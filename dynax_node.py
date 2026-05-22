@@ -7,7 +7,7 @@ import socket
 import threading
 from flask import Flask, request, jsonify
 
-CHAIN_FILE = "/data/data/com.termux/files/home/dynax_chain.json"
+CHAIN_FILE = "dynax_chain.json"
 DIFFICULTY = 4
 BLOCK_REWARD = 50
 SECRET_KEY = "DYNAX_SECRET_v1"
