@@ -3,11 +3,12 @@ import json
 import hashlib
 import os
 import hmac
+import ecdsa
 import socket
 import threading
 from flask import Flask, request, jsonify
 
-CHAIN_FILE = "dynax_chain.json"
+CHAIN_FILE = "/data/data/com.termux/files/home/dynax_chain.json"
 DIFFICULTY = 4
 BLOCK_REWARD = 50
 SECRET_KEY = "DYNAX_SECRET_v1"
@@ -159,6 +160,20 @@ class DYNAXNode:
 
 # Flask API
 app = Flask(__name__)
+# -------------------------
+# CORS (FULL SAFE VERSION)
+# -------------------------
+@app.after_request
+def add_cors_headers(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
+    response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE,OPTIONS"
+    return response
+
+@app.route("/", defaults={"path": ""}, methods=["OPTIONS"])
+@app.route("/<path:path>", methods=["OPTIONS"])
+def options_handler(path):
+    return make_response("", 204)
 node = DYNAXNode()
 
 @app.route("/")
