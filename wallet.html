@@ -1,249 +1,162 @@
-<!DOCTYPE html>
-<html>
+python3 << 'PYEOF'
+html = """<!DOCTYPE html>
+<html lang="en">
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DYNAX Wallet</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#0a0e1a;color:#fff;font-family:Arial;padding:15px}
-h1{color:#00e5ff;text-align:center;margin:20px 0}
-.tab{display:flex;gap:5px;margin:15px 0;flex-wrap:wrap}
-.tab button{flex:1;padding:10px;background:#1a1e2e;color:#aaa;border:1px solid #333;border-radius:5px;cursor:pointer}
-.tab button.active{background:#00e5ff;color:#000;font-weight:bold}
-.page{display:none}
-.page.active{display:block}
-.card{background:#1a1e2e;padding:20px;border-radius:10px;margin:10px 0;border:1px solid #00e5ff33}
-input{width:100%;padding:12px;margin:8px 0;background:#0d1117;color:#fff;border:1px solid #00e5ff55;border-radius:8px;font-size:14px}
-button.btn{width:100%;padding:12px;background:#00e5ff;color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:bold;margin:5px 0;font-size:15px}
-button.btn:hover{background:#00b8d4}
-button.btn.red{background:#ff5555;color:#fff}
-.result{background:#0d1117;padding:12px;border-radius:8px;margin-top:10px;word-break:break-all;font-size:13px;line-height:1.6}
-.success{color:#00e5ff}
-.error{color:#ff5555}
-.label{color:#aaa;font-size:12px;margin-top:10px}
-.addr{font-family:monospace;font-size:11px;color:#00e5ff;word-break:break-all}
-.bal{font-size:36px;color:#00e5ff;text-align:center;margin:10px 0}
-.symbol{color:#aaa;font-size:16px}
-.warning{background:#ff555533;border:1px solid #ff5555;padding:10px;border-radius:8px;font-size:12px;margin:10px 0}
-.copy{cursor:pointer;color:#00e5ff;font-size:12px}
+body{background:#050810;color:#e2e8f0;font-family:'Rajdhani',sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,255,213,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,213,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.container{max-width:480px;margin:0 auto;padding:20px;position:relative;z-index:1}
+.header{text-align:center;padding:30px 0 20px}
+.logo{font-size:36px;font-weight:700;letter-spacing:6px;color:#00ffd5;text-shadow:0 0 30px rgba(0,255,213,0.5)}
+.logo span{color:#fff}
+.tagline{font-size:11px;letter-spacing:3px;color:#64748b;margin-top:4px;font-family:monospace}
+.node-status{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0 20px;font-size:12px;font-family:monospace;color:#64748b}
+.dot{width:6px;height:6px;border-radius:50%;background:#ff4466;animation:pulse 2s infinite}
+.dot.online{background:#00ffd5}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:#0c1120;border-radius:12px;padding:4px;margin-bottom:20px;border:1px solid #1e293b}
+.tab{padding:10px;text-align:center;cursor:pointer;border-radius:8px;font-size:13px;font-weight:600;letter-spacing:1px;color:#64748b;transition:all 0.2s}
+.tab.active{background:#00ffd5;color:#000}
+.tab:hover:not(.active){color:#00ffd5}
+.panel{display:none}
+.panel.active{display:block}
+.card{background:#0c1120;border:1px solid #1e293b;border-radius:16px;padding:20px;margin-bottom:16px}
+.card-title{font-size:11px;letter-spacing:2px;color:#64748b;margin-bottom:12px;font-family:monospace}
+.balance-display{text-align:center;padding:20px 0}
+.balance-amount{font-size:48px;font-weight:700;color:#00ffd5;line-height:1}
+.balance-symbol{font-size:18px;color:#64748b;margin-top:4px;font-family:monospace}
+.address-box{background:#111827;border:1px solid #1e293b;border-radius:10px;padding:12px;font-family:monospace;font-size:11px;color:#00ffd5;word-break:break-all;cursor:pointer;transition:border-color 0.2s}
+.address-box:hover{border-color:#00ffd5}
+.copy-hint{font-size:10px;color:#64748b;text-align:right;margin-top:4px}
+.input-group{margin-bottom:14px}
+label{display:block;font-size:11px;letter-spacing:2px;color:#64748b;margin-bottom:6px;font-family:monospace}
+input{width:100%;background:#111827;border:1px solid #1e293b;border-radius:10px;padding:12px;color:#e2e8f0;font-family:monospace;font-size:12px;outline:none;transition:border-color 0.2s}
+input:focus{border-color:#00ffd5}
+input::placeholder{color:#64748b}
+.btn{width:100%;padding:14px;border:none;border-radius:10px;font-family:sans-serif;font-size:15px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all 0.2s;margin-top:8px}
+.btn-primary{background:#00ffd5;color:#000}
+.btn-primary:hover{box-shadow:0 0 20px rgba(0,255,213,0.4);transform:translateY(-1px)}
+.btn-outline{background:transparent;color:#00ffd5;border:1px solid #00ffd5}
+.btn-outline:hover{background:rgba(0,255,213,0.1)}
+.btn-danger{background:transparent;color:#ff4466;border:1px solid #ff4466}
+.btn:disabled{opacity:0.4;cursor:not-allowed;transform:none!important}
+.alert{padding:12px;border-radius:10px;font-size:13px;margin-top:12px;font-family:monospace;display:none}
+.alert.success{background:rgba(0,255,213,0.1);border:1px solid rgba(0,255,213,0.3);color:#00ffd5}
+.alert.error{background:rgba(255,68,102,0.1);border:1px solid rgba(255,68,102,0.3);color:#ff4466}
+.alert.show{display:block}
+.key-box{background:#111827;border:1px solid #ff980044;border-radius:10px;padding:12px;font-family:monospace;font-size:10px;color:#ff9800;word-break:break-all;margin:8px 0}
+.warning-text{font-size:12px;color:#ff9800;text-align:center;padding:8px}
+.divider{border:none;border-top:1px solid #1e293b;margin:16px 0}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,255,213,0.3);border-top-color:#00ffd5;border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.footer{text-align:center;padding:20px 0;font-size:11px;color:#64748b;font-family:monospace;letter-spacing:1px}
+.footer a{color:#00ffd5;text-decoration:none}
 </style>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-<h1>⛓️ DYNAX Wallet</h1>
-<p style="text-align:center;color:#aaa;font-size:13px">DYNAX/1.0 Testnet</p>
-
-<div class="tab">
-  <button class="active" onclick="showPage('create')">🔑 Create</button>
-  <button onclick="showPage('wallet')">💼 Wallet</button>
-  <button onclick="showPage('send')">💸 Send</button>
-  <button onclick="showPage('explorer')">🔍 Explorer</button>
+<div class="container">
+<div class="header">
+<div class="logo">DYN<span>AX</span></div>
+<div class="tagline">DECENTRALIZED · QUANTUM-RESISTANT · LAYER 1</div>
+<div class="node-status"><div class="dot" id="status-dot"></div><span id="status-text">connecting...</span></div>
 </div>
-
-<!-- CREATE WALLET -->
-<div id="page-create" class="page active">
-  <div class="card">
-    <h3>Create New Wallet</h3>
-    <p style="color:#aaa;font-size:13px;margin:10px 0">Generate a new DYNAX wallet address</p>
-    <button class="btn" onclick="createWallet()">🔑 Generate New Wallet</button>
-    <div id="createResult"></div>
-  </div>
-  <div class="card">
-    <h3>Import Wallet</h3>
-    <p style="color:#aaa;font-size:13px;margin:10px 0">Enter your existing address to check balance</p>
-    <input id="importAddr" placeholder="DX address...">
-    <button class="btn" onclick="importWallet()">📥 Import</button>
-  </div>
+<div class="tabs">
+<div class="tab active" onclick="switchTab('wallet')">WALLET</div>
+<div class="tab" onclick="switchTab('send')">SEND</div>
+<div class="tab" onclick="switchTab('new')">NEW</div>
 </div>
-
-<!-- WALLET -->
-<div id="page-wallet" class="page">
-  <div class="card" id="walletInfo">
-    <p style="color:#aaa;text-align:center">No wallet loaded. Create or import one first.</p>
-  </div>
+<div class="panel active" id="tab-wallet">
+<div id="no-wallet-msg" class="card" style="text-align:center;padding:30px">
+<div style="font-size:40px;margin-bottom:12px">🔐</div>
+<div style="font-size:16px;font-weight:600;margin-bottom:8px">No Wallet Loaded</div>
+<div style="font-size:13px;color:#64748b;margin-bottom:16px">Create a new wallet or load an existing one</div>
+<button class="btn btn-primary" onclick="switchTab('new')">CREATE WALLET</button>
+<button class="btn btn-outline" onclick="document.getElementById('load-file').click()" style="margin-top:8px">LOAD FROM FILE</button>
+<input type="file" id="load-file" accept=".json" style="display:none" onchange="loadWalletFile(this)">
 </div>
-
-<!-- SEND -->
-<div id="page-send" class="page">
-  <div class="card">
-    <h3>💸 Send DYX</h3>
-    <div class="warning">⚠️ Testnet: Use secret key DYNAX_SECRET_v1</div>
-    <div class="label">From Address</div>
-    <input id="sendFrom" placeholder="DX sender address...">
-    <div class="label">To Address</div>
-    <input id="sendTo" placeholder="DX recipient address...">
-    <div class="label">Amount (DYX)</div>
-    <input id="sendAmount" type="number" placeholder="0.00">
-    <div class="label">Secret Key</div>
-    <input id="sendSecret" type="password" placeholder="DYNAX_SECRET_v1">
-    <button class="btn" onclick="sendTx()">💸 Send DYX</button>
-    <div id="sendResult" class="result" style="display:none"></div>
-  </div>
+<div id="wallet-loaded" style="display:none">
+<div class="card">
+<div class="card-title">YOUR WALLET</div>
+<div class="address-box" id="full-address" onclick="copyAddress()">-</div>
+<div class="copy-hint">tap to copy</div>
 </div>
-
-<!-- EXPLORER -->
-<div id="page-explorer" class="page">
-  <div class="card">
-    <h3>🔍 Block Explorer</h3>
-    <button class="btn" onclick="loadExplorer()">🔄 Refresh</button>
-    <div id="explorerResult" class="result" style="display:none"></div>
-  </div>
-  <div class="card">
-    <h3>⛏️ Mine Block</h3>
-    <input id="mineAddr" placeholder="Your DX address...">
-    <button class="btn" onclick="mineBlock()">⛏️ Mine (+50 DYX)</button>
-    <div id="mineResult" class="result" style="display:none"></div>
-  </div>
+<div class="card">
+<div class="card-title">BALANCE</div>
+<div class="balance-display">
+<div class="balance-amount" id="balance-amount">-</div>
+<div class="balance-symbol">DYX</div>
 </div>
-
+<button class="btn btn-outline" onclick="refreshBalance()">REFRESH</button>
+</div>
+<button class="btn btn-danger" onclick="clearWallet()" style="margin-top:4px">CLEAR WALLET</button>
+</div>
+</div>
+<div class="panel" id="tab-send">
+<div class="card">
+<div class="card-title">SEND DYX</div>
+<div id="send-no-wallet" style="text-align:center;padding:20px;color:#64748b">Load a wallet first</div>
+<div id="send-form" style="display:none">
+<div class="input-group"><label>FROM</label><div class="address-box" id="send-from-addr" style="cursor:default">-</div></div>
+<div class="input-group"><label>TO ADDRESS</label><input type="text" id="send-to" placeholder="DX..."></div>
+<div class="input-group"><label>AMOUNT (DYX)</label><input type="number" id="send-amount" placeholder="0.00" min="0" step="any"></div>
+<div class="input-group"><label>PRIVATE KEY</label><input type="password" id="send-privkey" placeholder="Your private key..."></div>
+<button class="btn btn-primary" onclick="sendTx()" id="send-btn">SEND TRANSACTION</button>
+<div class="alert" id="send-alert"></div>
+</div>
+</div>
+</div>
+<div class="panel" id="tab-new">
+<div class="card">
+<div class="card-title">GENERATE NEW WALLET</div>
+<p style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.6">A new ECDSA keypair will be generated locally in your browser. Your private key never leaves your device.</p>
+<button class="btn btn-primary" onclick="generateWallet()" id="gen-btn">GENERATE WALLET</button>
+</div>
+<div class="card" id="new-wallet-result" style="display:none">
+<div class="card-title">NEW WALLET CREATED</div>
+<label>ADDRESS</label>
+<div class="address-box" id="new-address" onclick="copyText('new-address')" style="margin-bottom:4px">-</div>
+<div class="copy-hint">tap to copy</div>
+<hr class="divider">
+<div class="warning-text">WARNING: SAVE YOUR PRIVATE KEY - IT CANNOT BE RECOVERED</div>
+<label style="margin-top:8px">PRIVATE KEY</label>
+<div class="key-box" id="new-privkey">-</div>
+<label>PUBLIC KEY</label>
+<div class="key-box" id="new-pubkey" style="border-color:#1e293b;color:#64748b">-</div>
+<button class="btn btn-primary" onclick="downloadWallet()" style="margin-top:12px">DOWNLOAD WALLET FILE</button>
+<button class="btn btn-outline" onclick="useThisWallet()">USE THIS WALLET</button>
+</div>
+</div>
+<div class="footer">DYNAX NETWORK · <a href="/explorer.html">EXPLORER</a> · <a href="/whitepaper.md">WHITEPAPER</a><br>by Hideko Nanoura</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/elliptic@6.5.4/dist/elliptic.min.js"></script>
 <script>
-const API = 'https://dynax-website-2.onrender.com';
-let currentWallet = null;
-
-function showPage(name) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab button').forEach(b => b.classList.remove('active'));
-    document.getElementById('page-'+name).classList.add('active');
-    event.target.classList.add('active');
-}
-
-function generateAddress() {
-    const chars = '0123456789abcdef';
-    let addr = 'DX';
-    for(let i=0; i<38; i++) addr += chars[Math.floor(Math.random()*16)];
-    return addr;
-}
-
-function createWallet() {
-    const addr = generateAddress();
-    const privateKey = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b=>b.toString(16).padStart(2,'0')).join('');
-    currentWallet = {address: addr, privateKey};
-    
-    document.getElementById('createResult').innerHTML = `
-    <div class="result">
-      <div class="warning">⚠️ Save your private key! Never share it!</div>
-      <div class="label">Address</div>
-      <div class="addr">${addr}</div>
-      <div class="label">Private Key</div>
-      <div class="addr">${privateKey}</div>
-      <button class="btn" style="margin-top:10px" onclick="copyAddr('${addr}')">📋 Copy Address</button>
-    </div>`;
-    
-    updateWalletPage(addr);
-}
-
-function copyAddr(addr) {
-    navigator.clipboard.writeText(addr);
-    alert('Copied!');
-}
-
-async function importWallet() {
-    const addr = document.getElementById('importAddr').value.trim();
-    if(!addr.startsWith('DX')) return alert('Invalid address');
-    currentWallet = {address: addr};
-    updateWalletPage(addr);
-    showPage('wallet');
-}
-
-async function updateWalletPage(addr) {
-    const el = document.getElementById('walletInfo');
-    el.innerHTML = '<p style="color:#aaa;text-align:center">Loading...</p>';
-    try {
-        const r = await fetch(`${API}/balance/${addr}`);
-        const d = await r.json();
-        el.innerHTML = `
-        <div class="label">Your Address</div>
-        <div class="addr">${addr}</div>
-        <button class="btn" style="margin:5px 0" onclick="copyAddr('${addr}')">📋 Copy</button>
-        <div class="bal">${d.balance} <span class="symbol">DYX</span></div>
-        <button class="btn" onclick="updateWalletPage('${addr}')">🔄 Refresh</button>`;
-    } catch(e) {
-        el.innerHTML = `
-        <div class="label">Your Address</div>
-        <div class="addr">${addr}</div>
-        <div class="bal">0 <span class="symbol">DYX</span></div>
-        <p class="error">Could not load balance</p>`;
-    }
-}
-
-async function signTx(from, to, amount, secret) {
-    const canonical = JSON.stringify({amount:parseFloat(amount),from,to});
-    const enc = new TextEncoder();
-    const key = await crypto.subtle.importKey('raw',enc.encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);
-    const sig = await crypto.subtle.sign('HMAC',key,enc.encode(canonical));
-    return Array.from(new Uint8Array(sig)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-
-async function sendTx() {
-    const from = document.getElementById('sendFrom').value.trim();
-    const to = document.getElementById('sendTo').value.trim();
-    const amount = parseFloat(document.getElementById('sendAmount').value);
-    const secret = document.getElementById('sendSecret').value.trim();
-    if(!from||!to||!amount||!secret) return alert('Fill all fields');
-    
-    const el = document.getElementById('sendResult');
-    el.style.display='block';
-    el.innerHTML='<span class="success">Signing transaction...</span>';
-    
-    try {
-        const sig = await signTx(from,to,amount,secret);
-        const r = await fetch(`${API}/send`,{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({from,to,amount,signature:sig})
-        });
-        const d = await r.json();
-        if(d.success) {
-            el.innerHTML=`<span class="success">✅ TX Sent!<br>TXID: ${d.txid}</span>`;
-        } else {
-            el.innerHTML=`<span class="error">❌ ${d.error}</span>`;
-        }
-    } catch(e) {
-        el.innerHTML=`<span class="error">❌ ${e.message}</span>`;
-    }
-}
-
-async function loadExplorer() {
-    const el = document.getElementById('explorerResult');
-    el.style.display='block';
-    el.innerHTML='Loading...';
-    try {
-        const [chainR, infoR] = await Promise.all([
-            fetch(`${API}/chain`),
-            fetch(`${API}/`)
-        ]);
-        const chain = await chainR.json();
-        const info = await infoR.json();
-        el.innerHTML = `
-        <span class="success">Blocks: ${info.blocks} | Valid: ${info.valid} | Mempool: ${info.mempool}</span>
-        <hr style="border-color:#333;margin:10px 0">
-        ${chain.slice(-5).reverse().map(b=>`
-        <div style="border-bottom:1px solid #333;padding:8px 0">
-          <span class="success">Block #${b.index}</span> | TX: ${b.tx_count}<br>
-          <span style="color:#aaa;font-size:11px">${b.hash.substring(0,24)}...</span>
-        </div>`).join('')}`;
-    } catch(e) {
-        el.innerHTML=`<span class="error">❌ ${e.message}</span>`;
-    }
-}
-
-async function mineBlock() {
-    const addr = document.getElementById('mineAddr').value.trim();
-    if(!addr) return alert('Enter address');
-    const el = document.getElementById('mineResult');
-    el.style.display='block';
-    el.innerHTML='<span class="success">⛏️ Mining...</span>';
-    try {
-        const r = await fetch(`${API}/mine/${addr}`);
-        const d = await r.json();
-        if(d.success) {
-            el.innerHTML=`<span class="success">✅ Block #${d.block.index} mined!<br>+50 DYX reward!<br>Hash: ${d.block.hash.substring(0,20)}...</span>`;
-        }
-    } catch(e) {
-        el.innerHTML=`<span class="error">❌ ${e.message}</span>`;
-    }
-}
-
-loadExplorer();
+const NODE='https://dynax-node2.onrender.com';
+let ec=null,currentWallet=null;
+window.onload=()=>{ec=new elliptic.ec('secp256k1');checkNode();setInterval(checkNode,30000)};
+async function sha256hex(data){const b=typeof data==='string'?new TextEncoder().encode(data):data;const h=await crypto.subtle.digest('SHA-256',b);return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('')}
+async function pubkeyToAddress(pub){const b=hexToBytes(pub);const h1=await crypto.subtle.digest('SHA-256',b);const h2=await crypto.subtle.digest('SHA-256',h1);return'DX'+Array.from(new Uint8Array(h2)).map(x=>x.toString(16).padStart(2,'0')).join('').slice(0,40)}
+function hexToBytes(h){const b=new Uint8Array(h.length/2);for(let i=0;i<h.length;i+=2)b[i/2]=parseInt(h.substr(i,2),16);return b}
+async function checkNode(){try{const r=await fetch(NODE+'/',{signal:AbortSignal.timeout(5000)});const d=await r.json();document.getElementById('status-dot').className='dot online';document.getElementById('status-text').textContent=`BLOCK #${d.blocks} · ${d.peers} PEERS`}catch(e){document.getElementById('status-dot').className='dot';document.getElementById('status-text').textContent='node offline'}}
+async function generateWallet(){const btn=document.getElementById('gen-btn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span>GENERATING...';try{const kp=ec.genKeyPair();const priv=kp.getPrivate('hex').padStart(64,'0');const pub=kp.getPublic(false,'hex').slice(2);const addr=await pubkeyToAddress(pub);currentWallet={private_key:priv,public_key:pub,address:addr};document.getElementById('new-address').textContent=addr;document.getElementById('new-privkey').textContent=priv;document.getElementById('new-pubkey').textContent=pub;document.getElementById('new-wallet-result').style.display='block'}catch(e){alert('Error: '+e.message)}btn.disabled=false;btn.textContent='GENERATE AGAIN'}
+function downloadWallet(){if(!currentWallet)return;const b=new Blob([JSON.stringify(currentWallet,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`wallet_${currentWallet.address.slice(0,10)}.json`;a.click()}
+function useThisWallet(){if(!currentWallet)return;setWallet(currentWallet);switchTab('wallet')}
+function loadWalletFile(input){const file=input.files[0];if(!file)return;const r=new FileReader();r.onload=e=>{try{const w=JSON.parse(e.target.result);if(!w.address||!w.private_key||!w.public_key){alert('Invalid wallet file');return}setWallet(w);switchTab('wallet')}catch(err){alert('Cannot read file')}};r.readAsText(file)}
+function setWallet(w){currentWallet=w;document.getElementById('no-wallet-msg').style.display='none';document.getElementById('wallet-loaded').style.display='block';document.getElementById('full-address').textContent=w.address;document.getElementById('send-no-wallet').style.display='none';document.getElementById('send-form').style.display='block';document.getElementById('send-from-addr').textContent=w.address;refreshBalance()}
+function clearWallet(){currentWallet=null;document.getElementById('no-wallet-msg').style.display='block';document.getElementById('wallet-loaded').style.display='none';document.getElementById('send-no-wallet').style.display='block';document.getElementById('send-form').style.display='none'}
+async function refreshBalance(){if(!currentWallet)return;document.getElementById('balance-amount').textContent='...';try{const r=await fetch(`${NODE}/balance/${currentWallet.address}`);const d=await r.json();document.getElementById('balance-amount').textContent=d.balance||'0'}catch(e){document.getElementById('balance-amount').textContent='?'}}
+async function sendTx(){const to=document.getElementById('send-to').value.trim();const amount=parseFloat(document.getElementById('send-amount').value);const privkey=document.getElementById('send-privkey').value.trim();const al=document.getElementById('send-alert');const btn=document.getElementById('send-btn');if(!to||!amount||!privkey){showAlert(al,'error','Please fill all fields');return}if(!to.startsWith('DX')){showAlert(al,'error','Invalid address');return}btn.disabled=true;btn.innerHTML='<span class="spinner"></span>SIGNING...';try{const kp=ec.keyFromPrivate(privkey,'hex');const pub=kp.getPublic(false,'hex').slice(2);const canon=JSON.stringify({amount:amount,from:currentWallet.address,to:to});const mb=new TextEncoder().encode(canon);const hb=await crypto.subtle.digest('SHA-256',mb);const sig=kp.sign(new Uint8Array(hb));const sigHex=sig.toDER('hex');btn.innerHTML='<span class="spinner"></span>BROADCASTING...';const r=await fetch(`${NODE}/send`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from:currentWallet.address,to:to,amount:amount,public_key:pub,signature:sigHex})});const res=await r.json();if(res.success){showAlert(al,'success','TX sent! '+res.txid.slice(0,20)+'...');document.getElementById('send-to').value='';document.getElementById('send-amount').value='';document.getElementById('send-privkey').value='';refreshBalance()}else{showAlert(al,'error',res.error||'Failed')}}catch(e){showAlert(al,'error','Error: '+e.message)}btn.disabled=false;btn.textContent='SEND TRANSACTION'}
+function switchTab(n){document.querySelectorAll('.tab').forEach((t,i)=>{t.classList.toggle('active',['wallet','send','new'][i]===n)});document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.getElementById('tab-'+n).classList.add('active')}
+function copyAddress(){const addr=currentWallet.address;navigator.clipboard.writeText(addr).then(()=>{document.getElementById('full-address').textContent='COPIED!';setTimeout(()=>{document.getElementById('full-address').textContent=addr},1500)})}
+function copyText(id){navigator.clipboard.writeText(document.getElementById(id).textContent)}
+function showAlert(el,type,msg){el.className='alert '+type+' show';el.textContent=msg;setTimeout(()=>el.classList.remove('show'),5000)}
 </script>
 </body>
-</html>
+</html>"""
+open('/data/data/com.termux/files/home/qchain-website/wallet.html','w').write(html)
+print('done',len(html),'chars')
+PYEOF
