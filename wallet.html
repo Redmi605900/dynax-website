@@ -130,8 +130,12 @@ const NODE='https://dynax-node2.onrender.com';
 let wallet=null;
 
 function getEc(){
-  if(!window.elliptic) throw new Error('elliptic not loaded');
-  return new elliptic.ec('secp256k1');
+  if(!window.elliptic){throw new Error("elliptic library not loaded yet, please wait and try again");}
+  return new elliptic.ec("secp256k1");
+}
+function waitForElliptic(cb){
+  if(window.elliptic){cb();}
+  else{setTimeout(()=>waitForElliptic(cb),100);}
 }
 
 async function sha256(data){
@@ -161,9 +165,10 @@ async function checkNode(){
 }
 
 async function genWallet(){
-  const btn=document.getElementById('gbtn');
+  const btn=document.getElementById("gbtn");
   btn.disabled=true;
-  btn.innerHTML='<span class="spinner"></span>GENERATING...';
+  btn.innerHTML="<span class="spinner"></span>GENERATING...";
+  if(!window.elliptic){btn.disabled=false;btn.textContent="GENERATE WALLET";alert("Loading library, please try again");return;}
   try{
     const ec=getEc();
     const kp=ec.genKeyPair();
@@ -280,6 +285,10 @@ function copyAddr(){
 
 function showAlert(el,type,msg){el.className='alert '+type+' show';el.textContent=msg;setTimeout(()=>el.classList.remove('show'),5000)}
 
+document.getElementById('gbtn').disabled=true;
+document.getElementById('gbtn').textContent='LOADING...';
+function waitEc(){if(window.elliptic){document.getElementById('gbtn').disabled=false;document.getElementById('gbtn').textContent='GENERATE WALLET';}else{setTimeout(waitEc,200);}}
+waitEc();
 checkNode();
 setInterval(checkNode,30000);
 </script>
