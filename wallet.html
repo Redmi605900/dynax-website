@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DYNAX Wallet</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/elliptic/6.5.4/elliptic.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha3/0.8.0/sha3.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -146,10 +147,10 @@ async function sha256(data){
 
 function hex2bytes(h){const b=new Uint8Array(h.length/2);for(let i=0;i<h.length;i+=2)b[i/2]=parseInt(h.substr(i,2),16);return b}
 
-async function pubToAddr(pub){
-  const h1=await sha256(hex2bytes(pub));
-  const h2=await sha256(h1);
-  return 'DX'+h2.slice(0,40);
+function pubToAddr(pub){
+  const pubBytes = hex2bytes(pub);
+  const hash = sha3_256(pubBytes);
+  return 'DX'+hash.slice(0,40);
 }
 
 async function checkNode(){
@@ -174,7 +175,7 @@ async function genWallet(){
     const kp=ec.genKeyPair();
     const priv=kp.getPrivate('hex').padStart(64,'0');
     const pub=kp.getPublic(false,'hex').slice(2);
-    const addr=await pubToAddr(pub);
+    const addr=pubToAddr(pub);
     wallet={private_key:priv,public_key:pub,address:addr};
     document.getElementById('new-addr').textContent=addr;
     document.getElementById('new-pk').textContent=priv;
