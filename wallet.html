@@ -137,7 +137,7 @@ input::placeholder{color:#64748b}
 <script>
 const NODE='https://dynax-node2.onrender.com';
 let ec=null,currentWallet=null;
-window.onload=()=>{ec=new elliptic.ec('secp256k1');checkNode();setInterval(checkNode,30000)};
+function initEc(){if(window.elliptic){ec=new elliptic.ec("secp256k1")}else{setTimeout(initEc,100)}}window.onload=()=>{initEc();checkNode();setInterval(checkNode,30000)};
 async function sha256hex(data){const b=typeof data==='string'?new TextEncoder().encode(data):data;const h=await crypto.subtle.digest('SHA-256',b);return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('')}
 async function pubkeyToAddress(pub){const b=hexToBytes(pub);const h1=await crypto.subtle.digest('SHA-256',b);const h2=await crypto.subtle.digest('SHA-256',h1);return'DX'+Array.from(new Uint8Array(h2)).map(x=>x.toString(16).padStart(2,'0')).join('').slice(0,40)}
 function hexToBytes(h){const b=new Uint8Array(h.length/2);for(let i=0;i<h.length;i+=2)b[i/2]=parseInt(h.substr(i,2),16);return b}
