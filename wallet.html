@@ -156,7 +156,4 @@ function copyText(id){navigator.clipboard.writeText(document.getElementById(id).
 function showAlert(el,type,msg){el.className='alert '+type+' show';el.textContent=msg;setTimeout(()=>el.classList.remove('show'),5000)}
 </script>
 </body>
-</html>"""
-open('/data/data/com.termux/files/home/qchain-website/wallet.html','w').write(html)
-print('done',len(html),'chars')
-PYEOF
+</html>
