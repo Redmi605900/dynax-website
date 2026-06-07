@@ -1,10 +1,11 @@
-python3 << 'PYEOF'
-html = """<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DYNAX Wallet</title>
+<script src="https://cdn.jsdelivr.net/npm/elliptic@6.5.4/dist/elliptic.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#050810;color:#e2e8f0;font-family:'Rajdhani',sans-serif;min-height:100vh}
@@ -21,49 +22,42 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:#0c1120;border-radius:12px;padding:4px;margin-bottom:20px;border:1px solid #1e293b}
 .tab{padding:10px;text-align:center;cursor:pointer;border-radius:8px;font-size:13px;font-weight:600;letter-spacing:1px;color:#64748b;transition:all 0.2s}
 .tab.active{background:#00ffd5;color:#000}
-.tab:hover:not(.active){color:#00ffd5}
-.panel{display:none}
-.panel.active{display:block}
+.panel{display:none}.panel.active{display:block}
 .card{background:#0c1120;border:1px solid #1e293b;border-radius:16px;padding:20px;margin-bottom:16px}
 .card-title{font-size:11px;letter-spacing:2px;color:#64748b;margin-bottom:12px;font-family:monospace}
-.balance-display{text-align:center;padding:20px 0}
-.balance-amount{font-size:48px;font-weight:700;color:#00ffd5;line-height:1}
-.balance-symbol{font-size:18px;color:#64748b;margin-top:4px;font-family:monospace}
-.address-box{background:#111827;border:1px solid #1e293b;border-radius:10px;padding:12px;font-family:monospace;font-size:11px;color:#00ffd5;word-break:break-all;cursor:pointer;transition:border-color 0.2s}
-.address-box:hover{border-color:#00ffd5}
+.balance-amount{font-size:48px;font-weight:700;color:#00ffd5;line-height:1;text-align:center;padding:20px 0}
+.balance-symbol{font-size:18px;color:#64748b;text-align:center;font-family:monospace}
+.address-box{background:#111827;border:1px solid #1e293b;border-radius:10px;padding:12px;font-family:monospace;font-size:11px;color:#00ffd5;word-break:break-all;cursor:pointer}
 .copy-hint{font-size:10px;color:#64748b;text-align:right;margin-top:4px}
 .input-group{margin-bottom:14px}
 label{display:block;font-size:11px;letter-spacing:2px;color:#64748b;margin-bottom:6px;font-family:monospace}
-input{width:100%;background:#111827;border:1px solid #1e293b;border-radius:10px;padding:12px;color:#e2e8f0;font-family:monospace;font-size:12px;outline:none;transition:border-color 0.2s}
+input{width:100%;background:#111827;border:1px solid #1e293b;border-radius:10px;padding:12px;color:#e2e8f0;font-family:monospace;font-size:12px;outline:none}
 input:focus{border-color:#00ffd5}
 input::placeholder{color:#64748b}
-.btn{width:100%;padding:14px;border:none;border-radius:10px;font-family:sans-serif;font-size:15px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all 0.2s;margin-top:8px}
+.btn{width:100%;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:700;letter-spacing:2px;cursor:pointer;margin-top:8px}
 .btn-primary{background:#00ffd5;color:#000}
-.btn-primary:hover{box-shadow:0 0 20px rgba(0,255,213,0.4);transform:translateY(-1px)}
 .btn-outline{background:transparent;color:#00ffd5;border:1px solid #00ffd5}
-.btn-outline:hover{background:rgba(0,255,213,0.1)}
 .btn-danger{background:transparent;color:#ff4466;border:1px solid #ff4466}
-.btn:disabled{opacity:0.4;cursor:not-allowed;transform:none!important}
+.btn:disabled{opacity:0.4;cursor:not-allowed}
 .alert{padding:12px;border-radius:10px;font-size:13px;margin-top:12px;font-family:monospace;display:none}
 .alert.success{background:rgba(0,255,213,0.1);border:1px solid rgba(0,255,213,0.3);color:#00ffd5}
 .alert.error{background:rgba(255,68,102,0.1);border:1px solid rgba(255,68,102,0.3);color:#ff4466}
 .alert.show{display:block}
 .key-box{background:#111827;border:1px solid #ff980044;border-radius:10px;padding:12px;font-family:monospace;font-size:10px;color:#ff9800;word-break:break-all;margin:8px 0}
 .warning-text{font-size:12px;color:#ff9800;text-align:center;padding:8px}
-.divider{border:none;border-top:1px solid #1e293b;margin:16px 0}
+hr{border:none;border-top:1px solid #1e293b;margin:16px 0}
 .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,255,213,0.3);border-top-color:#00ffd5;border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
-.footer{text-align:center;padding:20px 0;font-size:11px;color:#64748b;font-family:monospace;letter-spacing:1px}
+.footer{text-align:center;padding:20px 0;font-size:11px;color:#64748b;font-family:monospace}
 .footer a{color:#00ffd5;text-decoration:none}
 </style>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 <div class="container">
 <div class="header">
 <div class="logo">DYN<span>AX</span></div>
 <div class="tagline">DECENTRALIZED · QUANTUM-RESISTANT · LAYER 1</div>
-<div class="node-status"><div class="dot" id="status-dot"></div><span id="status-text">connecting...</span></div>
+<div class="node-status"><div class="dot" id="sdot"></div><span id="stxt">connecting...</span></div>
 </div>
 <div class="tabs">
 <div class="tab active" onclick="switchTab('wallet')">WALLET</div>
@@ -71,89 +65,223 @@ input::placeholder{color:#64748b}
 <div class="tab" onclick="switchTab('new')">NEW</div>
 </div>
 <div class="panel active" id="tab-wallet">
-<div id="no-wallet-msg" class="card" style="text-align:center;padding:30px">
+<div id="no-wallet" class="card" style="text-align:center;padding:30px">
 <div style="font-size:40px;margin-bottom:12px">🔐</div>
 <div style="font-size:16px;font-weight:600;margin-bottom:8px">No Wallet Loaded</div>
 <div style="font-size:13px;color:#64748b;margin-bottom:16px">Create a new wallet or load an existing one</div>
 <button class="btn btn-primary" onclick="switchTab('new')">CREATE WALLET</button>
-<button class="btn btn-outline" onclick="document.getElementById('load-file').click()" style="margin-top:8px">LOAD FROM FILE</button>
-<input type="file" id="load-file" accept=".json" style="display:none" onchange="loadWalletFile(this)">
+<button class="btn btn-outline" onclick="document.getElementById('lf').click()" style="margin-top:8px">LOAD FROM FILE</button>
+<input type="file" id="lf" accept=".json" style="display:none" onchange="loadFile(this)">
 </div>
 <div id="wallet-loaded" style="display:none">
 <div class="card">
-<div class="card-title">YOUR WALLET</div>
-<div class="address-box" id="full-address" onclick="copyAddress()">-</div>
+<div class="card-title">ADDRESS</div>
+<div class="address-box" id="full-addr" onclick="copyAddr()">-</div>
 <div class="copy-hint">tap to copy</div>
 </div>
 <div class="card">
 <div class="card-title">BALANCE</div>
-<div class="balance-display">
-<div class="balance-amount" id="balance-amount">-</div>
+<div class="balance-amount" id="bal">-</div>
 <div class="balance-symbol">DYX</div>
+<button class="btn btn-outline" onclick="refreshBal()" style="margin-top:16px">REFRESH</button>
 </div>
-<button class="btn btn-outline" onclick="refreshBalance()">REFRESH</button>
-</div>
-<button class="btn btn-danger" onclick="clearWallet()" style="margin-top:4px">CLEAR WALLET</button>
+<button class="btn btn-danger" onclick="clearW()">CLEAR WALLET</button>
 </div>
 </div>
 <div class="panel" id="tab-send">
 <div class="card">
 <div class="card-title">SEND DYX</div>
-<div id="send-no-wallet" style="text-align:center;padding:20px;color:#64748b">Load a wallet first</div>
+<div id="send-nw" style="text-align:center;padding:20px;color:#64748b">Load a wallet first</div>
 <div id="send-form" style="display:none">
-<div class="input-group"><label>FROM</label><div class="address-box" id="send-from-addr" style="cursor:default">-</div></div>
-<div class="input-group"><label>TO ADDRESS</label><input type="text" id="send-to" placeholder="DX..."></div>
-<div class="input-group"><label>AMOUNT (DYX)</label><input type="number" id="send-amount" placeholder="0.00" min="0" step="any"></div>
-<div class="input-group"><label>PRIVATE KEY</label><input type="password" id="send-privkey" placeholder="Your private key..."></div>
-<button class="btn btn-primary" onclick="sendTx()" id="send-btn">SEND TRANSACTION</button>
-<div class="alert" id="send-alert"></div>
+<div class="input-group"><label>FROM</label><div class="address-box" id="sfrom" style="cursor:default">-</div></div>
+<div class="input-group"><label>TO ADDRESS</label><input type="text" id="sto" placeholder="DX..."></div>
+<div class="input-group"><label>AMOUNT (DYX)</label><input type="number" id="samt" placeholder="0.00" min="0" step="any"></div>
+<div class="input-group"><label>PRIVATE KEY</label><input type="password" id="spk" placeholder="Your private key..."></div>
+<button class="btn btn-primary" onclick="sendTx()" id="sbtn">SEND TRANSACTION</button>
+<div class="alert" id="sal"></div>
 </div>
 </div>
 </div>
 <div class="panel" id="tab-new">
 <div class="card">
 <div class="card-title">GENERATE NEW WALLET</div>
-<p style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.6">A new ECDSA keypair will be generated locally in your browser. Your private key never leaves your device.</p>
-<button class="btn btn-primary" onclick="generateWallet()" id="gen-btn">GENERATE WALLET</button>
+<p style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.6">A new ECDSA keypair will be generated locally. Your private key never leaves your device.</p>
+<button class="btn btn-primary" id="gbtn" onclick="genWallet()">GENERATE WALLET</button>
 </div>
-<div class="card" id="new-wallet-result" style="display:none">
-<div class="card-title">NEW WALLET CREATED</div>
+<div class="card" id="new-result" style="display:none">
+<div class="card-title">WALLET CREATED</div>
 <label>ADDRESS</label>
-<div class="address-box" id="new-address" onclick="copyText('new-address')" style="margin-bottom:4px">-</div>
-<div class="copy-hint">tap to copy</div>
-<hr class="divider">
-<div class="warning-text">WARNING: SAVE YOUR PRIVATE KEY - IT CANNOT BE RECOVERED</div>
+<div class="address-box" id="new-addr" style="margin-bottom:4px">-</div>
+<div class="copy-hint" onclick="navigator.clipboard.writeText(document.getElementById('new-addr').textContent)">tap to copy</div>
+<hr>
+<div class="warning-text">⚠️ SAVE YOUR PRIVATE KEY - CANNOT BE RECOVERED</div>
 <label style="margin-top:8px">PRIVATE KEY</label>
-<div class="key-box" id="new-privkey">-</div>
+<div class="key-box" id="new-pk">-</div>
 <label>PUBLIC KEY</label>
-<div class="key-box" id="new-pubkey" style="border-color:#1e293b;color:#64748b">-</div>
-<button class="btn btn-primary" onclick="downloadWallet()" style="margin-top:12px">DOWNLOAD WALLET FILE</button>
-<button class="btn btn-outline" onclick="useThisWallet()">USE THIS WALLET</button>
+<div class="key-box" id="new-pub" style="border-color:#1e293b;color:#64748b">-</div>
+<button class="btn btn-primary" onclick="dlWallet()" style="margin-top:12px">DOWNLOAD WALLET FILE</button>
+<button class="btn btn-outline" onclick="useWallet()">USE THIS WALLET</button>
 </div>
 </div>
 <div class="footer">DYNAX NETWORK · <a href="/explorer.html">EXPLORER</a> · <a href="/whitepaper.md">WHITEPAPER</a><br>by Hideko Nanoura</div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/elliptic@6.5.4/dist/elliptic.min.js"></script>
 <script>
 const NODE='https://dynax-node2.onrender.com';
-let ec=null,currentWallet=null;
-function initEc(){if(window.elliptic){ec=new elliptic.ec("secp256k1")}else{setTimeout(initEc,100)}}window.onload=()=>{initEc();checkNode();setInterval(checkNode,30000)};
-async function sha256hex(data){const b=typeof data==='string'?new TextEncoder().encode(data):data;const h=await crypto.subtle.digest('SHA-256',b);return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('')}
-async function pubkeyToAddress(pub){const b=hexToBytes(pub);const h1=await crypto.subtle.digest('SHA-256',b);const h2=await crypto.subtle.digest('SHA-256',h1);return'DX'+Array.from(new Uint8Array(h2)).map(x=>x.toString(16).padStart(2,'0')).join('').slice(0,40)}
-function hexToBytes(h){const b=new Uint8Array(h.length/2);for(let i=0;i<h.length;i+=2)b[i/2]=parseInt(h.substr(i,2),16);return b}
-async function checkNode(){try{const r=await fetch(NODE+'/',{signal:AbortSignal.timeout(5000)});const d=await r.json();document.getElementById('status-dot').className='dot online';document.getElementById('status-text').textContent=`BLOCK #${d.blocks} · ${d.peers} PEERS`}catch(e){document.getElementById('status-dot').className='dot';document.getElementById('status-text').textContent='node offline'}}
-async function generateWallet(){const btn=document.getElementById("gen-btn");btn.disabled=true;btn.innerHTML="<span class="spinner"></span>GENERATING...";try{if(!ec){ec=new elliptic.ec("secp256k1")}const kp=ec.genKeyPair();const priv=kp.getPrivate('hex').padStart(64,'0');const pub=kp.getPublic(false,'hex').slice(2);const addr=await pubkeyToAddress(pub);currentWallet={private_key:priv,public_key:pub,address:addr};document.getElementById('new-address').textContent=addr;document.getElementById('new-privkey').textContent=priv;document.getElementById('new-pubkey').textContent=pub;document.getElementById('new-wallet-result').style.display='block'}catch(e){alert('Error: '+e.message)}btn.disabled=false;btn.textContent='GENERATE AGAIN'}
-function downloadWallet(){if(!currentWallet)return;const b=new Blob([JSON.stringify(currentWallet,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`wallet_${currentWallet.address.slice(0,10)}.json`;a.click()}
-function useThisWallet(){if(!currentWallet)return;setWallet(currentWallet);switchTab('wallet')}
-function loadWalletFile(input){const file=input.files[0];if(!file)return;const r=new FileReader();r.onload=e=>{try{const w=JSON.parse(e.target.result);if(!w.address||!w.private_key||!w.public_key){alert('Invalid wallet file');return}setWallet(w);switchTab('wallet')}catch(err){alert('Cannot read file')}};r.readAsText(file)}
-function setWallet(w){currentWallet=w;document.getElementById('no-wallet-msg').style.display='none';document.getElementById('wallet-loaded').style.display='block';document.getElementById('full-address').textContent=w.address;document.getElementById('send-no-wallet').style.display='none';document.getElementById('send-form').style.display='block';document.getElementById('send-from-addr').textContent=w.address;refreshBalance()}
-function clearWallet(){currentWallet=null;document.getElementById('no-wallet-msg').style.display='block';document.getElementById('wallet-loaded').style.display='none';document.getElementById('send-no-wallet').style.display='block';document.getElementById('send-form').style.display='none'}
-async function refreshBalance(){if(!currentWallet)return;document.getElementById('balance-amount').textContent='...';try{const r=await fetch(`${NODE}/balance/${currentWallet.address}`);const d=await r.json();document.getElementById('balance-amount').textContent=d.balance||'0'}catch(e){document.getElementById('balance-amount').textContent='?'}}
-async function sendTx(){const to=document.getElementById('send-to').value.trim();const amount=parseFloat(document.getElementById('send-amount').value);const privkey=document.getElementById('send-privkey').value.trim();const al=document.getElementById('send-alert');const btn=document.getElementById('send-btn');if(!to||!amount||!privkey){showAlert(al,'error','Please fill all fields');return}if(!to.startsWith('DX')){showAlert(al,'error','Invalid address');return}btn.disabled=true;btn.innerHTML='<span class="spinner"></span>SIGNING...';try{const kp=ec.keyFromPrivate(privkey,'hex');const pub=kp.getPublic(false,'hex').slice(2);const canon=JSON.stringify({amount:amount,from:currentWallet.address,to:to});const mb=new TextEncoder().encode(canon);const hb=await crypto.subtle.digest('SHA-256',mb);const sig=kp.sign(new Uint8Array(hb));const sigHex=sig.toDER('hex');btn.innerHTML='<span class="spinner"></span>BROADCASTING...';const r=await fetch(`${NODE}/send`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from:currentWallet.address,to:to,amount:amount,public_key:pub,signature:sigHex})});const res=await r.json();if(res.success){showAlert(al,'success','TX sent! '+res.txid.slice(0,20)+'...');document.getElementById('send-to').value='';document.getElementById('send-amount').value='';document.getElementById('send-privkey').value='';refreshBalance()}else{showAlert(al,'error',res.error||'Failed')}}catch(e){showAlert(al,'error','Error: '+e.message)}btn.disabled=false;btn.textContent='SEND TRANSACTION'}
-function switchTab(n){document.querySelectorAll('.tab').forEach((t,i)=>{t.classList.toggle('active',['wallet','send','new'][i]===n)});document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.getElementById('tab-'+n).classList.add('active')}
-function copyAddress(){const addr=currentWallet.address;navigator.clipboard.writeText(addr).then(()=>{document.getElementById('full-address').textContent='COPIED!';setTimeout(()=>{document.getElementById('full-address').textContent=addr},1500)})}
-function copyText(id){navigator.clipboard.writeText(document.getElementById(id).textContent)}
+let wallet=null;
+
+function getEc(){
+  if(!window.elliptic) throw new Error('elliptic not loaded');
+  return new elliptic.ec('secp256k1');
+}
+
+async function sha256(data){
+  const b=typeof data==='string'?new TextEncoder().encode(data):data;
+  const h=await crypto.subtle.digest('SHA-256',b);
+  return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+
+function hex2bytes(h){const b=new Uint8Array(h.length/2);for(let i=0;i<h.length;i+=2)b[i/2]=parseInt(h.substr(i,2),16);return b}
+
+async function pubToAddr(pub){
+  const h1=await sha256(hex2bytes(pub));
+  const h2=await sha256(h1);
+  return 'DX'+h2.slice(0,40);
+}
+
+async function checkNode(){
+  try{
+    const r=await fetch(NODE+'/',{signal:AbortSignal.timeout(5000)});
+    const d=await r.json();
+    document.getElementById('sdot').className='dot online';
+    document.getElementById('stxt').textContent='BLOCK #'+d.blocks+' · '+d.peers+' PEERS';
+  }catch(e){
+    document.getElementById('sdot').className='dot';
+    document.getElementById('stxt').textContent='node offline';
+  }
+}
+
+async function genWallet(){
+  const btn=document.getElementById('gbtn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span>GENERATING...';
+  try{
+    const ec=getEc();
+    const kp=ec.genKeyPair();
+    const priv=kp.getPrivate('hex').padStart(64,'0');
+    const pub=kp.getPublic(false,'hex').slice(2);
+    const addr=await pubToAddr(pub);
+    wallet={private_key:priv,public_key:pub,address:addr};
+    document.getElementById('new-addr').textContent=addr;
+    document.getElementById('new-pk').textContent=priv;
+    document.getElementById('new-pub').textContent=pub;
+    document.getElementById('new-result').style.display='block';
+    btn.textContent='GENERATE AGAIN';
+  }catch(e){
+    alert('Error: '+e.message);
+    btn.textContent='GENERATE WALLET';
+  }
+  btn.disabled=false;
+}
+
+function dlWallet(){
+  if(!wallet)return;
+  const b=new Blob([JSON.stringify(wallet,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);
+  a.download='wallet_'+wallet.address.slice(0,10)+'.json';
+  a.click();
+}
+
+function useWallet(){if(wallet){setWallet(wallet);switchTab('wallet')}}
+
+function loadFile(inp){
+  const f=inp.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const w=JSON.parse(e.target.result);
+      if(!w.address||!w.private_key||!w.public_key){alert('Invalid wallet file');return}
+      setWallet(w);switchTab('wallet');
+    }catch(err){alert('Cannot read file')}
+  };
+  r.readAsText(f);
+}
+
+function setWallet(w){
+  wallet=w;
+  document.getElementById('no-wallet').style.display='none';
+  document.getElementById('wallet-loaded').style.display='block';
+  document.getElementById('full-addr').textContent=w.address;
+  document.getElementById('send-nw').style.display='none';
+  document.getElementById('send-form').style.display='block';
+  document.getElementById('sfrom').textContent=w.address;
+  refreshBal();
+}
+
+function clearW(){
+  wallet=null;
+  document.getElementById('no-wallet').style.display='block';
+  document.getElementById('wallet-loaded').style.display='none';
+  document.getElementById('send-nw').style.display='block';
+  document.getElementById('send-form').style.display='none';
+}
+
+async function refreshBal(){
+  if(!wallet)return;
+  document.getElementById('bal').textContent='...';
+  try{
+    const r=await fetch(NODE+'/balance/'+wallet.address);
+    const d=await r.json();
+    document.getElementById('bal').textContent=d.balance||'0';
+  }catch(e){document.getElementById('bal').textContent='?'}
+}
+
+async function sendTx(){
+  const to=document.getElementById('sto').value.trim();
+  const amt=parseFloat(document.getElementById('samt').value);
+  const pk=document.getElementById('spk').value.trim();
+  const al=document.getElementById('sal');
+  const btn=document.getElementById('sbtn');
+  if(!to||!amt||!pk){showAlert(al,'error','Fill all fields');return}
+  if(!to.startsWith('DX')){showAlert(al,'error','Invalid address');return}
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span>SIGNING...';
+  try{
+    const ec=getEc();
+    const kp=ec.keyFromPrivate(pk,'hex');
+    const pub=kp.getPublic(false,'hex').slice(2);
+    const canon=JSON.stringify({amount:amt,from:wallet.address,to:to});
+    const hb=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(canon));
+    const sig=kp.sign(new Uint8Array(hb));
+    const sigHex=sig.toDER('hex');
+    btn.innerHTML='<span class="spinner"></span>BROADCASTING...';
+    const res=await fetch(NODE+'/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from:wallet.address,to:to,amount:amt,public_key:pub,signature:sigHex})});
+    const d=await res.json();
+    if(d.success){showAlert(al,'success','Sent! '+d.txid.slice(0,20)+'...');document.getElementById('sto').value='';document.getElementById('samt').value='';document.getElementById('spk').value='';refreshBal()}
+    else showAlert(al,'error',d.error||'Failed');
+  }catch(e){showAlert(al,'error','Error: '+e.message)}
+  btn.disabled=false;btn.textContent='SEND TRANSACTION';
+}
+
+function switchTab(n){
+  ['wallet','send','new'].forEach((t,i)=>{
+    document.querySelectorAll('.tab')[i].classList.toggle('active',t===n);
+    document.getElementById('tab-'+t).classList.toggle('active',t===n);
+  });
+}
+
+function copyAddr(){
+  if(!wallet)return;
+  navigator.clipboard.writeText(wallet.address).then(()=>{
+    document.getElementById('full-addr').textContent='COPIED!';
+    setTimeout(()=>{document.getElementById('full-addr').textContent=wallet.address},1500);
+  });
+}
+
 function showAlert(el,type,msg){el.className='alert '+type+' show';el.textContent=msg;setTimeout(()=>el.classList.remove('show'),5000)}
+
+checkNode();
+setInterval(checkNode,30000);
 </script>
 </body>
 </html>
