@@ -286,10 +286,7 @@ function copyAddr(){
 
 function showAlert(el,type,msg){el.className='alert '+type+' show';el.textContent=msg;setTimeout(()=>el.classList.remove('show'),5000)}
 
-document.getElementById('gbtn').disabled=true;
-document.getElementById('gbtn').textContent='LOADING...';
-function waitEc(){if(window.elliptic){document.getElementById('gbtn').disabled=false;document.getElementById('gbtn').textContent='GENERATE WALLET';}else{setTimeout(waitEc,200);}}
-waitEc();
+
 checkNode();
 setInterval(checkNode,30000);
 </script>
