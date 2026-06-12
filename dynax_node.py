@@ -49,13 +49,14 @@ def upload_chain():
     try:
         chain_data = request.get_json()
         if chain_data:
-            save_chain(chain_data)
+            # เขียนทับไฟล์ dynax_chain.json โดยตรง
+            with open("dynax_chain.json", "w") as f:
+                json.dump(chain_data, f, indent=4)
             return jsonify({"message": "Chain uploaded successfully"}), 200
         else:
             return jsonify({"error": "No chain data received"}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 # -------------------------------
 # Run server
 # -------------------------------
