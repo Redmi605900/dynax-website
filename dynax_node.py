@@ -48,11 +48,14 @@ def mine_block(address):
 def upload_chain():
     try:
         chain_data = request.get_json()
-        if chain_data:
-            save_chain(chain_data)
-            return jsonify({"message": "Chain uploaded succ>
-        else:
-            return jsonify({"error": "No chain data receive>
+
+        if not chain_data:
+            return jsonify({"error": "No chain data received"}), 400
+
+        save_chain(chain_data)
+
+        return jsonify({"message": "Chain uploaded successfully"})
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 # -------------------------------
