@@ -92,6 +92,15 @@ class DynaxNode:
             block["nonce"] += 1
         self.chain.append(block)
         self.save_chain()
+        
+        # Broadcast new block to all peers
+        for peer in list(self.peers):
+            try:
+                r = requests.post(f"{peer}/receive_block", json=block, timeout=3)
+                print(f"Broadcasted block {block['index']} to {peer}: {r.status_code}")
+            except Exception as e:
+                print(f"Failed to broadcast to {peer}: {e}")
+        
         return {"status": "mined", "block": block["index"]}
 
 node = DynaxNode()
@@ -325,6 +334,16 @@ def sync_chain():
         node.save_chain()
         return jsonify({"status": "synced", "blocks": len(node.chain)})
     return jsonify({"status": "already longest", "blocks": len(node.chain)})
+
+
+@app.route("/assets/<path:filename>")
+def assets(filename):
+    import os
+    filepath = os.path.join("assets", filename)
+    if os.path.exists(filepath):
+        from flask import send_file
+        return send_file(filepath)
+    return "Not found", 404
 
 if __name__ == "__main__":
     print("=== DYNAX V20 SECURE NODE STARTED ===")
