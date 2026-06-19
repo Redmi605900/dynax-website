@@ -19,20 +19,39 @@ def api_stats():
         'status': 'online'
     })
 
+# Serve HTML pages directly
 @app.route('/explorer')
-def explorer():
-    return redirect(f"{BASE_URL}:6006")
+def explorer_page():
+    return send_file('explorer.html')
 
 @app.route('/wallet')
-def wallet():
-    return redirect(f"{BASE_URL}:6007")
+def wallet_page():
+    return send_file('wallet.html')
 
 @app.route('/dex')
-def dex():
-    return redirect(f"{BASE_URL}:6004")
+def dex_page():
+    return send_file('dex.html')
 
 @app.route('/dvm')
-def dvm():
+def dvm_page():
+    # ถ้าไม่มี dvm.html ให้ใช้ explorer.html แทน หรือสร้างหน้าใหม่
+    return send_file('explorer.html')
+
+# API endpoints สำหรับ services (ถ้าต้องการ)
+@app.route('/api/explorer')
+def explorer_api():
+    return redirect(f"{BASE_URL}:6006")
+
+@app.route('/api/wallet')
+def wallet_api():
+    return redirect(f"{BASE_URL}:6007")
+
+@app.route('/api/dex')
+def dex_api():
+    return redirect(f"{BASE_URL}:6004")
+
+@app.route('/api/dvm')
+def dvm_api():
     return redirect(f"{BASE_URL}:6005")
 
 if __name__ == '__main__':
