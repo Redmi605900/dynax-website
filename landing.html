@@ -4,6 +4,100 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DYNAX - Layer 1 Blockchain</title>
+
+<!-- PWA Meta Tags -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#d4af37">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DYNAX">
+
+<style>
+/* เพิ่มปุ่ม Install PWA */
+.install-banner {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, #d4af37, #f5d47a);
+  color: #0a0a0a;
+  padding: 15px;
+  text-align: center;
+  z-index: 1000;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
+}
+.install-banner.show {
+  display: block;
+}
+.install-btn {
+  background: #0a0a0a;
+  color: #d4af37;
+  border: none;
+  padding: 10px 25px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  margin: 0 10px;
+}
+.close-install {
+  background: transparent;
+  border: none;
+  color: #0a0a0a;
+  font-size: 20px;
+  cursor: pointer;}
+</style>
+</head>
+<body>
+
+<!-- Install Banner -->
+<div class="install-banner" id="installBanner">
+  <span>📱 ติดตั้งแอป DYNAX</span>
+  <button class="install-btn" onclick="installPWA()">ติดตั้ง</button>
+  <button class="close-install" onclick="closeInstall()">✕</button>
+</div>
+
+<script>
+// Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js')
+    .then(reg => console.log('SW registered'))
+    .catch(err => console.log('SW error:', err));
+}
+
+// Install Prompt
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBanner').classList.add('show');
+});
+
+function installPWA() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(choiceResult => {
+      if (choiceResult.outcome === 'accepted') {
+        document.getElementById('installBanner').classList.remove('show');
+      }
+      deferredPrompt = null;
+    });
+  }
+}
+
+function closeInstall() {
+  document.getElementById('installBanner').classList.remove('show');
+}
+</script>
+
+<!-- ส่วนที่เหลือของ landing.html เดิม -->
+==> landing.html <==
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DYNAX - Layer 1 Blockchain</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
@@ -296,5 +390,3 @@ async function loadStats() {
 loadStats();
 setInterval(loadStats, 30000);
 </script>
-</body>
-</html>
