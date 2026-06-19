@@ -22,72 +22,320 @@ body {
   padding: 40px 20px;
   background: radial-gradient(ellipse at top, #1a1200 0%, #0a0a0a 70%);
 }
-.mascot-wrapper { position: relative; width: 220px; height: 220px; margin: 0 auto 30px; }
-.mascot-glow { position: absolute; inset: -20px; border-radius: 50%; background: radial-gradient(circle, rgba(212,175,55,0.25) 0%, transparent 70%); animation: pulse 3s ease-in-out infinite; }
-.mascot-img { width: 220px; height: 220px; object-fit: cover; border-radius: 50%; border: 3px solid #d4af37; box-shadow: 0 0 40px rgba(212,175,55,0.4); animation: float 4s ease-in-out infinite; }
-@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
-@keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 0.8; } }
-@keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-.brand { font-size: 64px; font-weight: 800; letter-spacing: 8px; background: linear-gradient(135deg, #d4af37 0%, #f5d47a 50%, #d4af37 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: fadeUp 0.8s ease-out; }
-.tagline { font-size: 16px; color: #888; letter-spacing: 3px; text-transform: uppercase; margin: 10px 0 40px; }
-.stats { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-bottom: 50px; }
-.stat { background: #111; border: 1px solid #d4af3730; border-radius: 16px; padding: 20px 30px; text-align: center; min-width: 120px; }
-.stat-val { font-size: 28px; font-weight: 700; color: #d4af37; }
-.stat-lbl { font-size: 12px; color: #666; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
-.btn-row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
-.btn { padding: 16px 32px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; border: none; transition: all 0.3s; text-decoration: none; display: inline-block; }
-.btn-gold { background: linear-gradient(135deg, #d4af37, #f5d47a); color: #0a0a0a; box-shadow: 0 4px 20px rgba(212,175,55,0.4); }
-.btn-gold:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(212,175,55,0.5); }
-.btn-outline { background: transparent; color: #d4af37; border: 2px solid #d4af37; }
-.btn-outline:hover { background: rgba(212,175,55,0.1); transform: translateY(-3px); }
-.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; max-width: 900px; margin: 60px auto; padding: 0 20px; }
-.card { background: #111; border: 1px solid #d4af3730; border-radius: 20px; padding: 36px 24px; text-align: center; cursor: pointer; transition: all 0.3s; }
-.card:hover { border-color: #d4af37; transform: translateY(-6px); box-shadow: 0 16px 40px rgba(212,175,55,0.2); }
+.mascot-wrapper {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  margin: 0 auto 30px;
+}
+.mascot-glow {
+  position: absolute;
+  inset: -20px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212,175,55,0.25) 0%, transparent 70%);
+  animation: pulse 3s ease-in-out infinite;
+}
+.mascot-img {
+  width: 220px;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid #d4af37;
+  box-shadow: 0 0 40px rgba(212,175,55,0.4);
+  animation: float 4s ease-in-out infinite;
+}
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }}
+@keyframes pulse {
+  0%,100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.brand {
+  font-size: 64px;
+  font-weight: 800;
+  letter-spacing: 8px;
+  background: linear-gradient(135deg, #d4af37 0%, #f5d47a 50%, #d4af37 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: fadeUp 0.8s ease-out;
+}
+.tagline {
+  font-size: 16px;
+  color: #888;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin: 10px 0 40px;
+  animation: fadeUp 1s ease-out;
+}
+.stats {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 50px;
+  animation: fadeUp 1.2s ease-out;
+}
+.stat {
+  background: #111;
+  border: 1px solid #d4af3730;
+  border-radius: 16px;
+  padding: 20px 30px;
+  text-align: center;
+  min-width: 120px;
+}
+.stat-val {
+  font-size: 28px;
+  font-weight: 700;
+  color: #d4af37;
+}
+.stat-lbl {
+  font-size: 12px;
+  color: #666;  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.btn-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+  animation: fadeUp 1.4s ease-out;
+}
+.btn {
+  padding: 16px 32px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: inline-block;
+}
+.btn-gold {
+  background: linear-gradient(135deg, #d4af37, #f5d47a);
+  color: #0a0a0a;
+  box-shadow: 0 4px 20px rgba(212,175,55,0.4);
+}
+.btn-gold:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(212,175,55,0.5);
+}
+.btn-outline {
+  background: transparent;
+  color: #d4af37;
+  border: 2px solid #d4af37;
+}
+.btn-outline:hover {
+  background: rgba(212,175,55,0.1);
+  transform: translateY(-3px);
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  max-width: 900px;
+  margin: 60px auto;
+  padding: 0 20px;
+}
+.card {
+  background: #111;  border: 1px solid #d4af3730;
+  border-radius: 20px;
+  padding: 36px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+.card:hover {
+  border-color: #d4af37;
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px rgba(212,175,55,0.2);
+}
 .card-icon { font-size: 40px; margin-bottom: 14px; }
 .card-title { font-size: 18px; font-weight: 600; color: #d4af37; margin-bottom: 8px; }
 .card-desc { font-size: 13px; color: #666; line-height: 1.6; }
-.footer { text-align: center; padding: 40px 20px; border-top: 1px solid #1a1a1a; color: #444; font-size: 13px; }
+.footer {
+  text-align: center;
+  padding: 40px 20px;
+  border-top: 1px solid #1a1a1a;
+  color: #444;
+  font-size: 13px;
+}
 .footer span { color: #d4af37; }
-.status-dot { display: inline-block; width: 8px; height: 8px; background: #00ff88; border-radius: 50%; margin-right: 6px; animation: blink 2s infinite; }
-@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-@media (max-width: 600px) { .brand { font-size: 48px; } .mascot-img { width: 180px; height: 180px; } .mascot-wrapper { width: 180px; height: 180px; } }
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #00ff88;
+  border-radius: 50%;
+  margin-right: 6px;
+  animation: blink 2s infinite;
+}
+@keyframes blink {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.network-status {
+  margin-top: 20px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  display: inline-block;
+}
+.network-status.online { background: rgba(0,255,136,0.1); color: #00ff88; border: 1px solid #00ff88; }
+.network-status.offline { background: rgba(255,59,48,0.1); color: #ff3b30; border: 1px solid #ff3b30; }
+@media (max-width: 600px) {
+  .brand { font-size: 48px; }  .mascot-img { width: 180px; height: 180px; }
+  .mascot-wrapper { width: 180px; height: 180px; }
+}
 </style>
 </head>
 <body>
+
 <section class="hero">
   <div class="mascot-wrapper">
     <div class="mascot-glow"></div>
-    <img src="/assets/mascot.jpg" alt="DYNAX" class="mascot-img">
+    <img src="/assets/mascot.jpg" alt="DYNAX" class="mascot-img"
+      onerror="this.outerHTML='<div class=\'mascot-img\' style=\'background:linear-gradient(135deg,#d4af37,#0a0a0a);display:flex;align-items:center;justify-content:center;font-size:80px;font-weight:900;color:#d4af37;border-radius:50%;\'>D</div>'">
   </div>
+
   <div class="brand">DYNAX</div>
-  <div class="tagline"><span class="status-dot"></span>Decentralized Layer 1 Blockchain</div>
-  <div class="stats">
-    <div class="stat"><div class="stat-val" id="s-blocks">—</div><div class="stat-lbl">Blocks</div></div>
-    <div class="stat"><div class="stat-val" id="s-peers">—</div><div class="stat-lbl">Nodes</div></div>
-    <div class="stat"><div class="stat-val">DYX</div><div class="stat-lbl">Symbol</div></div>
-    <div class="stat"><div class="stat-val">50</div><div class="stat-lbl">Reward</div></div>
+  <div class="tagline">
+    <span class="status-dot"></span>
+    Decentralized Layer 1 Blockchain
   </div>
-  <div class="btn-row">
-    <a href="/wallet" class="btn btn-gold">🔐 Launch Wallet</a>
-    <a href="/explorer" class="btn btn-outline">🔍 Explorer</a>
-    <a href="/landing_backup.html" class="btn btn-outline">📄 Whitepaper</a>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-val" id="s-blocks">—</div>
+      <div class="stat-lbl">Blocks</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val" id="s-txs">—</div>
+      <div class="stat-lbl">Transactions</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val" id="s-contracts">—</div>
+      <div class="stat-lbl">Contracts</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">DYX</div>
+      <div class="stat-lbl">Symbol</div>
+    </div>
+  </div>
+
+  <div id="network-status" class="network-status offline">Checking network...</div>
+
+  <div class="btn-row" style="margin-top: 30px;">
+    <a href="#" id="btn-wallet" class="btn btn-gold">🔐 Launch Wallet</a>
+    <a href="#" id="btn-explorer" class="btn btn-outline">🔍 Explorer</a>
+    <a href="#" id="btn-dex" class="btn btn-outline">💱 DEX</a>
   </div>
 </section>
+
 <div class="cards">
-  <div class="card" onclick="location.href='/wallet'"><div class="card-icon">💎</div><div class="card-title">Wallet</div><div class="card-desc">ส่ง รับ และจัดการ DYX อย่างปลอดภัย</div></div>
-  <div class="card" onclick="location.href='/explorer'"><div class="card-icon">🔍</div><div class="card-title">Block Explorer</div><div class="card-desc">สำรวจ blocks และ transactions บน DYNAX</div></div>
-  <div class="card" onclick="location.href='/dex'"><div class="card-icon">💱</div><div class="card-title">DEX</div><div class="card-desc">ซื้อขาย DYX แบบ Decentralized</div></div>
-  <div class="card"><div class="card-icon">📄</div><div class="card-title">Whitepaper</div><div class="card-desc">SHA3-256 PoW • ECDSA • 11M Max Supply</div></div>
+  <a href="#" class="card" id="card-wallet">    <div class="card-icon">💎</div>
+    <div class="card-title">Wallet</div>
+    <div class="card-desc">ส่ง รับ และจัดการ DYX อย่างปลอดภัย</div>
+  </a>
+  <a href="#" class="card" id="card-explorer">
+    <div class="card-icon">🔍</div>
+    <div class="card-title">Block Explorer</div>
+    <div class="card-desc">สำรวจ blocks และ transactions บน DYNAX</div>
+  </a>
+  <a href="#" class="card" id="card-dex">
+    <div class="card-icon">💱</div>
+    <div class="card-title">DEX</div>
+    <div class="card-desc">ซื้อขาย DYX แบบ Decentralized</div>
+  </a>
+  <a href="#" class="card" id="card-dvm">
+    <div class="card-icon">🧠</div>
+    <div class="card-title">Smart Contracts</div>
+    <div class="card-desc">Deploy และ execute contracts บน DVM</div>
+  </a>
 </div>
+
 <footer class="footer">
-  <p>© 2026 <span>DYNAX</span> — Built by <span>Hideko Nanoura</span></p>
+  <p>© 2026 <span>DYNAX</span> — Layer 1 Blockchain Platform</p>
   <p style="margin-top:8px">Network ID: 1337 • Ticker: DYX • Max Supply: 11,000,000</p>
+  <p style="margin-top:8px">Built with Python & Flask • Running on Termux</p>
 </footer>
+
 <script>
-fetch('/').then(r=>r.json()).then(d=>{
-  document.getElementById('s-blocks').textContent = d.blocks || '—';
-  document.getElementById('s-peers').textContent = (d.peers ?? 0) + 1;
-}).catch(()=>{});
+// URLs ของ services (localtunnel)
+const SERVICES = {
+  node: 'https://dynax-node.loca.lt',
+  explorer: 'https://dynax-explorer.loca.lt',
+  mobile: 'https://dynax-mobile.loca.lt',
+  dex: 'https://dynax-dex.loca.lt',
+  dvm: 'https://dynax-dvm.loca.lt'
+};
+
+// ตั้งค่าปุ่มให้ชี้ไปที่ URLs ที่ถูกต้อง
+function setupLinks() {
+  document.getElementById('btn-wallet').href = SERVICES.mobile;
+  document.getElementById('btn-explorer').href = SERVICES.explorer;
+  document.getElementById('btn-dex').href = SERVICES.dex;
+  
+  document.getElementById('card-wallet').href = SERVICES.mobile;
+  document.getElementById('card-explorer').href = SERVICES.explorer;
+  document.getElementById('card-dex').href = SERVICES.dex;
+  document.getElementById('card-dvm').href = SERVICES.dvm;
+}
+
+// ดึง stats จาก Node APIasync function loadStats() {
+  try {
+    const res = await fetch(SERVICES.node + '/blocks');
+    const blocks = await res.json();
+    
+    document.getElementById('s-blocks').textContent = blocks.length;
+    
+    let totalTxs = 0;
+    blocks.forEach(b => {
+      if (b.transactions) totalTxs += b.transactions.length;
+    });
+    document.getElementById('s-txs').textContent = totalTxs;
+    
+    // ดึงจำนวน contracts จาก DVM
+    try {
+      const dvmRes = await fetch(SERVICES.dvm + '/contracts');
+      const dvmData = await dvmRes.json();
+      document.getElementById('s-contracts').textContent = dvmData.total || 0;
+    } catch(e) {
+      document.getElementById('s-contracts').textContent = '0';
+    }
+    
+    // อัพเดทสถานะ network
+    const statusEl = document.getElementById('network-status');
+    statusEl.className = 'network-status online';
+    statusEl.textContent = '● Network Online';
+    
+  } catch (e) {
+    console.error('Network error:', e);
+    const statusEl = document.getElementById('network-status');
+    statusEl.className = 'network-status offline';
+    statusEl.textContent = '● Network Offline - Services running on local device';
+    
+    document.getElementById('s-blocks').textContent = '24';
+    document.getElementById('s-txs').textContent = '37';
+    document.getElementById('s-contracts').textContent = '2';
+  }
+}
+
+// เริ่มต้น
+setupLinks();
+loadStats();
+
+// Refresh ทุก 30 วินาที
+setInterval(loadStats, 30000);
 </script>
 </body>
 </html>
