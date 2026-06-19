@@ -3,8 +3,8 @@ import os
 
 app = Flask(__name__, static_folder='assets', static_url_path='/assets')
 
-# ใช้ IP ตรงของมือถือคุณ
-BASE_URL = "http://192.168.43.166"
+# IP จริงของเครื่อง
+BASE_URL = "http://172.17.78.115"
 
 @app.route('/')
 def home():
