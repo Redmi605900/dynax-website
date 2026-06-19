@@ -2,7 +2,13 @@ from flask import Flask, send_file, jsonify, redirect
 import requests
 import os
 
-app = Flask(__name__, static_folder='.', static_url_path='')
+# ใช้ absolute path
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+app = Flask(__name__, 
+    static_folder=os.path.join(BASE_DIR, 'assets'),
+    static_url_path='/assets'
+)
 
 # URLs ของ services (localtunnel)
 SERVICES = {
@@ -15,11 +21,13 @@ SERVICES = {
 
 @app.route('/')
 def home():
-    return send_file('landing.html')
+    landing_path = os.path.join(BASE_DIR, 'landing.html')
+    return send_file(landing_path)
 
 @app.route('/assets/<path:filename>')
 def assets(filename):
-    return send_file(f'assets/{filename}')
+    file_path = os.path.join(BASE_DIR, 'assets', filename)
+    return send_file(file_path)
 
 @app.route('/api/stats')
 def api_stats():
@@ -50,7 +58,7 @@ def api_stats():
             'error': str(e)
         })
 
-# Redirect routes ไปยัง services จริง
+# Redirect routes
 @app.route('/explorer')
 def explorer():
     return redirect(SERVICES['explorer'])
@@ -67,11 +75,7 @@ def dex():
 def dvm():
     return redirect(SERVICES['dvm'])
 
-@app.route('/node')
-def node():
-    return redirect(SERVICES['node'])
-
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
-    print(f"🚀 DYNAX Server running on port {port}")
+    print(f" DYNAX Server running on port {port}")
     app.run(host='0.0.0.0', port=port, debug=False)
