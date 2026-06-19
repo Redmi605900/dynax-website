@@ -3,13 +3,8 @@ import os
 
 app = Flask(__name__, static_folder='assets', static_url_path='/assets')
 
-# URLs ของ services (localtunnel)
-SERVICES = {
-    'explorer': 'https://dynax-explorer.loca.lt',
-    'mobile': 'https://dynax-mobile.loca.lt',
-    'dex': 'https://dynax-dex.loca.lt',
-    'dvm': 'https://dynax-dvm.loca.lt'
-}
+# ใช้ IP ตรงของมือถือคุณ
+BASE_URL = "http://192.168.43.166"
 
 @app.route('/')
 def home():
@@ -17,7 +12,6 @@ def home():
 
 @app.route('/api/stats')
 def api_stats():
-    # ใช้ค่า hardcoded จาก Block Explorer ที่เห็น
     return jsonify({
         'blocks': 24,
         'transactions': 37,
@@ -25,24 +19,22 @@ def api_stats():
         'status': 'online'
     })
 
-# Redirect routes ไปยัง localtunnel services
 @app.route('/explorer')
 def explorer():
-    return redirect(SERVICES['explorer'])
+    return redirect(f"{BASE_URL}:6006")
 
 @app.route('/wallet')
 def wallet():
-    return redirect(SERVICES['mobile'])
+    return redirect(f"{BASE_URL}:6007")
 
 @app.route('/dex')
 def dex():
-    return redirect(SERVICES['dex'])
+    return redirect(f"{BASE_URL}:6004")
 
 @app.route('/dvm')
 def dvm():
-    return redirect(SERVICES['dvm'])
+    return redirect(f"{BASE_URL}:6005")
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
-    print(f" DYNAX Server running on port {port}")
     app.run(host='0.0.0.0', port=port, debug=False)
