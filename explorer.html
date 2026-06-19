@@ -1,129 +1,145 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
-<title>DYNAX Explorer</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DYNAX Block Explorer</title>
 <style>
-*{box-sizing:border-box}
-body{background:#0a0e1a;color:#fff;font-family:Arial;margin:0;padding:20px}
-h1{color:#00e5ff;text-align:center;margin-bottom:5px}
-.sub{text-align:center;color:#aaa;margin-bottom:20px;font-size:13px}
-.stats{display:flex;gap:15px;justify-content:center;margin:20px 0;flex-wrap:wrap}
-.stat{background:#1a1e2e;padding:15px 20px;border-radius:10px;text-align:center;border:1px solid #00e5ff;min-width:130px}
-.stat h2{color:#00e5ff;margin:0;font-size:24px}
-.stat p{margin:5px 0;color:#aaa;font-size:12px}
-.section{margin:25px 0}
-.section h2{color:#00e5ff;border-bottom:1px solid #1a1e2e;padding-bottom:8px}
-.block{background:#1a1e2e;margin:10px 0;padding:15px;border-radius:10px;border-left:4px solid #00e5ff}
-.block h3{color:#00e5ff;margin:0 0 8px 0;font-size:16px}
-.hash{font-family:monospace;color:#aaa;font-size:11px;word-break:break-all}
-.tx{background:#0d1117;padding:8px 10px;border-radius:5px;margin:5px 0;font-size:12px}
-.label{color:#aaa;font-size:11px;margin-top:6px}
-.badge{display:inline-block;background:#00e5ff22;color:#00e5ff;border:1px solid #00e5ff44;border-radius:4px;padding:2px 8px;font-size:11px;margin-left:8px}
-.search{display:flex;gap:10px;margin:15px 0}
-.search input{flex:1;background:#1a1e2e;border:1px solid #00e5ff44;color:#fff;padding:10px;border-radius:8px;font-size:14px}
-.search button{background:#00e5ff;color:#000;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:bold}
-.halving{background:#1a1e2e;padding:15px;border-radius:10px;border:1px solid #ff9800;margin:15px 0}
-.halving h3{color:#ff9800;margin:0 0 8px 0}
-.progress{background:#0d1117;border-radius:10px;height:10px;margin:8px 0}
-.progress-bar{background:#ff9800;height:10px;border-radius:10px;transition:width 0.5s}
-.peers{background:#1a1e2e;padding:12px;border-radius:10px;border:1px solid #00ff8844;margin:10px 0}
-.peer{color:#00ff88;font-family:monospace;font-size:12px;padding:3px 0}
-.loading{text-align:center;color:#aaa;padding:20px}
-.error{color:#ff4444;text-align:center;padding:10px}
-.green{color:#00ff88}
-.refresh{float:right;background:none;border:1px solid #00e5ff44;color:#00e5ff;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px}
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
+body { background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%); min-height: 100vh; color: white; padding: 20px; }
+.container { max-width: 1200px; margin: 0 auto; }
+.header { text-align: center; margin-bottom: 30px; padding: 20px; background: rgba(247,147,26,0.1); border-radius: 20px; border: 2px solid rgba(247,147,26,0.3); }
+.header h1 { color: #F7931A; font-size: 32px; margin-bottom: 10px; }
+.header p { color: #888; font-size: 14px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
+.stat-card { background: rgba(247,147,26,0.1); border: 2px solid rgba(247,147,26,0.3); border-radius: 15px; padding: 20px; text-align: center; }
+.stat-card h3 { color: #F7931A; font-size: 14px; margin-bottom: 10px; }
+.stat-card .value { font-size: 28px; font-weight: bold; color: white; }
+.tabs { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
+.tab { padding: 12px 24px; background: rgba(247,147,26,0.1); border: 2px solid rgba(247,147,26,0.3); border-radius: 10px; cursor: pointer; color: white; font-weight: 600; }
+.tab.active { background: linear-gradient(135deg, #F7931A, #FFA500); border-color: #F7931A; }
+.content { background: rgba(0,0,0,0.3); border-radius: 15px; padding: 20px; margin: 20px 0; min-height: 200px; }
+.block-item, .tx-item, .contract-item { background: rgba(247,147,26,0.05); border: 1px solid rgba(247,147,26,0.2); border-radius: 10px; padding: 15px; margin: 10px 0; }
+.block-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.block-number { font-size: 20px; font-weight: bold; color: #F7931A; }
+.block-hash { font-size: 12px; color: #888; font-family: monospace; word-break: break-all; }
+.label { color: #888; font-size: 12px; }
+.value-highlight { color: #F7931A; font-weight: bold; }
+.loading { text-align: center; padding: 40px; color: #888; }
 </style>
 </head>
 <body>
-<h1>DYNAX Explorer</h1>
-<p class="sub">Network ID: 1337 | Protocol: DYNAX/1.0 | <span class="green">Live</span></p>
-<div class="stats" id="stats"><div class="loading">Loading...</div></div>
-<div class="halving" id="halving-box" style="display:none">
-<h3>Halving Info</h3>
-<div id="halving-info"></div>
-<div class="progress"><div class="progress-bar" id="halving-bar"></div></div>
+<div class="container">
+    <div class="header">
+        <h1> DYNAX Block Explorer</h1>
+        <p>Layer 1 Blockchain Explorer</p>
+    </div>
+    
+    <div class="stats">
+        <div class="stat-card"><h3>Total Blocks</h3><div class="value" id="total-blocks">-</div></div>
+        <div class="stat-card"><h3>Total Transactions</h3><div class="value" id="total-txs">-</div></div>
+        <div class="stat-card"><h3>Smart Contracts</h3><div class="value" id="total-contracts">-</div></div>
+        <div class="stat-card"><h3>Network Status</h3><div class="value" style="color: #34C759;">● Online</div></div>
+    </div>
+    
+    <div class="tabs">
+        <div class="tab active" onclick="showTab('blocks')">📦 Blocks</div>
+        <div class="tab" onclick="showTab('transactions')">💸 Transactions</div>
+        <div class="tab" onclick="showTab('contracts')">🧠 Smart Contracts</div>
+    </div>    
+    <div class="content" id="content"><div class="loading">Loading...</div></div>
 </div>
-<div class="section">
-<h2>Search <button class="refresh" onclick="loadAll()">Refresh</button></h2>
-<div class="search">
-<input id="search-input" placeholder="Block number, TX ID, or Address..." onkeydown="if(event.key==='Enter')doSearch()">
-<button onclick="doSearch()">Search</button>
-</div>
-<div id="search-result"></div>
-</div>
-<div class="section"><h2>Latest Blocks</h2><div id="blocks-list"><div class="loading">Loading...</div></div></div>
-<div class="section"><h2>Network Peers</h2><div id="peers-list"><div class="loading">Loading...</div></div></div>
+
 <script>
-const NODE="https://dynax-node2.onrender.com";
-function short(h,n=16){return h?h.slice(0,n)+"...":"-"}
-async function loadStats(){
-try{
-const r=await fetch(NODE+"/");
-const d=await r.json();
-document.getElementById("stats").innerHTML=`
-<div class="stat"><h2>${d.blocks}</h2><p>Blocks</p></div>
-<div class="stat"><h2>${d.reward} DYX</h2><p>Block Reward</p></div>
-<div class="stat"><h2>${d.difficulty}</h2><p>Difficulty</p></div>
-<div class="stat"><h2>${d.mempool}</h2><p>Mempool TXs</p></div>
-<div class="stat"><h2>${d.peers}</h2><p>Peers</p></div>
-<div class="stat"><h2>11,000,000</h2><p>Max Supply DYX</p></div>`;
-}catch(e){document.getElementById("stats").innerHTML='<div class="error">Cannot connect to node</div>';}
+let currentTab = 'blocks';
+
+async function loadStats() {
+    try {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        document.getElementById('total-blocks').textContent = data.total_blocks || '-';
+        document.getElementById('total-txs').textContent = data.total_transactions || '-';
+        document.getElementById('total-contracts').textContent = data.total_contracts || '-';
+    } catch (e) { console.error(e); }
 }
-async function loadHalving(){
-try{
-const r=await fetch(NODE+"/halving");
-const d=await r.json();
-const pct=((d.current_block%210000)/210000*100).toFixed(1);
-document.getElementById("halving-box").style.display="block";
-document.getElementById("halving-info").innerHTML=`Current Reward: <b style="color:#ff9800">${d.current_reward} DYX</b> | Halvings Done: <b>${d.halvings_done}</b> | Next Halving: Block <b>#${d.next_halving_block}</b> (<b>${d.blocks_until_halving.toLocaleString()}</b> blocks away)`;
-document.getElementById("halving-bar").style.width=pct+"%";
-}catch(e){}
+
+async function loadBlocks() {
+    try {
+        const res = await fetch('http://127.0.0.1:6002/blocks');
+        const blocks = await res.json();
+        let html = '<h2 style="color: #F7931A; margin-bottom: 15px;">Latest Blocks</h2>';
+        blocks.slice().reverse().slice(0, 20).forEach(block => {
+            html += '<div class="block-item">';
+            html += '<div class="block-header"><div class="block-number">Block #' + block.index + '</div>';
+            html += '<div class="label">' + new Date(block.timestamp * 1000).toLocaleString() + '</div></div>';
+            html += '<div class="block-hash">Hash: ' + block.hash + '</div>';
+            html += '<div style="margin-top: 10px;"><span class="label">Transactions: </span>';
+            html += '<span class="value-highlight">' + (block.transactions ? block.transactions.length : 0) + '</span>';
+            html += ' | <span class="label">Nonce: </span><span class="value-highlight">' + block.nonce + '</span></div></div>';
+        });
+        document.getElementById('content').innerHTML = html;
+    } catch (e) { document.getElementById('content').innerHTML = '<div class="loading">Error loading blocks</div>'; }
 }
-async function loadBlocks(){
-try{
-const r=await fetch(NODE+"/chain");
-const blocks=await r.json();
-const latest=blocks.slice().reverse().slice(0,10);
-document.getElementById("blocks-list").innerHTML=latest.map(b=>`
-<div class="block">
-<h3>Block #${b.index}<span class="badge">difficulty: ${b.difficulty||4}</span></h3>
-<div class="label">Hash:</div><div class="hash">${b.hash}</div>
-<div class="label">Prev:</div><div class="hash">${b.prev_hash}</div>
-<div class="label">Time: ${new Date(b.timestamp*1000).toLocaleString()} | TXs: ${b.tx_count}</div>
-${b.transactions.map(tx=>`<div class="tx">${tx.from==="NETWORK"?"Mining Reward":"TX"} ${short(tx.from)} to ${short(tx.to)} | <b>${tx.amount} DYX</b></div>`).join("")}
-</div>`).join("");
-}catch(e){document.getElementById("blocks-list").innerHTML='<div class="error">Cannot load blocks</div>';}
+
+async function loadTransactions() {
+    try {
+        const res = await fetch('http://127.0.0.1:6002/blocks');
+        const blocks = await res.json();
+        let html = '<h2 style="color: #F7931A; margin-bottom: 15px;">Recent Transactions</h2>';
+        let txs = [];
+        blocks.forEach(block => {
+            if (block.transactions) {
+                block.transactions.forEach(tx => { txs.push({...tx, block: block.index, timestamp: block.timestamp}); });
+            }
+        });
+        txs.slice().reverse().slice(0, 30).forEach(tx => {
+            html += '<div class="tx-item">';
+            html += '<div style="display: flex; justify-content: space-between; margin-bottom: 8px;">';
+            html += '<span class="label">Block #' + tx.block + '</span>';            html += '<span class="label">' + new Date(tx.timestamp * 1000).toLocaleString() + '</span></div>';
+            html += '<div style="margin-bottom: 5px;"><span class="label">From: </span><span style="color: #34C759;">' + (tx.from || 'GENESIS') + '</span></div>';
+            html += '<div style="margin-bottom: 5px;"><span class="label">To: </span><span style="color: #FF9500;">' + (tx.to || 'MINER') + '</span></div>';
+            html += '<div><span class="label">Amount: </span><span class="value-highlight">' + tx.amount + ' DYX</span></div></div>';
+        });
+        document.getElementById('content').innerHTML = html;
+    } catch (e) { document.getElementById('content').innerHTML = '<div class="loading">Error loading transactions</div>'; }
 }
-async function loadPeers(){
-try{
-const r=await fetch(NODE+"/peers");
-const d=await r.json();
-document.getElementById("peers-list").innerHTML=`<div class="peers">${(!d.peers||d.peers.length===0)?'<div class="peer">No peers</div>':d.peers.map(p=>`<div class="peer">* ${p}</div>`).join("")}</div>`;
-}catch(e){}
+
+async function loadContracts() {
+    try {
+        const res = await fetch('/api/contracts');
+        const data = await res.json();
+        let html = '<h2 style="color: #F7931A; margin-bottom: 15px;">Smart Contracts</h2>';
+        if (!data.contracts || data.contracts.length === 0) {
+            html += '<div class="loading">No contracts deployed yet</div>';
+        } else {
+            data.contracts.forEach(contract => {
+                html += '<div class="contract-item">';
+                html += '<div style="margin-bottom: 8px;"><span class="label">Contract ID: </span><span class="value-highlight">' + contract.id + '</span></div>';
+                html += '<div style="margin-bottom: 8px;"><span class="label">Creator: </span><span style="color: #34C759;">' + contract.creator + '</span></div>';
+                html += '<div><span class="label">Deployed: </span><span>' + new Date(contract.timestamp * 1000).toLocaleString() + '</span></div></div>';
+            });
+        }
+        document.getElementById('content').innerHTML = html;
+    } catch (e) { document.getElementById('content').innerHTML = '<div class="loading">Error loading contracts</div>'; }
 }
-async function doSearch(){
-const q=document.getElementById("search-input").value.trim();
-if(!q)return;
-const el=document.getElementById("search-result");
-el.innerHTML='<div class="loading">Searching...</div>';
-try{
-if(/^\d+$/.test(q)){
-const r=await fetch(NODE+"/block/"+q);
-if(r.ok){const b=await r.json();el.innerHTML=`<div class="block"><h3>Block #${b.index}</h3><div class="hash">${b.hash}</div><div class="label">Time: ${new Date(b.timestamp*1000).toLocaleString()} | Nonce: ${b.nonce}</div>${b.transactions.map(tx=>`<div class="tx">${tx.from} to ${tx.to} | ${tx.amount} DYX</div>`).join("")}</div>`;return;}
+
+function showTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    if (tab === 'blocks') loadBlocks();
+    else if (tab === 'transactions') loadTransactions();
+    else if (tab === 'contracts') loadContracts();
 }
-if(q.startsWith("DX")){
-const r=await fetch(NODE+"/balance/"+q);
-if(r.ok){const d=await r.json();el.innerHTML=`<div class="block"><h3>Address</h3><div class="hash">${d.address}</div><h2 style="color:#00e5ff">${d.balance} DYX</h2></div>`;return;}
-}
-const r=await fetch(NODE+"/tx/"+q);
-if(r.ok){const d=await r.json();el.innerHTML=`<div class="block"><h3>Transaction</h3><div class="label">Block: #${d.block}</div><div class="tx">${d.tx.from} to ${d.tx.to} | ${d.tx.amount} DYX</div></div>`;return;}
-el.innerHTML='<div class="error">Not found</div>';
-}catch(e){el.innerHTML='<div class="error">Search failed</div>';}
-}
-async function loadAll(){await Promise.all([loadStats(),loadHalving(),loadBlocks(),loadPeers()]);}
-loadAll();
-setInterval(loadAll,30000);
+
+loadStats();
+loadBlocks();
+setInterval(() => {
+    loadStats();
+    if (currentTab === 'blocks') loadBlocks();
+    else if (currentTab === 'transactions') loadTransactions();
+    else if (currentTab === 'contracts') loadContracts();
+}, 10000);
 </script>
 </body>
 </html>

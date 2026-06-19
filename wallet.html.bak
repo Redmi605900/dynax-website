@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>DYNAX Wallet</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0e1a;color:#fff;font-family:Arial;padding:15px}
+h1{color:#00e5ff;text-align:center;margin:20px 0}
+.tab{display:flex;gap:5px;margin:15px 0;flex-wrap:wrap}
+.tab button{flex:1;padding:10px;background:#1a1e2e;color:#aaa;border:1px solid #333;border-radius:5px;cursor:pointer}
+.tab button.active{background:#00e5ff;color:#000;font-weight:bold}
+.page{display:none}
+.page.active{display:block}
+.card{background:#1a1e2e;padding:20px;border-radius:10px;margin:10px 0;border:1px solid #00e5ff33}
+input{width:100%;padding:12px;margin:8px 0;background:#0d1117;color:#fff;border:1px solid #00e5ff55;border-radius:8px;font-size:14px}
+button.btn{width:100%;padding:12px;background:#00e5ff;color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:bold;margin:5px 0;font-size:15px}
+button.btn:hover{background:#00b8d4}
+button.btn.red{background:#ff5555;color:#fff}
+.result{background:#0d1117;padding:12px;border-radius:8px;margin-top:10px;word-break:break-all;font-size:13px;line-height:1.6}
+.success{color:#00e5ff}
+.error{color:#ff5555}
+.label{color:#aaa;font-size:12px;margin-top:10px}
+.addr{font-family:monospace;font-size:11px;color:#00e5ff;word-break:break-all}
+.bal{font-size:36px;color:#00e5ff;text-align:center;margin:10px 0}
+.symbol{color:#aaa;font-size:16px}
+.warning{background:#ff555533;border:1px solid #ff5555;padding:10px;border-radius:8px;font-size:12px;margin:10px 0}
+.copy{cursor:pointer;color:#00e5ff;font-size:12px}
+</style>
+</head>
+<body>
+<h1>⛓️ DYNAX Wallet</h1>
+<p style="text-align:center;color:#aaa;font-size:13px">DYNAX/1.0 Testnet</p>
+
+<div class="tab">
+  <button class="active" onclick="showPage('create')">🔑 Create</button>
+  <button onclick="showPage('wallet')">💼 Wallet</button>
+  <button onclick="showPage('send')">💸 Send</button>
+  <button onclick="showPage('explorer')">🔍 Explorer</button>
+</div>
+
+<!-- CREATE WALLET -->
+<div id="page-create" class="page active">
+  <div class="card">
+    <h3>Create New Wallet</h3>
+    <p style="color:#aaa;font-size:13px;margin:10px 0">Generate a new DYNAX wallet address</p>
+    <button class="btn" onclick="createWallet()">🔑 Generate New Wallet</button>
+    <div id="createResult"></div>
+  </div>
+  <div class="card">
+    <h3>Import Wallet</h3>
+    <p style="color:#aaa;font-size:13px;margin:10px 0">Enter your existing address to check balance</p>
+    <input id="importAddr" placeholder="DX address...">
+    <button class="btn" onclick="importWallet()">📥 Import</button>
+  </div>
+</div>
+
+<!-- WALLET -->
+<div id="page-wallet" class="page">
+  <div class="card" id="walletInfo">
+    <p style="color:#aaa;text-align:center">No wallet loaded. Create or import one first.</p>
+  </div>
+</div>
+
+<!-- SEND -->
+<div id="page-send" class="page">
+  <div class="card">
+    <h3>💸 Send DYX</h3>
+    <div class="warning">⚠️ Testnet: Use secret key DYNAX_SECRET_v1</div>
+    <div class="label">From Address</div>
+    <input id="sendFrom" placeholder="DX sender address...">
+    <div class="label">To Address</div>
+    <input id="sendTo" placeholder="DX recipient address...">
+    <div class="label">Amount (DYX)</div>
+    <input id="sendAmount" type="number" placeholder="0.00">
+    <div class="label">Secret Key</div>
+    <input id="sendSecret" type="password" placeholder="DYNAX_SECRET_v1">
+    <button class="btn" onclick="sendTx()">💸 Send DYX</button>
+    <div id="sendResult" class="result" style="display:none"></div>
+  </div>
+</div>
+
+<!-- EXPLORER -->
+<div id="page-explorer" class="page">
+  <div class="card">
+    <h3>🔍 Block Explorer</h3>
+    <button class="btn" onclick="loadExplorer()">🔄 Refresh</button>
+    <div id="explorerResult" class="result" style="display:none"></div>
+  </div>
+  <div class="card">
+    <h3>⛏️ Mine Block</h3>
+    <input id="mineAddr" placeholder="Your DX address...">
+    <button class="btn" onclick="mineBlock()">⛏️ Mine (+50 DYX)</button>
+    <div id="mineResult" class="result" style="display:none"></div>
+  </div>
+</div>
+
+<script>
+const API = 'https://dynax-website-2.onrender.com';
+let currentWallet = null;
+
+function showPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab button').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-'+name).classList.add('active');
+    event.target.classList.add('active');
+}
+
+function generateAddress() {
+    const chars = '0123456789abcdef';
+    let addr = 'DX';
+    for(let i=0; i<38; i++) addr += chars[Math.floor(Math.random()*16)];
+    return addr;
+}
+
+function createWallet() {
+    const addr = generateAddress();
+    const privateKey = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b=>b.toString(16).padStart(2,'0')).join('');
+    currentWallet = {address: addr, privateKey};
+    
+    document.getElementById('createResult').innerHTML = `
+    <div class="result">
+      <div class="warning">⚠️ Save your private key! Never share it!</div>
+      <div class="label">Address</div>
+      <div class="addr">${addr}</div>
+      <div class="label">Private Key</div>
+      <div class="addr">${privateKey}</div>
+      <button class="btn" style="margin-top:10px" onclick="copyAddr('${addr}')">📋 Copy Address</button>
+    </div>`;
+    
+    updateWalletPage(addr);
+}
+
+function copyAddr(addr) {
+    navigator.clipboard.writeText(addr);
+    alert('Copied!');
+}
+
+async function importWallet() {
+    const addr = document.getElementById('importAddr').value.trim();
+    if(!addr.startsWith('DX')) return alert('Invalid address');
+    currentWallet = {address: addr};
+    updateWalletPage(addr);
+    showPage('wallet');
+}
+
+async function updateWalletPage(addr) {
+    const el = document.getElementById('walletInfo');
+    el.innerHTML = '<p style="color:#aaa;text-align:center">Loading...</p>';
+    try {
+        const r = await fetch(`${API}/balance/${addr}`);
+        const d = await r.json();
+        el.innerHTML = `
+        <div class="label">Your Address</div>
+        <div class="addr">${addr}</div>
+        <button class="btn" style="margin:5px 0" onclick="copyAddr('${addr}')">📋 Copy</button>
+        <div class="bal">${d.balance} <span class="symbol">DYX</span></div>
+        <button class="btn" onclick="updateWalletPage('${addr}')">🔄 Refresh</button>`;
+    } catch(e) {
+        el.innerHTML = `
+        <div class="label">Your Address</div>
+        <div class="addr">${addr}</div>
+        <div class="bal">0 <span class="symbol">DYX</span></div>
+        <p class="error">Could not load balance</p>`;
+    }
+}
+
+async function signTx(from, to, amount, secret) {
+    const canonical = JSON.stringify({amount:parseFloat(amount),from,to});
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey('raw',enc.encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);
+    const sig = await crypto.subtle.sign('HMAC',key,enc.encode(canonical));
+    return Array.from(new Uint8Array(sig)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function sendTx() {
+    const from = document.getElementById('sendFrom').value.trim();
+    const to = document.getElementById('sendTo').value.trim();
+    const amount = parseFloat(document.getElementById('sendAmount').value);
+    const secret = document.getElementById('sendSecret').value.trim();
+    if(!from||!to||!amount||!secret) return alert('Fill all fields');
+    
+    const el = document.getElementById('sendResult');
+    el.style.display='block';
+    el.innerHTML='<span class="success">Signing transaction...</span>';
+    
+    try {
+        const sig = await signTx(from,to,amount,secret);
+        const r = await fetch(`${API}/send`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({from,to,amount,signature:sig})
+        });
+        const d = await r.json();
+        if(d.success) {
+            el.innerHTML=`<span class="success">✅ TX Sent!<br>TXID: ${d.txid}</span>`;
+        } else {
+            el.innerHTML=`<span class="error">❌ ${d.error}</span>`;
+        }
+    } catch(e) {
+        el.innerHTML=`<span class="error">❌ ${e.message}</span>`;
+    }
+}
+
+async function loadExplorer() {
+    const el = document.getElementById('explorerResult');
+    el.style.display='block';
+    el.innerHTML='Loading...';
+    try {
+        const [chainR, infoR] = await Promise.all([
+            fetch(`${API}/chain`),
+            fetch(`${API}/`)
+        ]);
+        const chain = await chainR.json();
+        const info = await infoR.json();
+        el.innerHTML = `
+        <span class="success">Blocks: ${info.blocks} | Valid: ${info.valid} | Mempool: ${info.mempool}</span>
+        <hr style="border-color:#333;margin:10px 0">
+        ${chain.slice(-5).reverse().map(b=>`
+        <div style="border-bottom:1px solid #333;padding:8px 0">
+          <span class="success">Block #${b.index}</span> | TX: ${b.tx_count}<br>
+          <span style="color:#aaa;font-size:11px">${b.hash.substring(0,24)}...</span>
+        </div>`).join('')}`;
+    } catch(e) {
+        el.innerHTML=`<span class="error">❌ ${e.message}</span>`;
+    }
+}
+
+async function mineBlock() {
+    const addr = document.getElementById('mineAddr').value.trim();
+    if(!addr) return alert('Enter address');
+    const el = document.getElementById('mineResult');
+    el.style.display='block';
+    el.innerHTML='<span class="success">⛏️ Mining...</span>';
+    try {
+        const r = await fetch(`${API}/mine/${addr}`);
+        const d = await r.json();
+        if(d.success) {
+            el.innerHTML=`<span class="success">✅ Block #${d.block.index} mined!<br>+50 DYX reward!<br>Hash: ${d.block.hash.substring(0,20)}...</span>`;
+        }
+    } catch(e) {
+        el.innerHTML=`<span class="error">❌ ${e.message}</span>`;
+    }
+}
+
+loadExplorer();
+</script>
+</body>
+</html>

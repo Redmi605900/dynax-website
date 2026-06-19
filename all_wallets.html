@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DYNAX DEX - Decentralized Exchange</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
+body { background: linear-gradient(135deg, #0a0a0a 0%, #1a0a00 100%); min-height: 100vh; color: white; padding: 20px; }
+.container { max-width: 900px; margin: 0 auto; }
+.header { text-align: center; margin-bottom: 40px; }
+.header h1 { color: #F7931A; font-size: 36px; margin-bottom: 10px; }
+.header p { color: #888; font-size: 16px; }
+.total-card { background: linear-gradient(135deg, #F7931A, #FFA500); border-radius: 24px; padding: 40px; text-align: center; margin-bottom: 30px; box-shadow: 0 15px 40px rgba(247,147,26,0.4); }
+.total-label { font-size: 18px; opacity: 0.9; margin-bottom: 15px; }
+.total-amount { font-size: 64px; font-weight: bold; color: white; margin-bottom: 10px; }
+.total-sub { font-size: 18px; opacity: 0.9; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }
+.stat-card { background: rgba(247,147,26,0.1); border: 2px solid rgba(247,147,26,0.3); border-radius: 16px; padding: 24px; text-align: center; }
+.stat-value { font-size: 36px; font-weight: bold; color: #F7931A; }
+.stat-label { font-size: 14px; color: #888; margin-top: 8px; }
+.dex-section { background: rgba(247,147,26,0.05); border: 2px solid rgba(247,147,26,0.3); border-radius: 20px; padding: 30px; margin-bottom: 30px; }
+.dex-title { font-size: 24px; color: #F7931A; margin-bottom: 20px; text-align: center; }
+.dex-form { display: grid; gap: 15px; }
+.dex-form input, .dex-form select { width: 100%; padding: 16px; border: 2px solid rgba(247,147,26,0.3); border-radius: 12px; background: rgba(0,0,0,0.3); color: white; font-size: 16px; }
+.dex-form button { width: 100%; padding: 18px; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; background: linear-gradient(135deg, #F7931A, #FFA500); color: white; }
+.dex-form button:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(247,147,26,0.4); }
+.info-box { background: rgba(52,199,89,0.1); border: 2px solid #34C759; border-radius: 12px; padding: 20px; margin: 20px 0; text-align: center; }
+.info-box h3 { color: #34C759; margin-bottom: 10px; }
+.info-box p { color: #ccc; line-height: 1.6; }
+.loading { text-align: center; padding: 40px; color: #888; }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<h1>🔶 DYNAX DEX</h1>
+<p>Decentralized Exchange - ไม่มีตัวกลาง</p>
+</div>
+
+<div class="total-card">
+<div class="total-label">💰 Total Supply ในระบบ</div>
+<div class="total-amount" id="total-supply">11,000,000</div>
+<div class="total-sub">DYX</div>
+</div>
+
+<div class="stats-grid">
+<div class="stat-card">
+<div class="stat-value" id="stat-wallets">5</div><div class="stat-label">กระเป๋าทั้งหมด</div>
+</div>
+<div class="stat-card">
+<div class="stat-value" id="stat-txs">0</div>
+<div class="stat-label">ธุรกรรม</div>
+</div>
+<div class="stat-card">
+<div class="stat-value" id="stat-blocks">0</div>
+<div class="stat-label">Blocks</div>
+</div>
+<div class="stat-card">
+<div class="stat-value">P2P</div>
+<div class="stat-label">ไม่มีตัวกลาง</div>
+</div>
+</div>
+
+<div class="dex-section">
+<div class="dex-title"> ซื้อขาย DYX แบบ P2P</div>
+<div class="info-box">
+<h3>✅ Decentralized Exchange</h3>
+<p>ซื้อขายโดยตรงระหว่างกระเป๋า<br>ไม่มีตัวกลาง • ปลอดภัย • โปร่งใส<br>ใช้ ECDSA + SHA3-256 ในการตรวจสอบ</p>
+</div>
+<div class="dex-form">
+<input type="text" id="from-address" placeholder="ที่อยู่ผู้ส่ง (DX...)">
+<input type="text" id="to-address" placeholder="ที่อยู่ผู้รับ (DX...)">
+<input type="number" id="amount" placeholder="จำนวน DYX" step="0.01">
+<input type="number" id="fee" placeholder="ค่าธรรมเนียม" value="0.01" step="0.01">
+<button onclick="sendTransaction()">ส่ง DYX</button>
+</div>
+<div id="status"></div>
+</div>
+
+<div class="dex-section">
+<div class="dex-title">📊 ข้อมูล Blockchain</div>
+<div id="blockchain-info" class="loading">กำลังโหลด...</div>
+</div>
+</div>
+
+<script>
+const NODE_URL = window.location.origin;
+
+async function loadStats() {
+    try {
+        const res = await fetch(NODE_URL + '/blocks');
+        const blocks = await res.json();
+        
+        let totalTxs = 0;
+        blocks.forEach(b => {
+            const txs = b.transactions || b.txs || [];
+            totalTxs += txs.length;        });
+        
+        document.getElementById('stat-txs').textContent = totalTxs;
+        document.getElementById('stat-blocks').textContent = blocks.length;
+        
+        const infoDiv = document.getElementById('blockchain-info');
+        infoDiv.innerHTML = `
+            <div style="text-align: left;">
+                <p style="margin: 10px 0;"><strong>Blocks:</strong> ${blocks.length}</p>
+                <p style="margin: 10px 0;"><strong>Transactions:</strong> ${totalTxs}</p>
+                <p style="margin: 10px 0;"><strong>Total Supply:</strong> 11,000,000 DYX</p>
+                <p style="margin: 10px 0;"><strong>Consensus:</strong> Proof of Work (SHA3-256)</p>
+                <p style="margin: 10px 0;"><strong>Signature:</strong> ECDSA</p>
+                <p style="margin: 10px 0;"><strong>Decentralized:</strong> ✅ ไม่มีตัวกลาง</p>
+            </div>
+        `;
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function sendTransaction() {
+    const from = document.getElementById('from-address').value.trim();
+    const to = document.getElementById('to-address').value.trim();
+    const amount = parseFloat(document.getElementById('amount').value);
+    const fee = parseFloat(document.getElementById('fee').value) || 0.01;
+    const statusDiv = document.getElementById('status');
+    
+    if (!from || !to || !amount) {
+        statusDiv.innerHTML = '<div style="background: rgba(255,59,48,0.2); color: #FF3B30; padding: 15px; border-radius: 10px; margin-top: 15px;">กรุณากรอกข้อมูลให้ครบ</div>';
+        return;
+    }
+    
+    statusDiv.innerHTML = '<div style="background: rgba(247,147,26,0.2); color: #F7931A; padding: 15px; border-radius: 10px; margin-top: 15px;"> กำลังส่งธุรกรรม...</div>';
+    
+    // ในระบบจริงต้องเซ็นด้วย Private Key
+    // นี่เป็นตัวอย่าง UI เท่านั้น
+    setTimeout(() => {
+        statusDiv.innerHTML = '<div style="background: rgba(52,199,89,0.2); color: #34C759; padding: 15px; border-radius: 10px; margin-top: 15px;">✅ ฟีเจอร์นี้ต้องใช้ Private Key ในการเซ็น<br>ใช้ API โดยตรงหรือ wallet ที่รองรับ</div>';
+    }, 1000);
+}
+
+window.onload = loadStats;
+</script>
+</body>
+</html>

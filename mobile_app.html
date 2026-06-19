@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#F7931A">
+<title>DYNAX Wallet</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
+body { background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%); min-height: 100vh; color: white; padding-bottom: 80px; }
+.header { background: linear-gradient(135deg, #F7931A, #FFA500); padding: 20px; text-align: center; }
+.header h1 { font-size: 24px; }
+.balance-card { background: rgba(247,147,26,0.2); border-radius: 20px; padding: 30px 20px; margin: 20px; text-align: center; border: 2px solid rgba(247,147,26,0.3); }
+.balance-amount { font-size: 48px; font-weight: bold; margin: 10px 0; }
+.actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 0 20px; margin: 20px 0; }
+.action-btn { background: rgba(247,147,26,0.1); border: 2px solid rgba(247,147,26,0.3); border-radius: 15px; padding: 20px; text-align: center; }
+.action-btn .icon { font-size: 32px; margin-bottom: 10px; }
+.section { padding: 20px; }
+.section-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #F7931A; }
+.tx-item { background: rgba(247,147,26,0.05); border: 1px solid rgba(247,147,26,0.2); border-radius: 12px; padding: 15px; margin-bottom: 10px; }
+.nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.9); display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid rgba(247,147,26,0.3); }
+.nav-item { padding: 8px 20px; text-align: center; opacity: 0.6; }
+.nav-item.active { opacity: 1; color: #F7931A; }
+.modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: flex-end; }
+.modal.show { display: flex; }
+.modal-content { background: #1a1a2e; border-radius: 30px 30px 0 0; padding: 30px 20px; width: 100%; position: relative; }
+.form-group { margin-bottom: 20px; }
+.form-group input { width: 100%; padding: 15px; border: 2px solid rgba(247,147,26,0.3); border-radius: 12px; background: rgba(0,0,0,0.3); color: white; }
+.btn-primary { width: 100%; padding: 16px; border: none; border-radius: 12px; background: linear-gradient(135deg, #F7931A, #FFA500); color: white; font-weight: bold; }
+.close-btn { position: absolute; top: 15px; right: 15px; font-size: 28px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="header"><h1>🔶 DYNAX Wallet</h1></div>
+<div class="balance-card">
+    <div style="font-size: 14px; opacity: 0.9;">Total Balance</div>
+    <div class="balance-amount" id="balance">0 DYX</div>
+    <div id="wallet-address" style="font-size: 12px; color: #888;"></div>
+</div>
+<div class="actions">
+    <div class="action-btn" onclick="showModal('send')"><div class="icon">⬆️</div><div>Send</div></div>
+    <div class="action-btn" onclick="showModal('receive')"><div class="icon">⬇️</div><div>Receive</div></div>
+</div>
+<div class="section">
+    <div class="section-title">Recent Transactions</div>
+    <div id="tx-list"><div style="text-align: center; padding: 40px; color: #888;">Loading...</div></div>
+</div>
+<div id="send-modal" class="modal">
+    <div class="modal-content">        <span class="close-btn" onclick="closeModal('send')">&times;</span>
+        <h2 style="color: #F7931A; margin-bottom: 20px;">Send DYX</h2>
+        <div class="form-group"><input type="text" id="send-to" placeholder="Recipient Address"></div>
+        <div class="form-group"><input type="number" id="send-amount" placeholder="Amount"></div>
+        <div class="form-group"><input type="password" id="send-key" placeholder="Private Key"></div>
+        <button class="btn-primary" onclick="sendDYX()">Send</button>
+    </div>
+</div>
+<div id="receive-modal" class="modal">
+    <div class="modal-content" style="text-align: center;">
+        <span class="close-btn" onclick="closeModal('receive')">&times;</span>
+        <h2 style="color: #F7931A; margin-bottom: 20px;">Receive DYX</h2>
+        <div id="receive-addr" style="font-size: 14px; color: #F7931A; word-break: break-all;"></div>
+    </div>
+</div>
+<div class="nav-bar">
+    <div class="nav-item active">👛 Wallet</div>
+    <div class="nav-item" onclick="window.open('http://127.0.0.1:6006')">🔍 Explorer</div>
+</div>
+<script>
+const NODE='http://127.0.0.1:6002';
+const ADDR='DXa5ae9ccc94279d4f52b4f4e694a5a3b2f4f5ece3';
+async function load(){
+    try{
+        const r=await fetch(NODE+'/balance/'+ADDR);
+        const d=await r.json();
+        document.getElementById('balance').textContent=d.balance.toFixed(2)+' DYX';
+        document.getElementById('wallet-address').textContent=ADDR;
+        document.getElementById('receive-addr').textContent=ADDR;
+    }catch(e){}
+    try{
+        const r=await fetch(NODE+'/blocks');
+        const blocks=await r.json();
+        let txs=[];
+        blocks.forEach(b=>{if(b.transactions)b.transactions.forEach(t=>txs.push({...t,block:b.index}))});
+        let h='';
+        txs.slice(-10).reverse().forEach(t=>{
+            const send=t.from===ADDR;
+            h+='<div class="tx-item"><div style="display:flex;justify-content:space-between;">';
+            h+='<span style="color:'+(send?'#FF3B30':'#34C759')+'">'+(send?'-':'+')+t.amount+' DYX</span>';
+            h+='<span style="font-size:12px;color:#888">Block #'+t.block+'</span></div>';
+            h+='<div style="font-size:12px;color:#888">'+(send?t.to:t.from).substring(0,20)+'...</div></div>';
+        });
+        document.getElementById('tx-list').innerHTML=h||'<div style="text-align:center;padding:40px;color:#888">No transactions</div>';
+    }catch(e){}
+}
+function showModal(t){document.getElementById(t+'-modal').classList.add('show')}
+function closeModal(t){document.getElementById(t+'-modal').classList.remove('show')}
+async function sendDYX(){
+    const to=document.getElementById('send-to').value;    const amt=parseFloat(document.getElementById('send-amount').value);
+    const key=document.getElementById('send-key').value;
+    try{
+        const r=await fetch(NODE+'/tx/send',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({from:ADDR,to:to,amount:amt,fee:0.01,private_key:key})});
+        const d=await r.json();
+        if(r.status===201){alert('Sent!');closeModal('send');load();}
+        else alert('Error: '+d.error);
+    }catch(e){alert('Error: '+e.message)}
+}
+load();
+setInterval(load,10000);
+</script>
+</body>
+</html>

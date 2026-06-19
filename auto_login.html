@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DYNAX Wallet</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
+body { background: linear-gradient(135deg, #1a0a00 0%, #2d1810 100%); min-height: 100vh; color: white; padding: 20px; }
+.container { max-width: 500px; margin: 0 auto; }
+.header { text-align: center; margin-bottom: 30px; }
+.header h1 { color: #F7931A; font-size: 28px; }
+.box { background: rgba(247,147,26,0.1); border: 2px solid rgba(247,147,26,0.3); border-radius: 20px; padding: 25px; margin-bottom: 20px; }
+label { display: block; color: #F7931A; margin-bottom: 8px; font-weight: 600; font-size: 14px; }
+input { width: 100%; padding: 14px; border: 2px solid rgba(247,147,26,0.3); border-radius: 10px; background: rgba(0,0,0,0.3); color: white; font-size: 15px; margin-bottom: 15px; }
+input:focus { outline: none; border-color: #F7931A; }
+button { width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; background: linear-gradient(135deg, #F7931A, #FFA500); color: white; margin: 5px 0; }
+button:active { transform: scale(0.98); }
+.btn-sec { background: rgba(247,147,26,0.2); color: #F7931A; border: 2px solid #F7931A; }
+.balance-card { background: linear-gradient(135deg, #F7931A, #FFA500); border-radius: 20px; padding: 30px; text-align: center; margin-bottom: 20px; }
+.balance-amount { font-size: 42px; font-weight: bold; color: white; }
+.address-box { background: rgba(0,0,0,0.3); padding: 12px; border-radius: 10px; font-family: monospace; font-size: 12px; word-break: break-all; margin: 15px 0; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.btn { background: rgba(247,147,26,0.1); border: 2px solid rgba(247,147,26,0.3); border-radius: 15px; padding: 20px; text-align: center; cursor: pointer; }
+.btn .icon { font-size: 30px; margin-bottom: 8px; }
+.card { background: rgba(247,147,26,0.1); border: 2px solid rgba(247,147,26,0.3); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
+.status { padding: 12px; border-radius: 10px; margin: 12px 0; text-align: center; }
+.status.success { background: rgba(52,199,89,0.2); color: #34C759; }
+.status.error { background: rgba(255,59,48,0.2); color: #FF3B30; }
+.status.info { background: rgba(247,147,26,0.2); color: #F7931A; }
+.tx-item { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin: 10px 0; border-left: 4px solid #F7931A; }
+.tx-in { border-left-color: #34C759; }
+.tx-out { border-left-color: #FF3B30; }
+.hidden { display: none; }
+.debug { background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; font-family: monospace; font-size: 11px; color: #888; margin: 10px 0; word-break: break-all; max-height: 200px; overflow-y: auto; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- หน้า Login -->
+<div id="login-page">
+    <div class="header">
+        <h1>🔶 DYNAX Wallet</h1>
+        <p style="color: #888;">เข้าสู่ระบบอย่างปลอดภัย</p>
+    </div>
+    
+    <div class="box">
+        <label>📍 Address</label>        <input type="text" id="login-address" value="DXa5ae9ccc94279d4f52b4f4e694a5a3b2f4f5ece3" readonly>
+        
+        <label>🔒 รหัสผ่าน</label>
+        <input type="password" id="password" placeholder="DYNAX2024!">
+        
+        <button onclick="unlockWallet()">🔓 ปลดล็อก Wallet</button>
+        <div id="login-status"></div>
+        
+        <div class="debug" id="debug-log">Debug: พร้อมทำงาน</div>
+    </div>
+</div>
+
+<!-- หน้า Wallet -->
+<div id="wallet-page" class="hidden">
+    <div class="header">
+        <h1>🔶 DYNAX Wallet</h1>
+        <p style="color: #888;">เข้าสู่ระบบแล้ว</p>
+    </div>
+    
+    <div class="balance-card">
+        <div style="font-size: 14px; opacity: 0.9;">ยอดเงินคงเหลือ</div>
+        <div class="balance-amount" id="balance">0</div>
+        <div style="font-size: 18px; opacity: 0.9;">DYX</div>
+        <div class="address-box" id="address"></div>
+    </div>
+    
+    <div class="grid">
+        <div class="btn" onclick="showSection('send')">
+            <div class="icon">📤</div>
+            <div>ส่ง</div>
+        </div>
+        <div class="btn" onclick="showSection('receive')">
+            <div class="icon">📥</div>
+            <div>รับ</div>
+        </div>
+        <div class="btn" onclick="showSection('qr')">
+            <div class="icon">📱</div>
+            <div>QR</div>
+        </div>
+        <div class="btn" onclick="showSection('history')">
+            <div class="icon">📊</div>
+            <div>ประวัติ</div>
+        </div>
+    </div>
+    
+    <div id="send-section" class="card hidden">
+        <h3 style="color: #F7931A; margin-bottom: 15px;">📤 ส่ง DYX</h3>
+        <input type="text" id="to-address" placeholder="ที่อยู่ผู้รับ (DX...)">
+        <input type="number" id="amount" placeholder="จำนวน (DYX)" step="0.01">
+        <input type="number" id="fee" placeholder="ค่าธรรมเนียม" value="0.01" step="0.01">        <button onclick="sendTransaction()">ส่งทันที</button>
+        <button class="btn-sec" onclick="showSection('main')">ย้อนกลับ</button>
+        <div id="send-status"></div>
+    </div>
+    
+    <div id="receive-section" class="card hidden">
+        <h3 style="color: #F7931A; margin-bottom: 15px;">📥 รับ DYX</h3>
+        <div class="address-box" id="receive-address"></div>
+        <button onclick="copyAddress()">📋 คัดลอกที่อยู่</button>
+        <button class="btn-sec" onclick="showSection('main')">ย้อนกลับ</button>
+    </div>
+    
+    <div id="qr-section" class="card hidden">
+        <h3 style="color: #F7931A; margin-bottom: 15px;">📱 QR Code</h3>
+        <div style="background: white; padding: 20px; border-radius: 15px; text-align: center;">
+            <div id="qrcode">กำลังสร้าง...</div>
+        </div>
+        <button class="btn-sec" onclick="showSection('main')" style="margin-top: 15px;">ย้อนกลับ</button>
+    </div>
+    
+    <div id="history-section" class="card hidden">
+        <h3 style="color: #F7931A; margin-bottom: 15px;">📊 ประวัติธุรกรรม</h3>
+        <div id="tx-list"></div>
+        <button class="btn-sec" onclick="showSection('main')" style="margin-top: 15px;">ย้อนกลับ</button>
+    </div>
+    
+    <button class="btn-sec" onclick="logout()">🔒 ล็อกเอาท์</button>
+</div>
+
+</div>
+
+<script>
+const NODE_URL = window.location.origin;
+const WALLET_ADDRESS = "DXa5ae9ccc94279d4f52b4f4e694a5a3b2f4f5ece3";
+let myPrivateKey = null;
+
+function debug(msg) {
+    const log = document.getElementById('debug-log');
+    if (log) {
+        log.textContent = msg;
+        console.log(msg);
+    }
+}
+
+async function unlockWallet() {
+    const password = document.getElementById('password').value;
+    const statusDiv = document.getElementById('login-status');
+    
+    debug('กำลังปลดล็อก...');
+        if (!password) {
+        statusDiv.innerHTML = '<div class="status error">กรุณาใส่รหัสผ่าน</div>';
+        return;
+    }
+    
+    try {
+        debug('ส่ง request ไป /wallet/unlock');
+        
+        const response = await fetch(NODE_URL + '/wallet/unlock', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                address: WALLET_ADDRESS, 
+                password: password 
+            })
+        });
+        
+        debug('Response status: ' + response.status);
+        
+        const data = await response.json();
+        debug('Response: ' + JSON.stringify(data).substring(0, 100));
+        
+        if (response.status === 200 && data.private_key) {
+            myPrivateKey = data.private_key;
+            debug('✅ ปลดล็อกสำเร็จ!');
+            
+            document.getElementById('login-page').classList.add('hidden');
+            document.getElementById('wallet-page').classList.remove('hidden');
+            document.getElementById('address').textContent = WALLET_ADDRESS;
+            loadBalance();
+        } else {
+            statusDiv.innerHTML = '<div class="status error">❌ ' + (data.error || 'รหัสผ่านไม่ถูกต้อง') + '</div>';
+            debug('❌ Error: ' + (data.error || 'Unknown'));
+        }
+    } catch (e) {
+        statusDiv.innerHTML = '<div class="status error">❌ ' + e.message + '</div>';
+        debug('❌ Exception: ' + e.message);
+    }
+}
+
+async function loadBalance() {
+    try {
+        const res = await fetch(NODE_URL + '/balance/' + WALLET_ADDRESS);
+        const data = await res.json();
+        document.getElementById('balance').textContent = data.balance.toLocaleString();
+    } catch (e) {
+        document.getElementById('balance').textContent = 'Error';
+    }
+}
+function showSection(section) {
+    ['send-section', 'receive-section', 'qr-section', 'history-section'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+    });
+    
+    if (section === 'send') {
+        document.getElementById('send-section').classList.remove('hidden');
+    } else if (section === 'receive') {
+        document.getElementById('receive-section').classList.remove('hidden');
+        document.getElementById('receive-address').textContent = WALLET_ADDRESS;
+    } else if (section === 'qr') {
+        document.getElementById('qr-section').classList.remove('hidden');
+        // สร้าง QR Code แบบง่ายๆ
+        const qrDiv = document.getElementById('qrcode');
+        qrDiv.innerHTML = '<div style="padding: 20px; color: #333; font-size: 14px;">' + WALLET_ADDRESS + '</div>';
+    } else if (section === 'history') {
+        document.getElementById('history-section').classList.remove('hidden');
+        loadHistory();
+    }
+}
+
+async function sendTransaction() {
+    const to = document.getElementById('to-address').value.trim();
+    const amount = parseFloat(document.getElementById('amount').value);
+    const fee = parseFloat(document.getElementById('fee').value) || 0.01;
+    const statusDiv = document.getElementById('send-status');
+    
+    if (!to || !amount) {
+        statusDiv.innerHTML = '<div class="status error">กรุณากรอกข้อมูลให้ครบ</div>';
+        return;
+    }
+    
+    statusDiv.innerHTML = '<div class="status info">กำลังส่งธุรกรรม...</div>';
+    
+    // ต้องใช้ elliptic library เพื่อเซ็น
+    // แต่ตอนนี้ใช้ API แทน
+    try {
+        const res = await fetch(NODE_URL + '/tx/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                from: WALLET_ADDRESS,
+                to: to, 
+                amount: amount, 
+                fee: fee,
+                private_key: myPrivateKey
+            })
+        });
+        const data = await res.json();
+                if (res.status === 201) {
+            statusDiv.innerHTML = '<div class="status success">✅ ส่งสำเร็จ!</div>';
+            loadBalance();
+        } else {
+            statusDiv.innerHTML = '<div class="status error">❌ ' + (data.error || 'เกิดข้อผิดพลาด') + '</div>';
+        }
+    } catch (e) {
+        statusDiv.innerHTML = '<div class="status error">❌ ' + e.message + '</div>';
+    }
+}
+
+async function loadHistory() {
+    try {
+        const res = await fetch(NODE_URL + '/txs/' + WALLET_ADDRESS);
+        const txs = await res.json();
+        const list = document.getElementById('tx-list');
+        
+        if (txs.length === 0) {
+            list.innerHTML = '<p style="text-align: center; color: #888;">ไม่มีธุรกรรม</p>';
+            return;
+        }
+        
+        list.innerHTML = txs.reverse().map(tx => {
+            const isIn = tx.to === WALLET_ADDRESS;
+            return '<div class="tx-item ' + (isIn ? 'tx-in' : 'tx-out') + '">' +
+                '<div style="font-size: 18px; font-weight: bold; color: ' + (isIn ? '#34C759' : '#FF3B30') + ';">' +
+                (isIn ? '+' : '-') + parseFloat(tx.amount).toLocaleString() + ' DYX</div>' +
+                '<div style="font-size: 12px; color: #888; margin-top: 4px;">' +
+                (isIn ? 'จาก: ' : 'ไป: ') + (tx.from === WALLET_ADDRESS ? tx.to : tx.from) + '</div>' +
+                '<div style="font-size: 11px; color: #666;">Block #' + tx.block + '</div></div>';
+        }).join('');
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+function copyAddress() {
+    navigator.clipboard.writeText(WALLET_ADDRESS);
+    alert('✅ คัดลอกแล้ว!');
+}
+
+function logout() {
+    myPrivateKey = null;
+    document.getElementById('wallet-page').classList.add('hidden');
+    document.getElementById('login-page').classList.remove('hidden');
+    document.getElementById('password').value = '';
+    document.getElementById('debug-log').textContent = 'ล็อกเอาท์แล้ว';
+}
+</script>
+</body></html>

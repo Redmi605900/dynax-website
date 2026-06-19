@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DYNAX Wallet</title>
+    <script src="https://cdn.jsdelivr.net/npm/elliptic@6.5.4/dist/elliptic.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-sha3@0.8.0/build/sha3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: #F5F5F7;
+            min-height: 100vh;
+            color: #1C1C1E;
+        }
+
+        .container { max-width: 480px; margin: 0 auto; padding: 16px; }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #F7931A 0%, #FFA500 100%);
+            color: white;
+            padding: 24px 20px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(247, 147, 26, 0.3);
+            position: relative;
+        }
+
+        .lang-switch {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+        }
+
+        .lang-switch:hover { background: rgba(255,255,255,0.3); }
+        .header h1 { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+        .header p { font-size: 13px; opacity: 0.95; }
+
+        /* Balance Card */
+        .balance-card {
+            background: white;
+            border-radius: 20px;
+            padding: 28px 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+
+        .balance-label {
+            font-size: 13px;
+            color: #8E8E93;
+            margin-bottom: 10px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .balance-amount {
+            font-size: 42px;
+            font-weight: 700;
+            color: #F7931A;
+            margin-bottom: 6px;
+            letter-spacing: -1px;
+        }
+
+        .balance-unit {
+            font-size: 18px;
+            color: #8E8E93;
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+
+        .address-box {
+            background: linear-gradient(135deg, #F5F5F7 0%, #E5E5EA 100%);
+            padding: 14px;
+            border-radius: 12px;
+            font-family: 'SF Mono', 'Courier New', monospace;
+            font-size: 11px;
+            word-break: break-all;
+            color: #1C1C1E;
+            border: 1px solid #E5E5EA;
+        }
+
+        /* Action Buttons */
+        .actions {            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .action-btn {
+            background: white;
+            border: none;
+            border-radius: 16px;
+            padding: 22px 16px;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            transition: all 0.2s;
+        }
+
+        .action-btn:active { transform: scale(0.96); box-shadow: 0 1px 6px rgba(0,0,0,0.1); }
+
+        .action-btn .icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            margin: 0 auto 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+        }
+
+        .action-btn.send .icon { background: linear-gradient(135deg, #FFE5D9 0%, #FFD4C4 100%); }
+        .action-btn.receive .icon { background: linear-gradient(135deg, #D4F4DD 0%, #C4E8D0 100%); }
+        .action-btn.qr .icon { background: linear-gradient(135deg, #E5E5EA 0%, #D5D5DA 100%); }
+        .action-btn.history .icon { background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%); }
+
+        .action-btn .label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1C1C1E;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 22px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1C1C1E;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Inputs */
+        input[type="text"],
+        input[type="number"],
+        input[type="file"] {
+            width: 100%;
+            padding: 15px 16px;
+            border: 1.5px solid #E5E5EA;
+            border-radius: 12px;
+            font-size: 15px;
+            background: #FAFAFA;
+            margin-bottom: 12px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #F7931A;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(247, 147, 26, 0.1);
+        }
+
+        /* Buttons */
+        button {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #F7931A 0%, #FFA500 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(247, 147, 26, 0.3);
+        }
+        .btn-primary:hover { box-shadow: 0 6px 20px rgba(247, 147, 26, 0.4); transform: translateY(-1px); }
+        .btn-primary:active { transform: translateY(0); }
+
+        .btn-secondary {
+            background: #F5F5F7;
+            color: #1C1C1E;
+        }
+
+        .btn-secondary:hover { background: #E5E5EA; }
+
+        /* QR Code */
+        .qr-container {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            text-align: center;
+            margin: 16px 0;
+            border: 2px solid #F7931A;
+        }
+
+        #qrcode canvas, #qrcode img {
+            max-width: 220px !important;
+            height: auto !important;
+        }
+
+        /* Transaction Items */
+        .tx-item {
+            background: linear-gradient(135deg, #FAFAFA 0%, #F5F5F7 100%);
+            padding: 16px;
+            border-radius: 12px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            border-left: 4px solid #F7931A;
+            transition: all 0.2s;
+        }
+
+        .tx-item:hover { transform: translateX(4px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+        .tx-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;        }
+
+        .tx-in { border-left-color: #34C759; }
+        .tx-out { border-left-color: #FF3B30; }
+        .tx-in .tx-icon { background: #D4F4DD; }
+        .tx-out .tx-icon { background: #FEE2E2; }
+
+        .tx-details { flex: 1; min-width: 0; }
+        .tx-address {
+            font-size: 13px;
+            color: #8E8E93;
+            font-family: 'SF Mono', monospace;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .tx-amount {
+            font-size: 17px;
+            font-weight: 700;
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .tx-in .tx-amount { color: #34C759; }
+        .tx-out .tx-amount { color: #FF3B30; }
+
+        .tx-meta {
+            font-size: 12px;
+            color: #8E8E93;
+            margin-top: 4px;
+        }
+
+        /* Status */
+        .status {
+            padding: 14px;
+            border-radius: 12px;
+            margin: 14px 0;
+            text-align: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .status.success { background: #D4F4DD; color: #065F46; border: 1px solid #6EE7B7; }
+        .status.error { background: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; }
+
+        .hidden { display: none !important; }
+
+        /* Empty State */
+        .empty-state {            text-align: center;
+            padding: 48px 20px;
+            color: #8E8E93;
+        }
+
+        .empty-state .icon { font-size: 56px; margin-bottom: 16px; opacity: 0.4; }
+
+        /* Copy Button */
+        .copy-btn {
+            background: #F7931A;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            margin-top: 12px;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .balance-amount { font-size: 36px; }
+            .action-btn { padding: 18px 12px; }
+            .action-btn .icon { width: 48px; height: 48px; font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <button class="lang-switch" onclick="toggleLanguage()">🌐 <span id="lang-text">TH</span></button>
+            <h1 id="app-title">🔶 DYNAX Wallet</h1>
+            <p id="app-subtitle">Secure Decentralized Wallet</p>
+        </div>
+
+        <!-- Import Section -->
+        <div class="card" id="import-section">
+            <div class="card-title">🔐 <span data-en="Import Wallet" data-th="นำเข้ากระเป๋า">นำเข้ากระเป๋า</span></div>
+            <p style="color: #8E8E93; font-size: 14px; margin-bottom: 12px;" data-en="Select your wallet JSON file" data-th="เลือกไฟล์ wallet JSON ของคุณ">เลือกไฟล์ wallet JSON ของคุณ</p>
+            <input type="file" id="wallet-file" accept=".json" onchange="importWallet()">
+            <p style="text-align: center; color: #8E8E93; margin: 20px 0 12px; font-size: 13px;" data-en="Or enter Private Key:" data-th="หรือกรอก Private Key:">หรือกรอก Private Key:</p>
+            <input type="text" id="private-key-input" placeholder="Private Key (hex)" data-placeholder-en="Private Key (hex)" data-placeholder-th="คีย์ส่วนตัว (hex)">
+            <button class="btn-primary" onclick="importFromKey()" data-en="Import Wallet" data-th="นำเข้ากระเป๋า">นำเข้ากระเป๋า</button>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboard" class="hidden">
+            <!-- Balance Card -->
+            <div class="balance-card">                <div class="balance-label" data-en="Available Balance" data-th="ยอดเงินคงเหลือ">ยอดเงินคงเหลือ</div>
+                <div class="balance-amount" id="balance">0</div>
+                <div class="balance-unit">DYX</div>
+                <div class="address-box" id="address"></div>
+                <button class="btn-secondary" onclick="logout()" style="margin-top: 16px;">🔓 <span data-en="Logout" data-th="ออกจากระบบ">ออกจากระบบ</span></button>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="actions">
+                <div class="action-btn send" onclick="showSend()">
+                    <div class="icon">📤</div>
+                    <div class="label" data-en="Send" data-th="ส่ง">ส่ง</div>
+                </div>
+                <div class="action-btn receive" onclick="showReceive()">
+                    <div class="icon">📥</div>
+                    <div class="label" data-en="Receive" data-th="รับ">รับ</div>
+                </div>
+                <div class="action-btn qr" onclick="showQR()">
+                    <div class="icon">📱</div>
+                    <div class="label" data-en="QR Code" data-th="QR Code">QR Code</div>
+                </div>
+                <div class="action-btn history" onclick="showHistory()">
+                    <div class="icon">📊</div>
+                    <div class="label" data-en="History" data-th="ประวัติ">ประวัติ</div>
+                </div>
+            </div>
+
+            <!-- Send Form -->
+            <div class="card hidden" id="send-section">
+                <div class="card-title">📤 <span data-en="Send DYX" data-th="ส่ง DYX">ส่ง DYX</span></div>
+                <input type="text" id="to-address" placeholder="Recipient Address (DX...)" data-placeholder-en="Recipient Address (DX...)" data-placeholder-th="ที่อยู่ผู้รับ (DX...)">
+                <input type="number" id="amount" placeholder="Amount (DYX)" step="0.01" data-placeholder-en="Amount (DYX)" data-placeholder-th="จำนวน (DYX)">
+                <input type="number" id="fee" placeholder="Fee (0.01)" value="0.01" step="0.01" data-placeholder-en="Fee (0.01)" data-placeholder-th="ค่าธรรมเนียม (0.01)">
+                <button class="btn-primary" onclick="sendTransaction()" data-en="Send Now" data-th="ส่งทันที">ส่งทันที</button>
+                <div id="send-status"></div>
+            </div>
+
+            <!-- Receive Section -->
+            <div class="card hidden" id="receive-section">
+                <div class="card-title">📥 <span data-en="Receive DYX" data-th="รับ DYX">รับ DYX</span></div>
+                <p style="color: #8E8E93; font-size: 14px; margin-bottom: 12px;" data-en="Send DYX to this address:" data-th="ส่ง DYX มาที่อยู่นี้:">ส่ง DYX มาที่อยู่นี้:</p>
+                <div class="address-box" id="receive-address"></div>
+                <button class="copy-btn" onclick="copyAddress()">📋 <span data-en="Copy Address" data-th="คัดลอกที่อยู่">คัดลอกที่อยู่</span></button>
+            </div>
+
+            <!-- QR Section -->
+            <div class="card hidden" id="qr-section">
+                <div class="card-title">📱 <span data-en="QR Code" data-th="QR Code">QR Code</span></div>
+                <div class="qr-container">
+                    <div id="qrcode"></div>                    <p style="margin-top: 16px; font-size: 13px; color: #8E8E93;" data-en="Scan to receive DYX" data-th="สแกนเพื่อรับ DYX">สแกนเพื่อรับ DYX</p>
+                </div>
+            </div>
+
+            <!-- History Section -->
+            <div class="card hidden" id="history-section">
+                <div class="card-title">📊 <span data-en="Transaction History" data-th="ประวัติการทำรายการ">ประวัติการทำรายการ</span></div>
+                <div id="tx-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const NODE_URL = window.location.origin;
+        let currentWallet = null;
+        let ec = new elliptic.ec('secp256k1');
+        let currentLang = 'th';
+
+        const translations = {
+            en: {
+                'app-title': '🔶 DYNAX Wallet',
+                'app-subtitle': 'Secure Decentralized Wallet'
+            },
+            th: {
+                'app-title': '🔶 DYNAX Wallet',
+                'app-subtitle': 'กระเป๋าเงินที่ปลอดภัย'
+            }
+        };
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'th' : 'en';
+            document.getElementById('lang-text').textContent = currentLang === 'en' ? 'TH' : 'EN';
+            
+            // Update all elements with data-en and data-th
+            document.querySelectorAll('[data-en]').forEach(el => {
+                const key = el.getAttribute('data-' + currentLang);
+                if (key) el.textContent = key;
+            });
+            
+            // Update placeholders
+            document.querySelectorAll('input[placeholder]').forEach(el => {
+                const placeholderKey = el.getAttribute('data-placeholder-' + currentLang);
+                if (placeholderKey) el.placeholder = placeholderKey;
+            });
+            
+            localStorage.setItem('dynax_lang', currentLang);
+        }
+
+        function hideAllSections() {
+            ['send-section', 'receive-section', 'qr-section', 'history-section'].forEach(id => {                document.getElementById(id).classList.add('hidden');
+            });
+        }
+
+        function showSend() { hideAllSections(); document.getElementById('send-section').classList.remove('hidden'); }
+        function showReceive() { 
+            hideAllSections(); 
+            document.getElementById('receive-section').classList.remove('hidden');
+            document.getElementById('receive-address').textContent = currentWallet.address;
+        }
+        function showQR() { 
+            hideAllSections(); 
+            document.getElementById('qr-section').classList.remove('hidden');
+            setTimeout(() => {
+                QRCode.toCanvas(currentWallet.address, { width: 220, margin: 2 }, (err, canvas) => {
+                    if (!err) {
+                        const container = document.getElementById('qrcode');
+                        container.innerHTML = '';
+                        container.appendChild(canvas);
+                    }
+                });
+            }, 100);
+        }
+        function showHistory() { hideAllSections(); document.getElementById('history-section').classList.remove('hidden'); loadHistory(); }
+
+        async function importWallet() {
+            const file = document.getElementById('wallet-file').files[0];
+            if (!file) return;
+            try {
+                const text = await file.text();
+                const wallet = JSON.parse(text);
+                if (wallet.private_key) {
+                    currentWallet = wallet;
+                    showDashboard();
+                } else {
+                    alert('❌ ' + (currentLang === 'en' ? 'File has no private_key' : 'ไฟล์ไม่มี private_key'));
+                }
+            } catch (e) {
+                alert('❌ ' + e.message);
+            }
+        }
+
+        async function importFromKey() {
+            const key = document.getElementById('private-key-input').value.trim();
+            if (!key) {
+                alert(currentLang === 'en' ? 'Please enter Private Key' : 'กรุณากรอก Private Key');
+                return;
+            }
+            try {
+                const keyPair = ec.keyFromPrivate(key, 'hex');                const pubKey = keyPair.getPublic('hex');
+                const hash = sha3_256(hexToBytes(pubKey));
+                const address = 'DX' + hash.substring(0, 40);
+                currentWallet = { private_key: key, public_key: pubKey, address: address };
+                showDashboard();
+            } catch (e) {
+                alert('❌ ' + e.message);
+            }
+        }
+
+        function showDashboard() {
+            document.getElementById('import-section').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            document.getElementById('address').textContent = currentWallet.address;
+            updateBalance();
+        }
+
+        async function updateBalance() {
+            if (!currentWallet) return;
+            try {
+                const res = await fetch(`${NODE_URL}/balance/${currentWallet.address}`);
+                const data = await res.json();
+                document.getElementById('balance').textContent = data.balance.toLocaleString();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function sendTransaction() {
+            const to = document.getElementById('to-address').value.trim();
+            const amount = parseFloat(document.getElementById('amount').value);
+            const fee = parseFloat(document.getElementById('fee').value) || 0.01;
+            const statusDiv = document.getElementById('send-status');
+
+            if (!to || !amount || amount <= 0) {
+                const msg = currentLang === 'en' ? 'Please fill in all fields' : 'กรุณากรอกข้อมูลให้ครบ';
+                statusDiv.innerHTML = '<div class="status error">❌ ' + msg + '</div>';
+                return;
+            }
+
+            try {
+                const msgDict = { amount: amount, fee: fee, from: currentWallet.address, to: to };
+                const msgText = JSON.stringify(msgDict, Object.keys(msgDict).sort());
+                const keyPair = ec.keyFromPrivate(currentWallet.private_key, 'hex');
+                const msgHash = sha3_256(new TextEncoder().encode(msgText));
+                const signature = keyPair.sign(msgHash, 'hex').toDER('hex');
+
+                const res = await fetch(`${NODE_URL}/tx`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },                    body: JSON.stringify({
+                        from: currentWallet.address, to: to,
+                        amount: amount, fee: fee, signature: signature
+                    })
+                });
+
+                const data = await res.json();
+                if (res.status === 201) {
+                    const msg = currentLang === 'en' ? '✅ Sent successfully! Waiting for block mining' : '✅ ส่งสำเร็จ! กำลังรอขุด Block';
+                    statusDiv.innerHTML = '<div class="status success">' + msg + '</div>';
+                    document.getElementById('to-address').value = '';
+                    document.getElementById('amount').value = '';
+                    await updateBalance();
+                } else {
+                    statusDiv.innerHTML = '<div class="status error">❌ ' + (data.error || 'Error') + '</div>';
+                }
+            } catch (e) {
+                statusDiv.innerHTML = '<div class="status error">❌ ' + e.message + '</div>';
+            }
+        }
+
+        async function loadHistory() {
+            if (!currentWallet) return;
+            try {
+                const res = await fetch(`${NODE_URL}/txs/${currentWallet.address}`);
+                const txs = await res.json();
+                const list = document.getElementById('tx-list');
+
+                if (txs.length === 0) {
+                    const msg = currentLang === 'en' ? 'No transactions yet' : 'ยังไม่มีธุรกรรม';
+                    list.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>' + msg + '</p></div>';
+                    return;
+                }
+
+                list.innerHTML = txs.reverse().map(tx => {
+                    const isIn = tx.to === currentWallet.address;
+                    const amount = isIn ? '+' : '-';
+                    const fromTo = isIn ? (currentLang === 'en' ? 'From: ' : 'จาก: ') : (currentLang === 'en' ? 'To: ' : 'ไป: ');
+                    return `
+                        <div class="tx-item ${isIn ? 'tx-in' : 'tx-out'}">
+                            <div class="tx-icon">${isIn ? '📥' : '📤'}</div>
+                            <div class="tx-details">
+                                <div class="tx-address">${fromTo}${tx.from === currentWallet.address ? tx.to : tx.from}</div>
+                                <div class="tx-meta">Block #${tx.block} | Fee: ${parseFloat(tx.fee || 0).toFixed(2)}</div>
+                            </div>
+                            <div class="tx-amount">${amount}${parseFloat(tx.amount).toLocaleString()}</div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {                console.error(e);
+            }
+        }
+
+        function copyAddress() {
+            navigator.clipboard.writeText(currentWallet.address).then(() => {
+                const msg = currentLang === 'en' ? '✅ Address copied!' : '✅ คัดลอกที่อยู่แล้ว!';
+                alert(msg);
+            });
+        }
+
+        function logout() {
+            currentWallet = null;
+            document.getElementById('import-section').classList.remove('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
+            hideAllSections();
+            document.getElementById('send-status').innerHTML = '';
+        }
+
+        function hexToBytes(hex) {
+            const bytes = new Uint8Array(hex.length / 2);
+            for (let i = 0; i < hex.length; i += 2) {
+                bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+            }
+            return bytes;
+        }
+
+        // Load saved language
+        window.onload = function() {
+            const savedLang = localStorage.getItem('dynax_lang');
+            if (savedLang && savedLang !== currentLang) {
+                toggleLanguage();
+            }
+        };
+    </script>
+</body>
+</html>

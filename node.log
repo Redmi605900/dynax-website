@@ -1,0 +1,13 @@
+=== DYNAX CLEAN NODE STARTED ON 6001 ===
+ * Serving Flask app 'dynax_node'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:6001
+ * Running on http://192.168.43.166:6001
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [16/Jun/2026 22:42:35] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [16/Jun/2026 22:42:51] "GET /chain HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jun/2026 05:59:51] "GET /balance/DXa5ae9ccc94279d4f52b4f4e694a5a3b2f4f5ece3 HTTP/1.1" 200 -
+127.0.0.1 - - [17/Jun/2026 06:03:30] "[33mPOST /tx HTTP/1.1[0m" 404 -
+127.0.0.1 - - [17/Jun/2026 06:06:11] "[33mPOST /tx HTTP/1.1[0m" 404 -

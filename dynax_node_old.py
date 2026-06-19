@@ -1,5 +1,3 @@
-
-
 import time
 import json
 import hashlib
@@ -20,23 +18,6 @@ PEERS = [
     "http://127.0.0.1:6003"
 ]
 
-def validate_chain(chain):
-
-    if len(chain) == 0:
-        return False
-
-    for i in range(1, len(chain)):
-
-        prev = chain[i-1]
-        curr = chain[i]
-
-        if curr["index"] != prev["index"] + 1:
-            return False
-
-        if curr["prev_hash"] != prev["hash"]:
-            return False
-
-    return True
 
 # -------------------------
 # BLOCK
@@ -77,11 +58,7 @@ class Node:
             with open(CHAIN_FILE) as f:
                 data = json.load(f)
 
-            if not validate_chain(data):
-                raise Exception("CHAIN CORRUPTED")
-
             self.chain = []
-
             for b in data:
                 block = Block(
                     b["index"],

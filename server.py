@@ -1,14 +1,9 @@
-from flask import Flask, render_template, jsonify, redirect, send_from_directory
+from flask import Flask, send_file, jsonify, redirect
 import requests
 import os
 
-app = Flask(__name__, 
-    template_folder='templates',
-    static_folder='assets',
-    static_url_path='/assets'
-)
+app = Flask(__name__, static_folder='assets', static_url_path='/assets')
 
-# URLs ของ services (localtunnel)
 SERVICES = {
     'node': 'https://dynax-node.loca.lt',
     'explorer': 'https://dynax-explorer.loca.lt',
@@ -19,7 +14,7 @@ SERVICES = {
 
 @app.route('/')
 def home():
-    return render_template('landing.html')
+    return send_file('landing.html')
 
 @app.route('/api/stats')
 def api_stats():
@@ -50,7 +45,6 @@ def api_stats():
             'error': str(e)
         })
 
-# Redirect routes
 @app.route('/explorer')
 def explorer():
     return redirect(SERVICES['explorer'])
