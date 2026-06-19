@@ -1,4 +1,4 @@
-from flask import Flask, send_file, jsonify
+from flask import Flask, send_file, jsonify, redirect
 import requests
 import os
 
@@ -49,6 +49,27 @@ def api_stats():
             'status': 'offline',
             'error': str(e)
         })
+
+# Redirect routes ไปยัง services จริง
+@app.route('/explorer')
+def explorer():
+    return redirect(SERVICES['explorer'])
+
+@app.route('/wallet')
+def wallet():
+    return redirect(SERVICES['mobile'])
+
+@app.route('/dex')
+def dex():
+    return redirect(SERVICES['dex'])
+
+@app.route('/dvm')
+def dvm():
+    return redirect(SERVICES['dvm'])
+
+@app.route('/node')
+def node():
+    return redirect(SERVICES['node'])
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
