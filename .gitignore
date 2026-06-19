@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.p
+
+# Data files
+*.json
+*.log
+*.bak
+*.backup
+*.BROKEN
+.env
+repo
+
+# Backup files
+backup.tar.gz
+dynax-website.zip
+wallets/
+
+# Embedded git repo
+dynax-website/
+
+# OS
+.DS_Store
+Thumbs.db
