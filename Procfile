@@ -1,1 +1,1 @@
-web: python dynax_node.py
+web: gunicorn server:app
