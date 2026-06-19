@@ -1,12 +1,10 @@
-from flask import Flask, send_file, jsonify, redirect
+from flask import Flask, render_template, jsonify, redirect, send_from_directory
 import requests
 import os
 
-# ใช้ absolute path
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
 app = Flask(__name__, 
-    static_folder=os.path.join(BASE_DIR, 'assets'),
+    template_folder='templates',
+    static_folder='assets',
     static_url_path='/assets'
 )
 
@@ -21,13 +19,7 @@ SERVICES = {
 
 @app.route('/')
 def home():
-    landing_path = os.path.join(BASE_DIR, 'landing.html')
-    return send_file(landing_path)
-
-@app.route('/assets/<path:filename>')
-def assets(filename):
-    file_path = os.path.join(BASE_DIR, 'assets', filename)
-    return send_file(file_path)
+    return render_template('landing.html')
 
 @app.route('/api/stats')
 def api_stats():
@@ -77,5 +69,5 @@ def dvm():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
-    print(f" DYNAX Server running on port {port}")
+    print(f"🚀 DYNAX Server running on port {port}")
     app.run(host='0.0.0.0', port=port, debug=False)
