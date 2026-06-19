@@ -43,10 +43,10 @@ body {
   border: 3px solid #d4af37;
   box-shadow: 0 0 40px rgba(212,175,55,0.4);
   animation: float 4s ease-in-out infinite;
-}
-@keyframes float {
+}@keyframes float {
   0%,100% { transform: translateY(0); }
-  50% { transform: translateY(-12px); }}
+  50% { transform: translateY(-12px); }
+}
 @keyframes pulse {
   0%,100% { opacity: 0.4; transform: scale(1); }
   50% { opacity: 0.8; transform: scale(1.05); }
@@ -92,10 +92,10 @@ body {
   font-size: 28px;
   font-weight: 700;
   color: #d4af37;
-}
-.stat-lbl {
+}.stat-lbl {
   font-size: 12px;
-  color: #666;  margin-top: 4px;
+  color: #666;
+  margin-top: 4px;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -141,10 +141,10 @@ body {
   gap: 20px;
   max-width: 900px;
   margin: 60px auto;
-  padding: 0 20px;
-}
+  padding: 0 20px;}
 .card {
-  background: #111;  border: 1px solid #d4af3730;
+  background: #111;
+  border: 1px solid #d4af3730;
   border-radius: 20px;
   padding: 36px 24px;
   text-align: center;
@@ -190,10 +190,10 @@ body {
   font-size: 12px;
   display: inline-block;
 }
-.network-status.online { background: rgba(0,255,136,0.1); color: #00ff88; border: 1px solid #00ff88; }
-.network-status.offline { background: rgba(255,59,48,0.1); color: #ff3b30; border: 1px solid #ff3b30; }
+.network-status.online { background: rgba(0,255,136,0.1); color: #00ff88; border: 1px solid #00ff88; }.network-status.offline { background: rgba(255,59,48,0.1); color: #ff3b30; border: 1px solid #ff3b30; }
 @media (max-width: 600px) {
-  .brand { font-size: 48px; }  .mascot-img { width: 180px; height: 180px; }
+  .brand { font-size: 48px; }
+  .mascot-img { width: 180px; height: 180px; }
   .mascot-wrapper { width: 180px; height: 180px; }
 }
 </style>
@@ -235,29 +235,29 @@ body {
   <div id="network-status" class="network-status offline">Checking network...</div>
 
   <div class="btn-row" style="margin-top: 30px;">
-    <a href="#" id="btn-wallet" class="btn btn-gold">🔐 Launch Wallet</a>
-    <a href="#" id="btn-explorer" class="btn btn-outline">🔍 Explorer</a>
-    <a href="#" id="btn-dex" class="btn btn-outline">💱 DEX</a>
+    <a href="/wallet" class="btn btn-gold">🔐 Launch Wallet</a>
+    <a href="/explorer" class="btn btn-outline">🔍 Explorer</a>
+    <a href="/dex" class="btn btn-outline">💱 DEX</a>
   </div>
 </section>
-
 <div class="cards">
-  <a href="#" class="card" id="card-wallet">    <div class="card-icon">💎</div>
+  <a href="/wallet" class="card">
+    <div class="card-icon">💎</div>
     <div class="card-title">Wallet</div>
     <div class="card-desc">ส่ง รับ และจัดการ DYX อย่างปลอดภัย</div>
   </a>
-  <a href="#" class="card" id="card-explorer">
+  <a href="/explorer" class="card">
     <div class="card-icon">🔍</div>
     <div class="card-title">Block Explorer</div>
     <div class="card-desc">สำรวจ blocks และ transactions บน DYNAX</div>
   </a>
-  <a href="#" class="card" id="card-dex">
+  <a href="/dex" class="card">
     <div class="card-icon">💱</div>
     <div class="card-title">DEX</div>
     <div class="card-desc">ซื้อขาย DYX แบบ Decentralized</div>
   </a>
-  <a href="#" class="card" id="card-dvm">
-    <div class="card-icon">🧠</div>
+  <a href="/dvm" class="card">
+    <div class="card-icon"></div>
     <div class="card-title">Smart Contracts</div>
     <div class="card-desc">Deploy และ execute contracts บน DVM</div>
   </a>
@@ -270,71 +270,29 @@ body {
 </footer>
 
 <script>
-// URLs ของ services (localtunnel)
-const SERVICES = {
-  node: 'https://dynax-node.loca.lt',
-  explorer: 'https://dynax-explorer.loca.lt',
-  mobile: 'https://dynax-mobile.loca.lt',
-  dex: 'https://dynax-dex.loca.lt',
-  dvm: 'https://dynax-dvm.loca.lt'
-};
-
-// ตั้งค่าปุ่มให้ชี้ไปที่ URLs ที่ถูกต้อง
-function setupLinks() {
-  document.getElementById('btn-wallet').href = SERVICES.mobile;
-  document.getElementById('btn-explorer').href = SERVICES.explorer;
-  document.getElementById('btn-dex').href = SERVICES.dex;
-  
-  document.getElementById('card-wallet').href = SERVICES.mobile;
-  document.getElementById('card-explorer').href = SERVICES.explorer;
-  document.getElementById('card-dex').href = SERVICES.dex;
-  document.getElementById('card-dvm').href = SERVICES.dvm;
-}
-
-// ดึง stats จาก Node APIasync function loadStats() {
+// ดึง stats จาก API
+async function loadStats() {
   try {
-    const res = await fetch(SERVICES.node + '/blocks');
-    const blocks = await res.json();
+    const res = await fetch('/api/stats');
+    const data = await res.json();
     
-    document.getElementById('s-blocks').textContent = blocks.length;
+    document.getElementById('s-blocks').textContent = data.blocks;
+    document.getElementById('s-txs').textContent = data.transactions;
+    document.getElementById('s-contracts').textContent = data.contracts;
     
-    let totalTxs = 0;
-    blocks.forEach(b => {
-      if (b.transactions) totalTxs += b.transactions.length;
-    });
-    document.getElementById('s-txs').textContent = totalTxs;
-    
-    // ดึงจำนวน contracts จาก DVM
-    try {
-      const dvmRes = await fetch(SERVICES.dvm + '/contracts');
-      const dvmData = await dvmRes.json();
-      document.getElementById('s-contracts').textContent = dvmData.total || 0;
-    } catch(e) {
-      document.getElementById('s-contracts').textContent = '0';
+    const statusEl = document.getElementById('network-status');
+    if (data.status === 'online') {
+      statusEl.className = 'network-status online';
+      statusEl.textContent = '● Network Online';
+    } else {
+      statusEl.className = 'network-status offline';
+      statusEl.textContent = '● Network Offline';
     }
-    
-    // อัพเดทสถานะ network
-    const statusEl = document.getElementById('network-status');
-    statusEl.className = 'network-status online';
-    statusEl.textContent = '● Network Online';
-    
-  } catch (e) {
-    console.error('Network error:', e);
-    const statusEl = document.getElementById('network-status');
-    statusEl.className = 'network-status offline';
-    statusEl.textContent = '● Network Offline - Services running on local device';
-    
-    document.getElementById('s-blocks').textContent = '24';
-    document.getElementById('s-txs').textContent = '37';
-    document.getElementById('s-contracts').textContent = '2';
+  } catch (e) {    console.error(e);
   }
 }
 
-// เริ่มต้น
-setupLinks();
 loadStats();
-
-// Refresh ทุก 30 วินาที
 setInterval(loadStats, 30000);
 </script>
 </body>
