@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>DYNAX Icon - Correct Symbol</title>
+<style>
+body {
+  margin: 0;
+  padding: 20px;
+  background: #0a0a0a;
+  color: #fff;
+  font-family: Arial, sans-serif;
+}
+.container { max-width: 1200px; margin: 0 auto; }
+h1 { color: #d4af37; text-align: center; margin-bottom: 10px; }
+.subtitle { text-align: center; color: #888; margin-bottom: 30px; }
+.icons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  margin: 30px 0;
+}
+.icon-card {
+  background: #111;
+  border: 1px solid #d4af3730;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+.icon-card h3 { color: #d4af37; margin-bottom: 10px; font-size: 18px; }
+canvas {
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(212,175,55,0.3);
+  margin-bottom: 15px;
+  background: #000;
+}
+.download-btn {
+  background: linear-gradient(135deg, #d4af37, #f5d47a);
+  color: #0a0a0a;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 16px;
+  transition: transform 0.3s;
+}.download-btn:hover { transform: translateY(-2px); }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🎨 DYNAX Icon - Correct DYX Symbol</h1>
+  <p class="subtitle">ตัว D พร้อมขีดขวาง - สัญลักษณ์ DYX</p>
+
+  <div class="icons-grid">
+    <!-- แบบที่ 1: ทอง -->
+    <div class="icon-card">
+      <h3>แบบที่ 1: Gold</h3>
+      <canvas id="icon1" width="512" height="512"></canvas>
+      <button class="download-btn" onclick="downloadIcon('icon1', 'dynax-gold.png')">ดาวน์โหลด</button>
+    </div>
+
+    <!-- แบบที่ 2: หินอ่อน -->
+    <div class="icon-card">
+      <h3>แบบที่ 2: Marble</h3>
+      <canvas id="icon2" width="512" height="512"></canvas>
+      <button class="download-btn" onclick="downloadIcon('icon2', 'dynax-marble.png')">ดาวน์โหลด</button>
+    </div>
+
+    <!-- แบบที่ 3: ทอง Glow -->
+    <div class="icon-card">
+      <h3>แบบที่ 3: Gold Glow</h3>
+      <canvas id="icon3" width="512" height="512"></canvas>
+      <button class="download-btn" onclick="downloadIcon('icon3', 'dynax-gold-glow.png')">ดาวน์โหลด</button>
+    </div>
+
+    <!-- แบบที่ 4: บรอนซ์ -->
+    <div class="icon-card">
+      <h3>แบบที่ 4: Bronze</h3>
+      <canvas id="icon4" width="512" height="512"></canvas>
+      <button class="download-btn" onclick="downloadIcon('icon4', 'dynax-bronze.png')">ดาวน์โหลด</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// วาดตัว D พร้อมขีดขวาง แบบถูกต้อง
+function drawDYXSymbol(ctx, x, y, size, fillColor) {
+  const centerX = x;
+  const centerY = y;
+  const radius = size / 2;
+  
+  ctx.fillStyle = fillColor;
+  ctx.strokeStyle = fillColor;
+  
+  // วาดตัว D  // เส้นแนวตั้งซ้าย
+  const lineThickness = radius * 0.15;
+  const dWidth = radius * 0.9;
+  const dHeight = radius * 1.6;
+  
+  // เส้นตั้งซ้ายของ D
+  ctx.fillRect(
+    centerX - dWidth/2 - lineThickness/2,
+    centerY - dHeight/2,
+    lineThickness,
+    dHeight
+  );
+  
+  // ส่วนโค้งของ D
+  ctx.beginPath();
+  ctx.arc(
+    centerX - dWidth/4,
+    centerY,
+    dHeight/2,
+    -Math.PI/2,
+    Math.PI/2,
+    false
+  );
+  ctx.lineTo(centerX + dWidth/2, centerY);
+  ctx.arc(
+    centerX - dWidth/4,
+    centerY,
+    dHeight/2,
+    Math.PI/2,
+    -Math.PI/2,
+    true
+  );
+  ctx.closePath();
+  ctx.fill();
+  
+  // วาดขีดขวาง
+  const barWidth = dWidth * 0.6;
+  const barHeight = lineThickness;
+  const barX = centerX - dWidth/2 - barWidth/2;
+  const barY = centerY - barHeight/2;
+  
+  ctx.fillRect(barX, barY, barWidth, barHeight);
+}
+
+// สร้าง texture
+function createTexture(ctx, width, height, baseColor, variance = 20) {
+  const imageData = ctx.createImageData(width, height);
+  const data = imageData.data;
+  
+  for (let i = 0; i < data.length; i += 4) {    const noise = (Math.random() - 0.5) * variance;
+    data[i] = Math.max(0, Math.min(255, baseColor.r + noise));
+    data[i+1] = Math.max(0, Math.min(255, baseColor.g + noise));
+    data[i+2] = Math.max(0, Math.min(255, baseColor.b + noise));
+    data[i+3] = 255;
+  }
+  
+  return imageData;
+}
+
+// แบบที่ 1: ทอง
+function createIcon1() {
+  const canvas = document.getElementById('icon1');
+  const ctx = canvas.getContext('2d');
+  
+  // พื้นหลัง
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, 512, 512);
+  const texture = createTexture(ctx, 512, 512, {r: 20, g: 20, b: 20}, 25);
+  ctx.putImageData(texture, 0, 0);
+  
+  // เงา
+  ctx.shadowColor = '#000';
+  ctx.shadowBlur = 30;
+  ctx.shadowOffsetX = 5;
+  ctx.shadowOffsetY = 5;
+  
+  // ตัว D ทอง
+  const gradient = ctx.createLinearGradient(150, 150, 350, 350);
+  gradient.addColorStop(0, '#f5d47a');
+  gradient.addColorStop(0.5, '#d4af37');
+  gradient.addColorStop(1, '#8b6914');
+  
+  drawDYXSymbol(ctx, 256, 256, 350, gradient);
+  
+  ctx.shadowBlur = 0;
+}
+
+// แบบที่ 2: หินอ่อน
+function createIcon2() {
+  const canvas = document.getElementById('icon2');
+  const ctx = canvas.getContext('2d');
+  
+  // พื้นหลังหินอ่อน
+  const bg = ctx.createLinearGradient(0, 0, 512, 512);
+  bg.addColorStop(0, '#d4c4b0');
+  bg.addColorStop(0.5, '#c4b4a0');
+  bg.addColorStop(1, '#b4a490');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, 512, 512);  
+  // Texture
+  for (let i = 0; i < 5000; i++) {
+    ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.1})`;
+    ctx.fillRect(Math.random() * 512, Math.random() * 512, 2, 2);
+  }
+  
+  // เงา
+  ctx.shadowColor = 'rgba(0,0,0,0.5)';
+  ctx.shadowBlur = 20;
+  ctx.shadowOffsetX = 5;
+  ctx.shadowOffsetY = 5;
+  
+  // ตัว D
+  drawDYXSymbol(ctx, 256, 256, 350, '#8b7355');
+  
+  ctx.shadowBlur = 0;
+}
+
+// แบบที่ 3: ทอง Glow
+function createIcon3() {
+  const canvas = document.getElementById('icon3');
+  const ctx = canvas.getContext('2d');
+  
+  // พื้นหลัง
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, 512, 512);
+  
+  // Glow
+  ctx.shadowColor = '#d4af37';
+  ctx.shadowBlur = 60;
+  
+  const gradient = ctx.createRadialGradient(200, 200, 0, 300, 300, 200);
+  gradient.addColorStop(0, '#fff8dc');
+  gradient.addColorStop(0.3, '#ffd700');
+  gradient.addColorStop(0.7, '#d4af37');
+  gradient.addColorStop(1, '#b8860b');
+  
+  drawDYXSymbol(ctx, 256, 256, 350, gradient);
+  
+  ctx.shadowBlur = 0;
+}
+
+// แบบที่ 4: บรอนซ์
+function createIcon4() {
+  const canvas = document.getElementById('icon4');
+  const ctx = canvas.getContext('2d');
+  
+  // พื้นหลัง
+  ctx.fillStyle = '#2a2a2a';  ctx.fillRect(0, 0, 512, 512);
+  const texture = createTexture(ctx, 512, 512, {r: 45, g: 45, b: 45}, 30);
+  ctx.putImageData(texture, 0, 0);
+  
+  // เงา
+  ctx.shadowColor = '#000';
+  ctx.shadowBlur = 25;
+  ctx.shadowOffsetX = 5;
+  ctx.shadowOffsetY = 5;
+  
+  // ตัว D บรอนซ์
+  const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 200);
+  gradient.addColorStop(0, '#cd7f32');
+  gradient.addColorStop(0.5, '#b87333');
+  gradient.addColorStop(1, '#8b4513');
+  
+  drawDYXSymbol(ctx, 256, 256, 350, gradient);
+  
+  ctx.shadowBlur = 0;
+}
+
+// ดาวน์โหลด
+function downloadIcon(canvasId, filename) {
+  const canvas = document.getElementById(canvasId);
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// สร้างทั้งหมด
+createIcon1();
+createIcon2();
+createIcon3();
+createIcon4();
+</script>
+</body>
+</html>

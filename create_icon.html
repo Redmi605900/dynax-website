@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>DYNAX Icon Generator</title>
+<style>
+body {
+  margin: 0;
+  padding: 20px;
+  background: #0a0a0a;
+  color: #fff;
+  font-family: Arial, sans-serif;
+}
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+h1 {
+  color: #d4af37;
+  text-align: center;
+}
+.icons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  margin: 30px 0;
+}
+.icon-card {
+  background: #111;
+  border: 1px solid #d4af3730;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+.icon-card h3 {
+  color: #d4af37;
+  margin-bottom: 15px;
+}
+canvas {
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(212,175,55,0.3);
+  margin-bottom: 15px;
+}
+.download-btn {
+  background: linear-gradient(135deg, #d4af37, #f5d47a);
+  color: #0a0a0a;  border: none;
+  padding: 12px 30px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 16px;
+  transition: transform 0.3s;
+}
+.download-btn:hover {
+  transform: translateY(-2px);
+}
+.info {
+  background: #1a1200;
+  border: 1px solid #d4af37;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 20px 0;
+  color: #ccc;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🎨 DYNAX Icon Generator</h1>
+  
+  <div class="info">
+    <strong>คำแนะนำ:</strong> คลิกปุ่มดาวน์โหลดใต้แต่ละแบบ เพื่อเก็บไอคอน
+  </div>
+
+  <div class="icons-grid">
+    <!-- แบบที่ 1: ตัว D สีทองบนพื้นดำ -->
+    <div class="icon-card">
+      <h3>แบบที่ 1: Gold D on Black</h3>
+      <canvas id="icon1" width="512" height="512"></canvas>
+      <button class="download-btn" onclick="downloadIcon('icon1', 'dynax-icon-1.png')">ดาวน์โหลด</button>
+    </div>
+
+    <!-- แบบที่ 2: ตัว D พร้อม Glow -->
+    <div class="icon-card">
+      <h3>แบบที่ 2: D with Glow Effect</h3>
+      <canvas id="icon2" width="512" height="512"></canvas>
+      <button class="download-btn" onclick="downloadIcon('icon2', 'dynax-icon-2.png')">ดาวน์โหลด</button>
+    </div>
+
+    <!-- แบบที่ 3: ตัว D พร้อม Blockchain Pattern -->
+    <div class="icon-card">
+      <h3>แบบที่ 3: D with Blockchain</h3>
+      <canvas id="icon3" width="512" height="512"></canvas>
+      <button class="download-btn" onclick="downloadIcon('icon3', 'dynax-icon-3.png')">ดาวน์โหลด</button>
+    </div>
+    <!-- แบบที่ 4: ตัว D แบบ Minimalist -->
+    <div class="icon-card">
+      <h3>แบบที่ 4: Minimalist D</h3>
+      <canvas id="icon4" width="512" height="512"></canvas>
+      <button class="download-btn" onclick="downloadIcon('icon4', 'dynax-icon-4.png')">ดาวน์โหลด</button>
+    </div>
+
+    <!-- แบบที่ 5: ตัว D พร้อมวงกลมทอง -->
+    <div class="icon-card">
+      <h3>แบบที่ 5: D in Gold Circle</h3>
+      <canvas id="icon5" width="512" height="512"></canvas>
+      <button class="download-btn" onclick="downloadIcon('icon5', 'dynax-icon-5.png')">ดาวน์โหลด</button>
+    </div>
+
+    <!-- แบบที่ 6: ตัว D แบบ 3D -->
+    <div class="icon-card">
+      <h3>แบบที่ 6: 3D Gold D</h3>
+      <canvas id="icon6" width="512" height="512"></canvas>
+      <button class="download-btn" onclick="downloadIcon('icon6', 'dynax-icon-6.png')">ดาวน์โหลด</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// แบบที่ 1: ตัว D สีทองบนพื้นดำ
+function createIcon1() {
+  const canvas = document.getElementById('icon1');
+  const ctx = canvas.getContext('2d');
+  
+  // พื้นหลังดำ
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, 512, 512);
+  
+  // ตัว D สีทอง
+  ctx.fillStyle = '#d4af37';
+  ctx.font = 'bold 320px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('D', 256, 256);
+}
+
+// แบบที่ 2: ตัว D พร้อม Glow
+function createIcon2() {
+  const canvas = document.getElementById('icon2');
+  const ctx = canvas.getContext('2d');
+  
+  // พื้นหลัง gradient
+  const bg = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
+  bg.addColorStop(0, '#1a1200');  bg.addColorStop(1, '#0a0a0a');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, 512, 512);
+  
+  // Glow effect
+  ctx.shadowColor = '#d4af37';
+  ctx.shadowBlur = 60;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+  
+  // ตัว D
+  ctx.fillStyle = '#f5d47a';
+  ctx.font = 'bold 320px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('D', 256, 256);
+  
+  ctx.shadowBlur = 0;
+}
+
+// แบบที่ 3: ตัว D พร้อม Blockchain Pattern
+function createIcon3() {
+  const canvas = document.getElementById('icon3');
+  const ctx = canvas.getContext('2d');
+  
+  // พื้นหลัง
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, 512, 512);
+  
+  // Blockchain nodes
+  ctx.fillStyle = '#d4af3730';
+  const nodes = [[100,100], [412,100], [100,412], [412,412], [256,256]];
+  nodes.forEach(([x, y]) => {
+    ctx.beginPath();
+    ctx.arc(x, y, 20, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  
+  // เชื่อม nodes
+  ctx.strokeStyle = '#d4af3720';
+  ctx.lineWidth = 3;
+  nodes.forEach(([x1, y1], i) => {
+    nodes.forEach(([x2, y2], j) => {
+      if (i < j) {
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+    });  });
+  
+  // ตัว D
+  ctx.fillStyle = '#d4af37';
+  ctx.font = 'bold 300px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('D', 256, 256);
+}
+
+// แบบที่ 4: Minimalist
+function createIcon4() {
+  const canvas = document.getElementById('icon4');
+  const ctx = canvas.getContext('2d');
+  
+  // พื้นหลัง
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, 512, 512);
+  
+  // วงกลมบางๆ
+  ctx.strokeStyle = '#d4af3740';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(256, 256, 220, 0, Math.PI * 2);
+  ctx.stroke();
+  
+  // ตัว D เรียบ
+  ctx.fillStyle = '#d4af37';
+  ctx.font = '300px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('D', 256, 256);
+}
+
+// แบบที่ 5: ตัว D ในวงกลมทอง
+function createIcon5() {
+  const canvas = document.getElementById('icon5');
+  const ctx = canvas.getContext('2d');
+  
+  // พื้นหลัง
+  const bg = ctx.createLinearGradient(0, 0, 512, 512);
+  bg.addColorStop(0, '#1a1200');
+  bg.addColorStop(1, '#0a0a0a');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, 512, 512);
+  
+  // วงกลมทอง
+  ctx.strokeStyle = '#d4af37';
+  ctx.lineWidth = 8;
+  ctx.beginPath();  ctx.arc(256, 256, 230, 0, Math.PI * 2);
+  ctx.stroke();
+  
+  // Glow วงกลม
+  ctx.shadowColor = '#d4af37';
+  ctx.shadowBlur = 30;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  
+  // ตัว D
+  ctx.fillStyle = '#f5d47a';
+  ctx.font = 'bold 280px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('D', 256, 256);
+}
+
+// แบบที่ 6: 3D Gold D
+function createIcon6() {
+  const canvas = document.getElementById('icon6');
+  const ctx = canvas.getContext('2d');
+  
+  // พื้นหลัง
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, 512, 512);
+  
+  // Shadow ของตัว D
+  ctx.fillStyle = '#00000080';
+  ctx.font = 'bold 320px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('D', 260, 260);
+  
+  // ตัว D หลัก (gradient)
+  const gradient = ctx.createLinearGradient(100, 100, 400, 400);
+  gradient.addColorStop(0, '#f5d47a');
+  gradient.addColorStop(0.5, '#d4af37');
+  gradient.addColorStop(1, '#8b6914');
+  
+  ctx.fillStyle = gradient;
+  ctx.fillText('D', 256, 256);
+  
+  // Highlight
+  ctx.fillStyle = '#ffffff30';
+  ctx.font = 'bold 320px Arial';
+  ctx.fillText('D', 254, 254);
+}
+
+// ดาวน์โหลดไอคอน
+function downloadIcon(canvasId, filename) {  const canvas = document.getElementById(canvasId);
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// สร้างไอคอนทั้งหมด
+createIcon1();
+createIcon2();
+createIcon3();
+createIcon4();
+createIcon5();
+createIcon6();
+</script>
+</body>
+</html>

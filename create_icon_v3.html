@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>DYNAX Icon - With Crossbar D</title>
+<style>
+body {
+  margin: 0;
+  padding: 20px;
+  background: #0a0a0a;
+  color: #fff;
+  font-family: Arial, sans-serif;
+}
+.container { max-width: 1200px; margin: 0 auto; }
+h1 { color: #d4af37; text-align: center; margin-bottom: 10px; }
+.subtitle { text-align: center; color: #888; margin-bottom: 30px; }
+.icons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  margin: 30px 0;
+}
+.icon-card {
+  background: #111;
+  border: 1px solid #d4af3730;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+.icon-card h3 { color: #d4af37; margin-bottom: 10px; font-size: 18px; }
+.icon-card p { color: #888; font-size: 13px; margin-bottom: 15px; }
+canvas {
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(212,175,55,0.3);
+  margin-bottom: 15px;
+}
+.download-btn {
+  background: linear-gradient(135deg, #d4af37, #f5d47a);
+  color: #0a0a0a;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 16px;
+  transition: transform 0.3s;
+}.download-btn:hover { transform: translateY(-2px); }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🎨 DYNAX Icon - Crossbar D Symbol</h1>
+  <p class="subtitle">ตัว D พร้อมขีดขวาง (สัญลักษณ์ DYX)</p>
+
+  <div class="icons-grid">
+    <!-- แบบที่ 1: ทองสลัก -->
+    <div class="icon-card">
+      <h3>แบบที่ 1: Gold Carved</h3>
+      <p>ตัว D ทอง ขีดขวาง สลักบนหินดำ</p>
+      <canvas id="icon1" width="512" height="512"></canvas>
+      <button class="download-btn" onclick="downloadIcon('icon1', 'dynax-crossbar-gold.png')">ดาวน์โหลด</button>
+    </div>
+
+    <!-- แบบที่ 2: หินอ่อน -->
+    <div class="icon-card">
+      <h3>แบบที่ 2: Marble Embossed</h3>
+      <p>ตัว D สลักนูนบนหินอ่อน</p>
+      <canvas id="icon2" width="512" height="512"></canvas>
+      <button class="download-btn" onclick="downloadIcon('icon2', 'dynax-crossbar-marble.png')">ดาวน์โหลด</button>
+    </div>
+
+    <!-- แบบที่ 3: ทองคำเปลว -->
+    <div class="icon-card">
+      <h3>แบบที่ 3: Gold Leaf Glow</h3>
+      <p>ตัว D ทองคำเปลว + Glow</p>
+      <canvas id="icon3" width="512" height="512"></canvas>
+      <button class="download-btn" onclick="downloadIcon('icon3', 'dynax-crossbar-glow.png')">ดาวน์โหลด</button>
+    </div>
+
+    <!-- แบบที่ 4: บรอนซ์ -->
+    <div class="icon-card">
+      <h3>แบบที่ 4: Bronze Ancient</h3>
+      <p>ตัว D บรอนซ์ เหมือนเหรียญโบราณ</p>
+      <canvas id="icon4" width="512" height="512"></canvas>
+      <button class="download-btn" onclick="downloadIcon('icon4', 'dynax-crossbar-bronze.png')">ดาวน์โหลด</button>
+    </div>
+
+    <!-- แบบที่ 5: เงิน -->
+    <div class="icon-card">
+      <h3>แบบที่ 5: Silver Modern</h3>
+      <p>ตัว D เงิน เรียบหรู</p>
+      <canvas id="icon5" width="512" height="512"></canvas>
+      <button class="download-btn" onclick="downloadIcon('icon5', 'dynax-crossbar-silver.png')">ดาวน์โหลด</button>
+    </div>
+
+    <!-- แบบที่ 6: 3D Gold -->    <div class="icon-card">
+      <h3>แบบที่ 6: 3D Gold Premium</h3>
+      <p>ตัว D ทอง 3 มิติ + ขอบวงกลม</p>
+      <canvas id="icon6" width="512" height="512"></canvas>
+      <button class="download-btn" onclick="downloadIcon('icon6', 'dynax-crossbar-3d.png')">ดาวน์โหลด</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ฟังก์ชันวาดตัว D พร้อมขีดขวาง
+function drawCrossbarD(ctx, x, y, size, color, strokeWidth = 2) {
+  ctx.fillStyle = color;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = strokeWidth;
+  ctx.lineCap = 'round';
+  
+  // วาดตัว D
+  ctx.beginPath();
+  ctx.arc(x - size * 0.1, y, size * 0.35, -Math.PI/2, Math.PI/2, false);
+  ctx.lineTo(x + size * 0.35, y);
+  ctx.lineTo(x - size * 0.1, y);
+  ctx.closePath();
+  ctx.fill();
+  
+  // วาดขีดขวาง
+  const barWidth = size * 0.45;
+  const barHeight = size * 0.08;
+  const barX = x - size * 0.35;
+  const barY = y - barHeight / 2;
+  
+  ctx.fillRect(barX, barY, barWidth, barHeight);
+}
+
+// สร้าง texture
+function createTexture(ctx, width, height, baseColor, variance = 20) {
+  const imageData = ctx.createImageData(width, height);
+  const data = imageData.data;
+  
+  for (let i = 0; i < data.length; i += 4) {
+    const noise = (Math.random() - 0.5) * variance;
+    data[i] = Math.max(0, Math.min(255, baseColor.r + noise));
+    data[i+1] = Math.max(0, Math.min(255, baseColor.g + noise));
+    data[i+2] = Math.max(0, Math.min(255, baseColor.b + noise));
+    data[i+3] = 255;
+  }
+  
+  return imageData;
+}
+// แบบที่ 1: ทองสลัก
+function createIcon1() {
+  const canvas = document.getElementById('icon1');
+  const ctx = canvas.getContext('2d');
+  
+  // พื้นหลังหินดำ
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(0, 0, 512, 512);
+  const texture = createTexture(ctx, 512, 512, {r: 30, g: 30, b: 30}, 25);
+  ctx.putImageData(texture, 0, 0);
+  
+  // เงา
+  ctx.shadowColor = '#000';
+  ctx.shadowBlur = 25;
+  ctx.shadowOffsetX = 5;
+  ctx.shadowOffsetY = 5;
+  
+  // ตัว D ทอง
+  const gradient = ctx.createLinearGradient(150, 150, 350, 350);
+  gradient.addColorStop(0, '#f5d47a');
+  gradient.addColorStop(0.5, '#d4af37');
+  gradient.addColorStop(1, '#8b6914');
+  
+  drawCrossbarD(ctx, 256, 256, 300, gradient, 0);
+  
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+  
+  // ขอบ glow
+  ctx.strokeStyle = '#d4af3760';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(256, 256, 240, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
+// แบบที่ 2: หินอ่อน
+function createIcon2() {
+  const canvas = document.getElementById('icon2');
+  const ctx = canvas.getContext('2d');
+  
+  // พื้นหลังหินอ่อน
+  const gradient = ctx.createLinearGradient(0, 0, 512, 512);
+  gradient.addColorStop(0, '#d4c4b0');
+  gradient.addColorStop(0.5, '#c4b4a0');
+  gradient.addColorStop(1, '#b4a490');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 512, 512);
+    // Texture
+  for (let i = 0; i < 5000; i++) {
+    ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.1})`;
+    ctx.fillRect(Math.random() * 512, Math.random() * 512, 2, 2);
+  }
+  
+  // เงา embossed
+  ctx.shadowColor = 'rgba(0,0,0,0.5)';
+  ctx.shadowBlur = 15;
+  ctx.shadowOffsetX = 4;
+  ctx.shadowOffsetY = 4;
+  
+  // ตัว D สลัก
+  ctx.fillStyle = '#8b7355';
+  drawCrossbarD(ctx, 256, 256, 300, '#8b7355', 0);
+  
+  // Highlight
+  ctx.shadowColor = 'rgba(255,255,255,0.6)';
+  ctx.shadowBlur = 10;
+  ctx.shadowOffsetX = -2;
+  ctx.shadowOffsetY = -2;
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+  ctx.lineWidth = 2;
+  drawCrossbarD(ctx, 256, 256, 300, 'stroke', 2);
+  
+  ctx.shadowBlur = 0;
+}
+
+// แบบที่ 3: ทองคำเปลว + Glow
+function createIcon3() {
+  const canvas = document.getElementById('icon3');
+  const ctx = canvas.getContext('2d');
+  
+  // พื้นหลังดำ
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, 512, 512);
+  
+  // Glow พื้นหลัง
+  const glow = ctx.createRadialGradient(256, 256, 0, 256, 256, 300);
+  glow.addColorStop(0, '#1a1200');
+  glow.addColorStop(1, '#0a0a0a');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, 512, 512);
+  
+  // วงกลม
+  ctx.strokeStyle = '#d4af3730';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(256, 256, 240, 0, Math.PI * 2);
+  ctx.stroke();  
+  // Glow ตัว D
+  ctx.shadowColor = '#d4af37';
+  ctx.shadowBlur = 50;
+  
+  const gradient = ctx.createRadialGradient(200, 200, 0, 300, 300, 200);
+  gradient.addColorStop(0, '#fff8dc');
+  gradient.addColorStop(0.3, '#ffd700');
+  gradient.addColorStop(0.7, '#d4af37');
+  gradient.addColorStop(1, '#b8860b');
+  
+  drawCrossbarD(ctx, 256, 256, 300, gradient, 0);
+  
+  ctx.shadowBlur = 0;
+}
+
+// แบบที่ 4: บรอนซ์
+function createIcon4() {
+  const canvas = document.getElementById('icon4');
+  const ctx = canvas.getContext('2d');
+  
+  // พื้นหลัง
+  ctx.fillStyle = '#2a2a2a';
+  ctx.fillRect(0, 0, 512, 512);
+  const texture = createTexture(ctx, 512, 512, {r: 45, g: 45, b: 45}, 30);
+  ctx.putImageData(texture, 0, 0);
+  
+  // ตัว D บรอนซ์
+  const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 200);
+  gradient.addColorStop(0, '#cd7f32');
+  gradient.addColorStop(0.5, '#b87333');
+  gradient.addColorStop(1, '#8b4513');
+  
+  ctx.shadowColor = '#000';
+  ctx.shadowBlur = 20;
+  ctx.shadowOffsetX = 4;
+  ctx.shadowOffsetY = 4;
+  
+  drawCrossbarD(ctx, 256, 256, 300, gradient, 0);
+  
+  ctx.shadowBlur = 0;
+}
+
+// แบบที่ 5: เงิน
+function createIcon5() {
+  const canvas = document.getElementById('icon5');
+  const ctx = canvas.getContext('2d');
+  
+  // พื้นหลัง
+  ctx.fillStyle = '#0a0a0a';  ctx.fillRect(0, 0, 512, 512);
+  const texture = createTexture(ctx, 512, 512, {r: 15, g: 15, b: 15}, 20);
+  ctx.putImageData(texture, 0, 0);
+  
+  // ตัว D เงิน
+  const gradient = ctx.createLinearGradient(150, 150, 350, 350);
+  gradient.addColorStop(0, '#ffffff');
+  gradient.addColorStop(0.3, '#c0c0c0');
+  gradient.addColorStop(0.7, '#808080');
+  gradient.addColorStop(1, '#404040');
+  
+  ctx.shadowColor = '#c0c0c0';
+  ctx.shadowBlur = 30;
+  
+  drawCrossbarD(ctx, 256, 256, 300, gradient, 0);
+  
+  ctx.shadowBlur = 0;
+}
+
+// แบบที่ 6: 3D Gold
+function createIcon6() {
+  const canvas = document.getElementById('icon6');
+  const ctx = canvas.getContext('2d');
+  
+  // พื้นหลัง
+  const bg = ctx.createLinearGradient(0, 0, 512, 512);
+  bg.addColorStop(0, '#0a0a0a');
+  bg.addColorStop(1, '#1a1200');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, 512, 512);
+  
+  // วงกลมขอบ
+  ctx.strokeStyle = '#d4af37';
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.arc(256, 256, 235, 0, Math.PI * 2);
+  ctx.stroke();
+  
+  // ตัว D 3D
+  const gradient = ctx.createLinearGradient(150, 150, 350, 350);
+  gradient.addColorStop(0, '#f5d47a');
+  gradient.addColorStop(0.4, '#d4af37');
+  gradient.addColorStop(0.7, '#cd7f32');
+  gradient.addColorStop(1, '#b87333');
+  
+  ctx.shadowColor = '#d4af37';
+  ctx.shadowBlur = 30;
+  
+  drawCrossbarD(ctx, 256, 256, 300, gradient, 0);
+    ctx.shadowBlur = 0;
+}
+
+// ดาวน์โหลด
+function downloadIcon(canvasId, filename) {
+  const canvas = document.getElementById(canvasId);
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// สร้างทั้งหมด
+createIcon1();
+createIcon2();
+createIcon3();
+createIcon4();
+createIcon5();
+createIcon6();
+</script>
+</body>
+</html>

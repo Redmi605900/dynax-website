@@ -5,141 +5,330 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DYNAX Block Explorer</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
-body { background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%); min-height: 100vh; color: white; padding: 20px; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #0a0a0a;
+  color: #fff;
+  padding: 20px;
+}
 .container { max-width: 1200px; margin: 0 auto; }
-.header { text-align: center; margin-bottom: 30px; padding: 20px; background: rgba(247,147,26,0.1); border-radius: 20px; border: 2px solid rgba(247,147,26,0.3); }
-.header h1 { color: #F7931A; font-size: 32px; margin-bottom: 10px; }
-.header p { color: #888; font-size: 14px; }
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
-.stat-card { background: rgba(247,147,26,0.1); border: 2px solid rgba(247,147,26,0.3); border-radius: 15px; padding: 20px; text-align: center; }
-.stat-card h3 { color: #F7931A; font-size: 14px; margin-bottom: 10px; }
-.stat-card .value { font-size: 28px; font-weight: bold; color: white; }
-.tabs { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
-.tab { padding: 12px 24px; background: rgba(247,147,26,0.1); border: 2px solid rgba(247,147,26,0.3); border-radius: 10px; cursor: pointer; color: white; font-weight: 600; }
-.tab.active { background: linear-gradient(135deg, #F7931A, #FFA500); border-color: #F7931A; }
-.content { background: rgba(0,0,0,0.3); border-radius: 15px; padding: 20px; margin: 20px 0; min-height: 200px; }
-.block-item, .tx-item, .contract-item { background: rgba(247,147,26,0.05); border: 1px solid rgba(247,147,26,0.2); border-radius: 10px; padding: 15px; margin: 10px 0; }
-.block-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-.block-number { font-size: 20px; font-weight: bold; color: #F7931A; }
-.block-hash { font-size: 12px; color: #888; font-family: monospace; word-break: break-all; }
-.label { color: #888; font-size: 12px; }
-.value-highlight { color: #F7931A; font-weight: bold; }
-.loading { text-align: center; padding: 40px; color: #888; }
+.header {
+  text-align: center;
+  padding: 30px 20px;
+  background: linear-gradient(135deg, #1a1200, #0a0a0a);
+  border: 2px solid #d4af3730;
+  border-radius: 16px;
+  margin-bottom: 30px;
+}
+.title {
+  font-size: 32px;
+  background: linear-gradient(135deg, #d4af37, #f5d47a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 10px;
+}
+.subtitle { color: #888; font-size: 14px; }
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 30px;
+}
+.stat-card {
+  background: #111;
+  border: 1px solid #d4af3730;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+.stat-value {
+  font-size: 28px;  font-weight: bold;
+  color: #d4af37;
+  margin-bottom: 5px;
+}
+.stat-label { color: #888; font-size: 13px; }
+.status-online { color: #00ff88; }
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.tab {
+  background: #111;
+  border: 1px solid #d4af3730;
+  color: #888;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.tab:hover { background: #1a1a1a; }
+.tab.active {
+  background: linear-gradient(135deg, #d4af37, #f5d47a);
+  color: #0a0a0a;
+  font-weight: bold;
+}
+.content {
+  background: #111;
+  border: 1px solid #d4af3730;
+  border-radius: 12px;
+  padding: 20px;
+  min-height: 400px;
+}
+.section-title {
+  color: #d4af37;
+  font-size: 20px;
+  margin-bottom: 20px;
+}
+.block-item, .tx-item, .contract-item {
+  background: #1a1a1a;
+  border: 1px solid #d4af3720;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 10px;
+}
+.block-header, .tx-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;  margin-bottom: 10px;
+}
+.block-number {
+  color: #d4af37;
+  font-weight: bold;
+  font-size: 16px;
+}
+.timestamp { color: #666; font-size: 12px; }
+.block-hash, .tx-hash {
+  color: #888;
+  font-size: 12px;
+  word-break: break-all;
+  margin-bottom: 8px;
+}
+.block-info {
+  color: #aaa;
+  font-size: 13px;
+}
+.tx-from, .tx-to {
+  font-size: 12px;
+  margin-bottom: 5px;
+  word-break: break-all;
+}
+.tx-amount {
+  color: #d4af37;
+  font-weight: bold;
+}
+.from-address { color: #00ff88; }
+.to-address { color: #ff8800; }
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+.error-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #ff4444;
+}
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #888;
+}
+.refresh-btn {
+  background: linear-gradient(135deg, #d4af37, #f5d47a);
+  color: #0a0a0a;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 6px;  cursor: pointer;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
 </style>
 </head>
 <body>
 <div class="container">
-    <div class="header">
-        <h1> DYNAX Block Explorer</h1>
-        <p>Layer 1 Blockchain Explorer</p>
+  <div class="header">
+    <h1 class="title">DYNAX Block Explorer</h1>
+    <p class="subtitle">Layer 1 Blockchain Explorer</p>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-value" id="totalBlocks">-</div>
+      <div class="stat-label">Total Blocks</div>
     </div>
-    
-    <div class="stats">
-        <div class="stat-card"><h3>Total Blocks</h3><div class="value" id="total-blocks">-</div></div>
-        <div class="stat-card"><h3>Total Transactions</h3><div class="value" id="total-txs">-</div></div>
-        <div class="stat-card"><h3>Smart Contracts</h3><div class="value" id="total-contracts">-</div></div>
-        <div class="stat-card"><h3>Network Status</h3><div class="value" style="color: #34C759;">● Online</div></div>
+    <div class="stat-card">
+      <div class="stat-value" id="totalTx">-</div>
+      <div class="stat-label">Total Transactions</div>
     </div>
-    
-    <div class="tabs">
-        <div class="tab active" onclick="showTab('blocks')">📦 Blocks</div>
-        <div class="tab" onclick="showTab('transactions')">💸 Transactions</div>
-        <div class="tab" onclick="showTab('contracts')">🧠 Smart Contracts</div>
-    </div>    
-    <div class="content" id="content"><div class="loading">Loading...</div></div>
+    <div class="stat-card">
+      <div class="stat-value" id="totalContracts">-</div>
+      <div class="stat-label">Smart Contracts</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value status-online">● Online</div>
+      <div class="stat-label">Network Status</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('blocks')">📦 Blocks</button>
+    <button class="tab" onclick="showTab('transactions')">💸 Transactions</button>
+    <button class="tab" onclick="showTab('contracts')">🧠 Smart Contracts</button>
+  </div>
+
+  <div class="content">
+    <!-- Blocks Tab -->
+    <div id="blocksTab">
+      <h2 class="section-title">Latest Blocks</h2>
+      <button class="refresh-btn" onclick="loadBlocks()">Refresh Blocks</button>
+      <div id="blocksList"></div>
+    </div>
+
+    <!-- Transactions Tab -->
+    <div id="transactionsTab" style="display:none;">
+      <h2 class="section-title">Recent Transactions</h2>
+      <button class="refresh-btn" onclick="loadTransactions()">Refresh Transactions</button>      <div id="txList"></div>
+    </div>
+
+    <!-- Smart Contracts Tab -->
+    <div id="contractsTab" style="display:none;">
+      <h2 class="section-title">Smart Contracts</h2>
+      <button class="refresh-btn" onclick="loadContracts()">Refresh Contracts</button>
+      <div id="contractsList"></div>
+    </div>
+  </div>
 </div>
 
 <script>
-let currentTab = 'blocks';
+// API URL - ใช้ localtunnel
+const API_URL = 'https://dynax-node.loca.lt';
 
-async function loadStats() {
-    try {
-        const res = await fetch('/api/stats');
-        const data = await res.json();
-        document.getElementById('total-blocks').textContent = data.total_blocks || '-';
-        document.getElementById('total-txs').textContent = data.total_transactions || '-';
-        document.getElementById('total-contracts').textContent = data.total_contracts || '-';
-    } catch (e) { console.error(e); }
+function showTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('[id$="Tab"]').forEach(t => t.style.display = 'none');
+  
+  event.target.classList.add('active');
+  document.getElementById(tab + 'Tab').style.display = 'block';
 }
 
 async function loadBlocks() {
-    try {
-        const res = await fetch('http://127.0.0.1:6002/blocks');
-        const blocks = await res.json();
-        let html = '<h2 style="color: #F7931A; margin-bottom: 15px;">Latest Blocks</h2>';
-        blocks.slice().reverse().slice(0, 20).forEach(block => {
-            html += '<div class="block-item">';
-            html += '<div class="block-header"><div class="block-number">Block #' + block.index + '</div>';
-            html += '<div class="label">' + new Date(block.timestamp * 1000).toLocaleString() + '</div></div>';
-            html += '<div class="block-hash">Hash: ' + block.hash + '</div>';
-            html += '<div style="margin-top: 10px;"><span class="label">Transactions: </span>';
-            html += '<span class="value-highlight">' + (block.transactions ? block.transactions.length : 0) + '</span>';
-            html += ' | <span class="label">Nonce: </span><span class="value-highlight">' + block.nonce + '</span></div></div>';
-        });
-        document.getElementById('content').innerHTML = html;
-    } catch (e) { document.getElementById('content').innerHTML = '<div class="loading">Error loading blocks</div>'; }
+  try {
+    const response = await fetch(`${API_URL}/blocks`);
+    const blocks = await response.json();
+    
+    document.getElementById('totalBlocks').textContent = blocks.length;
+    
+    const container = document.getElementById('blocksList');
+    if (blocks.length === 0) {
+      container.innerHTML = '<div class="empty-state">No blocks yet</div>';
+      return;
+    }
+    
+    container.innerHTML = blocks.map(block => `
+      <div class="block-item">
+        <div class="block-header">
+          <span class="block-number">Block #${block.index}</span>
+          <span class="timestamp">${new Date(block.timestamp).toLocaleString()}</span>
+        </div>
+        <div class="block-hash">Hash: ${block.hash}</div>
+        <div class="block-info">
+          Transactions: ${block.transactions ? block.transactions.length : 0} | 
+          Nonce: ${block.nonce}
+        </div>
+      </div>
+    `).join('');  } catch (error) {
+    document.getElementById('blocksList').innerHTML = 
+      `<div class="error-state">Error loading blocks: ${error.message}</div>`;
+  }
 }
 
 async function loadTransactions() {
-    try {
-        const res = await fetch('http://127.0.0.1:6002/blocks');
-        const blocks = await res.json();
-        let html = '<h2 style="color: #F7931A; margin-bottom: 15px;">Recent Transactions</h2>';
-        let txs = [];
-        blocks.forEach(block => {
-            if (block.transactions) {
-                block.transactions.forEach(tx => { txs.push({...tx, block: block.index, timestamp: block.timestamp}); });
-            }
+  try {
+    const response = await fetch(`${API_URL}/blocks`);
+    const blocks = await response.json();
+    
+    // รวม transactions จากทุก blocks
+    const allTx = [];
+    blocks.forEach(block => {
+      if (block.transactions) {
+        block.transactions.forEach(tx => {
+          allTx.push({ ...tx, blockIndex: block.index, timestamp: block.timestamp });
         });
-        txs.slice().reverse().slice(0, 30).forEach(tx => {
-            html += '<div class="tx-item">';
-            html += '<div style="display: flex; justify-content: space-between; margin-bottom: 8px;">';
-            html += '<span class="label">Block #' + tx.block + '</span>';            html += '<span class="label">' + new Date(tx.timestamp * 1000).toLocaleString() + '</span></div>';
-            html += '<div style="margin-bottom: 5px;"><span class="label">From: </span><span style="color: #34C759;">' + (tx.from || 'GENESIS') + '</span></div>';
-            html += '<div style="margin-bottom: 5px;"><span class="label">To: </span><span style="color: #FF9500;">' + (tx.to || 'MINER') + '</span></div>';
-            html += '<div><span class="label">Amount: </span><span class="value-highlight">' + tx.amount + ' DYX</span></div></div>';
-        });
-        document.getElementById('content').innerHTML = html;
-    } catch (e) { document.getElementById('content').innerHTML = '<div class="loading">Error loading transactions</div>'; }
+      }
+    });
+    
+    document.getElementById('totalTx').textContent = allTx.length;
+    
+    const container = document.getElementById('txList');
+    if (allTx.length === 0) {
+      container.innerHTML = '<div class="empty-state">No transactions yet</div>';
+      return;
+    }
+    
+    container.innerHTML = allTx.map(tx => `
+      <div class="tx-item">
+        <div class="tx-header">
+          <span class="block-number">Block #${tx.blockIndex}</span>
+          <span class="timestamp">${new Date(tx.timestamp).toLocaleString()}</span>
+        </div>
+        <div class="tx-from">
+          <span class="from-address">From: ${tx.from || 'SYSTEM'}</span>
+        </div>
+        <div class="tx-to">
+          <span class="to-address">To: ${tx.to}</span>
+        </div>
+        <div class="tx-amount">Amount: ${tx.amount} DYX</div>
+      </div>
+    `).join('');
+  } catch (error) {
+    document.getElementById('txList').innerHTML = 
+      `<div class="error-state">Error loading transactions: ${error.message}</div>`;
+  }
 }
-
 async function loadContracts() {
-    try {
-        const res = await fetch('/api/contracts');
-        const data = await res.json();
-        let html = '<h2 style="color: #F7931A; margin-bottom: 15px;">Smart Contracts</h2>';
-        if (!data.contracts || data.contracts.length === 0) {
-            html += '<div class="loading">No contracts deployed yet</div>';
-        } else {
-            data.contracts.forEach(contract => {
-                html += '<div class="contract-item">';
-                html += '<div style="margin-bottom: 8px;"><span class="label">Contract ID: </span><span class="value-highlight">' + contract.id + '</span></div>';
-                html += '<div style="margin-bottom: 8px;"><span class="label">Creator: </span><span style="color: #34C759;">' + contract.creator + '</span></div>';
-                html += '<div><span class="label">Deployed: </span><span>' + new Date(contract.timestamp * 1000).toLocaleString() + '</span></div></div>';
-            });
-        }
-        document.getElementById('content').innerHTML = html;
-    } catch (e) { document.getElementById('content').innerHTML = '<div class="loading">Error loading contracts</div>'; }
+  try {
+    const response = await fetch(`${API_URL}/contracts`);
+    const contracts = await response.json();
+    
+    const container = document.getElementById('contractsList');
+    
+    if (!contracts || contracts.length === 0) {
+      document.getElementById('totalContracts').textContent = '0';
+      container.innerHTML = `
+        <div class="empty-state">
+          <h3>No Smart Contracts Deployed Yet</h3>
+          <p>Smart contracts will appear here once deployed</p>
+        </div>
+      `;
+      return;
+    }
+    
+    document.getElementById('totalContracts').textContent = contracts.length;
+    
+    container.innerHTML = contracts.map(contract => `
+      <div class="contract-item">
+        <div class="block-header">
+          <span class="block-number">Contract: ${contract.id || contract.address}</span>
+        </div>
+        <div class="block-hash">${contract.code ? contract.code.substring(0, 100) + '...' : 'No code'}</div>
+      </div>
+    `).join('');
+  } catch (error) {
+    document.getElementById('totalContracts').textContent = '0';
+    document.getElementById('contractsList').innerHTML = `
+      <div class="empty-state">
+        <h3>No Smart Contracts Deployed Yet</h3>
+        <p>Smart contracts will appear here once deployed</p>
+      </div>
+    `;
+  }
 }
 
-function showTab(tab) {
-    currentTab = tab;
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    event.target.classList.add('active');
-    if (tab === 'blocks') loadBlocks();
-    else if (tab === 'transactions') loadTransactions();
-    else if (tab === 'contracts') loadContracts();
-}
-
-loadStats();
+// โหลดข้อมูลครั้งแรก
 loadBlocks();
-setInterval(() => {
-    loadStats();
-    if (currentTab === 'blocks') loadBlocks();
-    else if (currentTab === 'transactions') loadTransactions();
-    else if (currentTab === 'contracts') loadContracts();
-}, 10000);
 </script>
 </body>
 </html>
