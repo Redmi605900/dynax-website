@@ -1,172 +1,192 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>DYNAX DEX</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-body{background:#0a0e1a;color:#fff;font-family:Arial;margin:0;padding:20px}
-h1{color:#00e5ff;text-align:center}
-.card{background:#1a1e2e;padding:20px;border-radius:10px;margin:15px 0;border:1px solid #00e5ff}
-input{width:100%;padding:10px;margin:8px 0;background:#0d1117;color:#fff;border:1px solid #00e5ff;border-radius:5px;box-sizing:border-box}
-button{width:100%;padding:12px;background:#00e5ff;color:#000;border:none;border-radius:5px;cursor:pointer;font-weight:bold;margin:5px 0}
-button:hover{background:#00b8d4}
-.result{background:#0d1117;padding:10px;border-radius:5px;margin-top:10px;word-break:break-all;font-size:13px}
-.success{color:#00e5ff}
-.error{color:#ff5555}
-.info{color:#aaa;font-size:12px;margin:5px 0}
-</style>
+    <title>DYNAX DEX</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body{background:#0a0e1a;color:#fff;font-family:Arial;margin:0;padding:20px}
+        h1{color:#00e5ff;text-align:center}
+        .card{background:#1a1e2e;padding:20px;border-radius:10px;margin:15px 0;border:1px solid #00e5ff}
+        input{width:100%;padding:10px;margin:8px 0;background:#0d1117;color:#fff;border:1px solid #00e5ff;border-radius:5px;box-sizing:border-box}
+        button{width:100%;padding:12px;background:#00e5ff;color:#000;border:none;border-radius:5px;cursor:pointer;font-weight:bold;margin:5px 0}
+        button:hover{background:#00b8d4}
+        .result{background:#0d1117;padding:10px;border-radius:5px;margin-top:10px;word-break:break-all;font-size:13px}
+        .success{color:#00e5ff}
+        .error{color:#ff5555}
+        .info{color:#aaa;font-size:12px;margin:5px 0}
+    </style>
 </head>
 <body>
-<h1>⛓️ DYNAX DEX</h1>
-<p style="text-align:center;color:#aaa">DYNAX/1.0 | Testnet</p>
+    <h1>⛓️ DYNAX DEX</h1>
+    <p style="text-align:center;color:#aaa">DYNAX/1.0 | Testnet</p>
 
-<div class="card">
-<h3>🔍 Check Balance</h3>
-<input id="balAddr" placeholder="DX address...">
-<button onclick="checkBalance()">Check Balance</button>
-<div id="balResult" class="result" style="display:none"></div>
-</div>
+    <div class="card">
+        <h3>🔍 Check Balance</h3>
+        <input id="balAddr" placeholder="DX address...">
+        <button onclick="checkBalance()">Check Balance</button>
+        <div id="balResult" class="result" style="display:none"></div>
+    </div>
 
-<div class="card">
-<h3>💸 Send DYX</h3>
-<p class="info">⚠️ Testnet only - requires SECRET_KEY signature</p>
-<input id="fromAddr" placeholder="From address (DX...)">
-<input id="toAddr" placeholder="To address (DX...)">
-<input id="amount" type="number" placeholder="Amount DYX">
-<input id="secretKey" type="password" placeholder="Secret Key (DYNAX_SECRET_v1)">
-<button onclick="sendDYX()">Send DYX</button>
-<div id="sendResult" class="result" style="display:none"></div>
-</div>
+    <div class="card">
+        <h3>💸 Send DYX</h3>
+        <p class="info">⚠️ Testnet only - requires SECRET_KEY signature</p>
+        <input id="fromAddr" placeholder="From address (DX...)">
+        <input id="toAddr" placeholder="To address (DX...)">
+        <input id="amount" type="number" placeholder="Amount DYX">
+        <input id="secretKey" type="password" placeholder="Secret Key (DYNAX_SECRET_v1)">
+        <button onclick="sendDYX()">Send DYX</button>
+        <div id="sendResult" class="result" style="display:none"></div>
+    </div>
 
-<div class="card">
-<h3>📦 Latest Blocks</h3>
-<button onclick="loadBlocks()">Refresh Blocks</button>
-<div id="blocksResult" class="result" style="display:none"></div>
-</div>
+    <div class="card">
+        <h3>📦 Latest Blocks</h3>
+        <button onclick="loadBlocks()">Refresh Blocks</button>
+        <div id="blocksResult" class="result" style="display:none"></div>
+    </div>
+    <div class="card">
+        <h3>⛏️ Mine Block</h3>
+        <input id="minerAddr" placeholder="Miner address (DX...)">
+        <button onclick="mineBlock()">Mine Block (+50 DYX)</button>
+        <div id="mineResult" class="result" style="display:none"></div>
+    </div>
 
-<div class="card">
-<h3>⛏️ Mine Block</h3>
-<input id="minerAddr" placeholder="Miner address (DX...)">
-<button onclick="mineBlock()">Mine Block (+50 DYX)</button>
-<div id="mineResult" class="result" style="display:none"></div>
-</div>
+    <div class="card">
+        <h3>📊 Node Status</h3>
+        <button onclick="loadStatus()">Check Status</button>
+        <div id="statusResult" class="result" style="display:none"></div>
+    </div>
 
-<div class="card">
-<h3>📊 Node Status</h3>
-<button onclick="loadStatus()">Check Status</button>
-<div id="statusResult" class="result" style="display:none"></div>
-</div>
+    <script>
+        const API = 'https://dynax-node2.onrender.com';
 
-<script>
-const API = 'https://dynax-node2.onrender.com';
-
-async function checkBalance() {
-    const addr = document.getElementById('balAddr').value.trim();
-    if(!addr) return alert('Enter address');
-    const el = document.getElementById('balResult');
-    el.style.display='block';
-    el.innerHTML='Loading...';
-    try {
-        const r = await fetch(`${API}/balance/${addr}`);
-        const d = await r.json();
-        el.innerHTML = `<span class="success">Balance: ${d.balance} ${d.symbol}</span>`;
-    } catch(e) {
-        el.innerHTML = `<span class="error">Error: ${e.message}</span>`;
-    }
-}
-
-async function sendDYX() {
-    const from = document.getElementById('fromAddr').value.trim();
-    const to = document.getElementById('toAddr').value.trim();
-    const amount = parseFloat(document.getElementById('amount').value);
-    const secret = document.getElementById('secretKey').value.trim();
-    if(!from||!to||!amount||!secret) return alert('Fill all fields');
-    
-    const el = document.getElementById('sendResult');
-    el.style.display='block';
-    el.innerHTML='Signing & Sending...';
-    
-    try {
-        const sig = await signTx(from, to, amount, secret);
-        const r = await fetch(`${API}/send`, {
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({from,to,amount,signature:sig})
-        });
-        const d = await r.json();
-        if(d.success) {
-            el.innerHTML = `<span class="success">✅ TX Sent!<br>TXID: ${d.txid}</span>`;
-        } else {
-            el.innerHTML = `<span class="error">❌ ${d.error}</span>`;
+        async function checkBalance() {
+            const addr = document.getElementById('balAddr').value.trim();
+            if(!addr) return alert('Enter address');
+            
+            const el = document.getElementById('balResult');
+            el.style.display='block';
+            el.innerHTML='Loading...';
+            
+            try {
+                const r = await fetch(`${API}/balance/${addr}`);
+                const d = await r.json();
+                const balance = d.balance !== undefined ? d.balance : 0;
+                const symbol = d.symbol || 'DYX';
+                el.innerHTML = `<span class="success">Balance: ${balance} ${symbol}</span>`;
+            } catch(e) {
+                el.innerHTML = `<span class="error">Error: ${e.message}</span>`;
+            }
         }
-    } catch(e) {
-        el.innerHTML = `<span class="error">Error: ${e.message}</span>`;
-    }
-}
 
-async function signTx(from, to, amount, secret) {
-    const canonical = JSON.stringify({amount,from,to});
-    const enc = new TextEncoder();
-    const key = await crypto.subtle.importKey('raw', enc.encode(secret), {name:'HMAC',hash:'SHA-256'}, false, ['sign']);
-    const sig = await crypto.subtle.sign('HMAC', key, enc.encode(canonical));
-    return Array.from(new Uint8Array(sig)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-
-async function loadBlocks() {
-    const el = document.getElementById('blocksResult');
-    el.style.display='block';
-    el.innerHTML='Loading...';
-    try {
-        const r = await fetch(`${API}/chain`);
-        const blocks = await r.json();
-        el.innerHTML = blocks.slice(-3).reverse().map(b=>
-            `<div style="border-bottom:1px solid #333;padding:5px 0">
-            <span class="success">Block #${b.index}</span> | 
-            TX: ${b.tx_count} | 
-            Hash: ${b.hash.substring(0,16)}...
-            </div>`
-        ).join('');
-    } catch(e) {
-        el.innerHTML = `<span class="error">Error: ${e.message}</span>`;
-    }
-}
-
-async function mineBlock() {
-    const addr = document.getElementById('minerAddr').value.trim();
-    if(!addr) return alert('Enter miner address');
-    const el = document.getElementById('mineResult');
-    el.style.display='block';
-    el.innerHTML='Mining...';
-    try {
-        const r = await fetch(`${API}/mine/${addr}`);
-        const d = await r.json();
-        if(d.success) {
-            el.innerHTML = `<span class="success">✅ Block #${d.block.index} mined!<br>Hash: ${d.block.hash.substring(0,20)}...</span>`;
+        async function sendDYX() {
+            const from = document.getElementById('fromAddr').value.trim();
+            const to = document.getElementById('toAddr').value.trim();
+            const amount = parseFloat(document.getElementById('amount').value);
+            const secret = document.getElementById('secretKey').value.trim();
+            
+            if(!from||!to||!amount||!secret) return alert('Fill all fields');
+            
+            const el = document.getElementById('sendResult');
+            el.style.display='block';
+            el.innerHTML='Signing & Sending...';
+            
+            try {
+                const sig = await signTx(from, to, amount, secret);
+                const r = await fetch(`${API}/send`, {                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({from,to,amount,signature:sig})
+                });
+                const d = await r.json();
+                if(d.success) {
+                    el.innerHTML = `<span class="success">✅ TX Sent!<br>TXID: ${d.txid || 'N/A'}</span>`;
+                } else {
+                    el.innerHTML = `<span class="error">❌ ${d.error || 'Transaction failed'}</span>`;
+                }
+            } catch(e) {
+                el.innerHTML = `<span class="error">Error: ${e.message}</span>`;
+            }
         }
-    } catch(e) {
-        el.innerHTML = `<span class="error">Error: ${e.message}</span>`;
-    }
-}
 
-async function loadStatus() {
-    const el = document.getElementById('statusResult');
-    el.style.display='block';
-    el.innerHTML='Loading...';
-    try {
-        const r = await fetch(`${API}/`);
-        const d = await r.json();
-        el.innerHTML = `<span class="success">
-        Name: ${d.name} | Version: ${d.version}<br>
-        Blocks: ${d.blocks} | Mempool: ${d.mempool}<br>
-        Reward: ${d.reward} DYX | Valid: ${d.valid}
-        </span>`;
-    } catch(e) {
-        el.innerHTML = `<span class="error">Error: ${e.message}</span>`;
-    }
-}
+        async function signTx(from, to, amount, secret) {
+            const canonical = JSON.stringify({amount,from,to});
+            const enc = new TextEncoder();
+            const key = await crypto.subtle.importKey('raw', enc.encode(secret), {name:'HMAC',hash:'SHA-256'}, false, ['sign']);
+            const sig = await crypto.subtle.sign('HMAC', key, enc.encode(canonical));
+            return Array.from(new Uint8Array(sig)).map(b=>b.toString(16).padStart(2,'0')).join('');
+        }
 
-loadStatus();
-loadBlocks();
-</script>
+        async function loadBlocks() {
+            const el = document.getElementById('blocksResult');
+            el.style.display='block';
+            el.innerHTML='Loading...';
+            
+            try {
+                const r = await fetch(`${API}/chain`);
+                const blocks = await r.json();
+                el.innerHTML = blocks.slice(-3).reverse().map(b => {
+                    const index = b.index || b.height || 0;
+                    const txCount = b.tx_count || b.transactions || 0;
+                    const hash = b.hash || 'N/A';
+                    return `<div style="border-bottom:1px solid #333;padding:5px 0">
+                        <span class="success">Block #${index}</span> | 
+                        TX: ${txCount} | 
+                        Hash: ${hash.substring(0,16)}...
+                    </div>`;
+                }).join('');
+            } catch(e) {
+                el.innerHTML = `<span class="error">Error: ${e.message}</span>`;
+            }
+        }
+
+        async function mineBlock() {
+            const addr = document.getElementById('minerAddr').value.trim();
+            if(!addr) return alert('Enter miner address');
+                        const el = document.getElementById('mineResult');
+            el.style.display='block';
+            el.innerHTML='Mining...';
+            
+            try {
+                const r = await fetch(`${API}/mine/${addr}`);
+                const d = await r.json();
+                if(d.success) {
+                    const blockIndex = d.block ? d.block.index : 'N/A';
+                    const blockHash = d.block ? d.block.hash : 'N/A';
+                    el.innerHTML = `<span class="success">✅ Block #${blockIndex} mined!<br>Hash: ${blockHash.substring(0,20)}...</span>`;
+                } else {
+                    el.innerHTML = `<span class="error">❌ ${d.error || 'Mining failed'}</span>`;
+                }
+            } catch(e) {
+                el.innerHTML = `<span class="error">Error: ${e.message}</span>`;
+            }
+        }
+
+        async function loadStatus() {
+            const el = document.getElementById('statusResult');
+            el.style.display='block';
+            el.innerHTML='Loading...';
+            
+            try {
+                const r = await fetch(`${API}/`);
+                const d = await r.json();
+                const name = d.name || 'DYNAX Node';
+                const version = d.version || '1.0';
+                const blocks = d.blocks || 0;
+                const mempool = d.mempool || 0;
+                const reward = d.reward || 50;
+                const valid = d.valid || 'N/A';
+                
+                el.innerHTML = `<span class="success">
+                    Name: ${name} | Version: ${version}<br>
+                    Blocks: ${blocks} | Mempool: ${mempool}<br>
+                    Reward: ${reward} DYX | Valid: ${valid}
+                </span>`;
+            } catch(e) {
+                el.innerHTML = `<span class="error">Error: ${e.message}</span>`;
+            }
+        }
+
+        loadStatus();
+        loadBlocks();
+    </script>
 </body>
 </html>
