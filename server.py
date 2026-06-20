@@ -1,4 +1,4 @@
-from flask import Flask, send_file, send_from_directory, jsonify
+from flask import Flask, send_file, jsonify
 import os
 
 app = Flask(__name__, static_folder='assets', static_url_path='/assets')
@@ -9,16 +9,7 @@ def home():
 
 @app.route('/dex')
 def dex_page():
-    return send_from_directory('.', 'dex.html')
-
-@app.route('/api/stats')
-def api_stats():
-    return jsonify({
-        'blocks': 24,
-        'transactions': 37,
-        'contracts': 2,
-        'status': 'online'
-    })
+    return send_file('dex.html')
 
 @app.route('/explorer')
 def explorer_page():
@@ -31,6 +22,15 @@ def wallet_page():
 @app.route('/whitepaper')
 def whitepaper():
     return send_file('whitepaper.html')
+
+@app.route('/api/stats')
+def api_stats():
+    return jsonify({
+        'blocks': 24,
+        'transactions': 37,
+        'contracts': 2,
+        'status': 'online'
+    })
 
 @app.route('/manifest.json')
 def manifest():
