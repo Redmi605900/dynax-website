@@ -5,7 +5,7 @@ import requests
 app = Flask(__name__, static_folder='assets', static_url_path='/assets')
 
 # ใช้ localtunnel Node
-NODE_URL = "https://dynax-node.loca.lt"
+NODE_URL = "http://172.17.78.115:6002"
 
 @app.route('/')
 def home():
