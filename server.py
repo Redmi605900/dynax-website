@@ -4,7 +4,9 @@ import requests
 
 app = Flask(__name__, static_folder='assets', static_url_path='/assets')
 
-NODE_URL = "https://dynax-node.loca.lt"
+# ใช้ IP ตรงของเครื่อง (ต้องอยู่ในวงเดียวกัน)
+NODE_URL = "http://172.17.78.115:6002"
+DEX_URL = "http://172.17.78.115:6004"
 
 @app.route('/')
 def home():
@@ -42,23 +44,23 @@ def whitepaper():
 @app.route('/manifest.json')
 def manifest():
     return send_file('manifest.json', mimetype='application/json')
-
-@app.route('/sw.js')def sw():
+@app.route('/sw.js')
+def sw():
     return send_file('sw.js', mimetype='application/javascript')
 
 # Proxy routes สำหรับ DEX
 @app.route('/balance/<addr>')
 def proxy_balance(addr):
     try:
-        r = requests.get(f"{NODE_URL}/balance/{addr}", timeout=10)
+        r = requests.get(f"{NODE_URL}/balance/{addr}", timeout=5)
         return jsonify(r.json())
     except Exception as e:
-        return jsonify({'error': str(e), 'node_url': NODE_URL}), 503
+        return jsonify({'error': str(e)}), 503
 
 @app.route('/send', methods=['POST'])
 def proxy_send():
     try:
-        r = requests.post(f"{NODE_URL}/send", json=request.json, timeout=10)
+        r = requests.post(f"{NODE_URL}/send", json=request.json, timeout=5)
         return jsonify(r.json())
     except Exception as e:
         return jsonify({'error': str(e)}), 503
@@ -66,7 +68,7 @@ def proxy_send():
 @app.route('/chain')
 def proxy_chain():
     try:
-        r = requests.get(f"{NODE_URL}/chain", timeout=10)
+        r = requests.get(f"{NODE_URL}/chain", timeout=5)
         return jsonify(r.json())
     except Exception as e:
         return jsonify({'error': str(e)}), 503
@@ -74,18 +76,33 @@ def proxy_chain():
 @app.route('/mine/<addr>')
 def proxy_mine(addr):
     try:
-        r = requests.get(f"{NODE_URL}/mine/{addr}", timeout=10)
+        r = requests.get(f"{NODE_URL}/mine/{addr}", timeout=5)
         return jsonify(r.json())
     except Exception as e:
         return jsonify({'error': str(e)}), 503
 
-@app.route('/')
-def proxy_root():
+@app.route('/blocks')
+def proxy_blocks():
     try:
-        r = requests.get(NODE_URL, timeout=10)
+        r = requests.get(f"{NODE_URL}/blocks", timeout=5)
+        return jsonify(r.json())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 503
+
+@app.route('/transactions')
+def proxy_transactions():
+    try:
+        r = requests.get(f"{NODE_URL}/transactions", timeout=5)        return jsonify(r.json())
+    except:
+        return jsonify([]), 200
+
+@app.route('/contracts')
+def proxy_contracts():
+    try:
+        r = requests.get(f"{NODE_URL}/contracts", timeout=5)
         return jsonify(r.json())
     except:
-        return jsonify({'status': 'running', 'network': 'DYNAX Testnet'})
+        return jsonify([]), 200
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
