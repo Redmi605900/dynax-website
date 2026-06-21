@@ -35,6 +35,20 @@ class DynaxNode:
         self.CHAIN_FILE = "dynax_chain.json"
         self.load_chain()
 
+# Load chain from backup if exists
+import os
+if os.path.exists('chain_backup.json'):
+    try:
+        with open('chain_backup.json', 'r') as f:
+            backup_chain = json.load(f)
+            if isinstance(backup_chain, list) and len(backup_chain) > len(blockchain):
+                blockchain.clear()
+                blockchain.extend(backup_chain)
+                print(f"Loaded {len(blockchain)} blocks from chain_backup.json")
+    except Exception as e:
+        print(f"Error loading backup: {e}")
+
+
     def load_chain(self):
         if os.path.exists(self.CHAIN_FILE):
             try:
