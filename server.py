@@ -27,8 +27,17 @@ def whitepaper():
 def api_stats():
     try:
         import requests
-        r = requests.get('https://dynax-node2.onrender.com/stats', timeout=5)
-        return jsonify(r.json())
+        r = requests.get('https://dynax-node2.onrender.com/', timeout=5)
+        data = r.json()
+        return jsonify({
+            'blocks': data.get('blocks', 0),
+            'transactions': 0,
+            'nodes': 1,
+            'difficulty': 4,
+            'symbol': 'DYX',
+            'reward': 50,
+            'status': 'online'
+        })
     except:
         return jsonify({'blocks': 0, 'transactions': 0, 'nodes': 1, 'status': 'online'})
 
