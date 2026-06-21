@@ -308,13 +308,15 @@
         }
 
         function updateStats() {
+    console.log('=== UPDATE STATS STARTED ===');
+    console.log('API URL:', NODE_URL);
             console.log('Updating stats...');
-            fetch(NODE_URL + '/chain')
+            fetch(NODE_URL + '/chain').then(r => { console.log('Chain response:', r.status); return r; })
                 .then(res => {
                     console.log('Response status:', res.status);
                     return res.json();
                 })
-                .then(blocks => {
+                .then(data => { console.log('Raw data:', data); const blocks = Array.isArray(data) ? data : (data.chain || []); console.log('Blocks array:', blocks.length);
                     console.log('Blocks loaded:', blocks.length);
                     document.getElementById('stat-blocks').textContent = blocks.length;
                     let txCount = 0;
@@ -481,7 +483,7 @@
         }
 
         async function loadBlocks() {
-            const res = await fetch(NODE_URL + '/chain');
+            const res = await fetch(NODE_URL + '/chain').then(r => { console.log('Chain response:', r.status); return r; });
             const blocks = await res.json();
             displayBlocks(blocks);
         }
