@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test API</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="background:#000;color:#0f0;padding:20px;font-family:monospace">
+    <h1>DYNAX API Test</h1>
+    <div id="result">Loading...</div>
+    
+    <script>
+        const API = 'https://dynax-node2.onrender.com';
+        
+        async function test() {
+            try {
+                // Test /chain
+                const chain = await fetch(API + '/chain').then(r => r.json());
+                const blocks = Array.isArray(chain) ? chain : (chain.chain || []);
+                
+                // Test /
+                const status = await fetch(API + '/').then(r => r.json());
+                
+                document.getElementById('result').innerHTML = `
+                    <h2>✅ API Working!</h2>
+                    <p>Blocks: ${blocks.length}</p>
+                    <p>Status: ${JSON.stringify(status)}</p>
+                    <p>Chain Type: ${Array.isArray(chain) ? 'Array' : 'Object'}</p>
+                `;
+            } catch(e) {
+                document.getElementById('result').innerHTML = `
+                    <h2>❌ Error: ${e.message}</h2>
+                `;
+            }
+        }
+        
+        test();
+    </script>
+</body>
+</html>
