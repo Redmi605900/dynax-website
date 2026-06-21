@@ -25,12 +25,12 @@ def whitepaper():
 
 @app.route('/api/stats')
 def api_stats():
-    return jsonify({
-        'blocks': 24,
-        'transactions': 37,
-        'contracts': 2,
-        'status': 'online'
-    })
+    try:
+        import requests
+        r = requests.get('https://dynax-node2.onrender.com/stats', timeout=5)
+        return jsonify(r.json())
+    except:
+        return jsonify({'blocks': 0, 'transactions': 0, 'nodes': 1, 'status': 'online'})
 
 @app.route('/manifest.json')
 def manifest():
