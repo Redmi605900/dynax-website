@@ -125,7 +125,7 @@
                 const blocks = await r.json();
                 el.innerHTML = blocks.slice(-3).reverse().map(b => {
                     const index = b.index || b.height || 0;
-                    const txCount = b.tx_count || b.transactions || 0;
+                    const txCount = b.tx_count || (b.transactions ? b.transactions.length : 0);
                     const hash = b.hash || 'N/A';
                     return `<div style="border-bottom:1px solid #333;padding:5px 0">
                         <span class="success">Block #${index}</span> | 
