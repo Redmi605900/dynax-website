@@ -13,18 +13,14 @@
         
         async function test() {
             try {
-                // Test /chain
                 const chain = await fetch(API + '/chain').then(r => r.json());
                 const blocks = Array.isArray(chain) ? chain : (chain.chain || []);
-                
-                // Test /
                 const status = await fetch(API + '/').then(r => r.json());
                 
                 document.getElementById('result').innerHTML = `
                     <h2>✅ API Working!</h2>
                     <p>Blocks: ${blocks.length}</p>
                     <p>Status: ${JSON.stringify(status)}</p>
-                    <p>Chain Type: ${Array.isArray(chain) ? 'Array' : 'Object'}</p>
                 `;
             } catch(e) {
                 document.getElementById('result').innerHTML = `
