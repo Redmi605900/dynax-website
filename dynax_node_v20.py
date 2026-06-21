@@ -58,7 +58,18 @@ if os.path.exists('chain_backup.json'):
         else: self.create_genesis()
 
     def create_genesis(self):
-        genesis = {"index": 0, "timestamp": int(time.time()), "transactions": [], "prev_hash": "0"*64, "nonce": 0}
+        genesis = {
+            "index": 0,
+            "timestamp": 1780771234,
+            "transactions": [
+                {"from": "GENESIS", "to": "DXa5ae9ccc94279d4f52b4f4e694a5a3b2f4f5ece3", "amount": 300000},
+                {"from": "GENESIS", "to": "DX2cd2db91dd4e11e56b3a90e8219b9b11f16d498d", "amount": 7000},
+                {"from": "GENESIS", "to": "DXb2913cfc7756e6675fadbcb35cd595e680b330d3", "amount": 445},
+                {"from": "GENESIS", "to": "DXe0e2eb885049e91123a0ab6f4bf62064d4572170", "amount": 137}
+            ],
+            "prev_hash": "0"*64,
+            "nonce": 0
+        }
         genesis["hash"] = hashlib.sha3_256(json.dumps(genesis, sort_keys=True).encode()).hexdigest()
         self.chain = [genesis]
         self.save_chain()
