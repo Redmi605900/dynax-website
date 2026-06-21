@@ -309,7 +309,7 @@
 
         function updateStats() {
             console.log('Updating stats...');
-            fetch(NODE_URL + '/blocks')
+            fetch(NODE_URL + '/chain')
                 .then(res => {
                     console.log('Response status:', res.status);
                     return res.json();
@@ -481,7 +481,7 @@
         }
 
         async function loadBlocks() {
-            const res = await fetch(NODE_URL + '/blocks');
+            const res = await fetch(NODE_URL + '/chain');
             const blocks = await res.json();
             displayBlocks(blocks);
         }
