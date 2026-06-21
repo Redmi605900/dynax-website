@@ -32,7 +32,7 @@ class DynaxNode:
         self.chain = []
         self.mempool = []
         self.peers = set()
-        self.CHAIN_FILE = "dynax_chain.json"
+        self.CHAIN_FILE = "chain_backup.json"
         self.load_chain()
 
 # Load chain from backup if exists
