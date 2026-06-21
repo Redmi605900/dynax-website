@@ -315,6 +315,20 @@ def show_pending():
     })
 
 
+@app.route("/stats")
+def stats():
+    chain = bc.chain
+    txs = sum(len(bc.get_txs(b)) for b in chain)
+    return jsonify({
+        "blocks": len(chain),
+        "transactions": txs,
+        "nodes": 1,
+        "difficulty": bc.difficulty,
+        "symbol": "DYX",
+        "reward": 50,
+        "status": "online"
+    })
+
 @app.route("/peers")
 def get_peers():
     return jsonify({"peers": list(node.peers)})
