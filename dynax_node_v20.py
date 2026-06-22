@@ -345,6 +345,28 @@ def assets(filename):
         return send_file(filepath)
     return "Not found", 404
 
+
+@app.route("/explorer")
+def explorer():
+    try:
+        return open("explorer.html").read()
+    except:
+        return "Explorer not found", 404
+
+@app.route("/whitepaper")
+def whitepaper():
+    try:
+        return open("whitepaper.html").read()
+    except:
+        return "Whitepaper not found", 404
+
+@app.route("/dex")
+def dex():
+    try:
+        return open("dex.html").read()
+    except:
+        return "DEX not found", 404
+
 if __name__ == "__main__":
     print("=== DYNAX V20 SECURE NODE STARTED ===")
     app.run(host="0.0.0.0", port=6002)

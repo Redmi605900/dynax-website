@@ -1,93 +1,557 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DYNAX - Layer 1 Blockchain</title>
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #0a0a0a;
-  min-height: 100vh;
-  color: white;
-}
-.hero {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 40px 20px;
-  background: radial-gradient(ellipse at top, #1a1200 0%, #0a0a0a 70%);
-}
-.mascot-wrapper { position: relative; width: 220px; height: 220px; margin: 0 auto 30px; }
-.mascot-glow { position: absolute; inset: -20px; border-radius: 50%; background: radial-gradient(circle, rgba(212,175,55,0.25) 0%, transparent 70%); animation: pulse 3s ease-in-out infinite; }
-.mascot-img { width: 220px; height: 220px; object-fit: cover; border-radius: 50%; border: 3px solid #d4af37; box-shadow: 0 0 40px rgba(212,175,55,0.4); animation: float 4s ease-in-out infinite; }
-@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
-@keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 0.8; } }
-@keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-.brand { font-size: 64px; font-weight: 800; letter-spacing: 8px; background: linear-gradient(135deg, #d4af37 0%, #f5d47a 50%, #d4af37 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: fadeUp 0.8s ease-out; }
-.tagline { font-size: 16px; color: #888; letter-spacing: 3px; text-transform: uppercase; margin: 10px 0 40px; }
-.stats { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-bottom: 50px; }
-.stat { background: #111; border: 1px solid #d4af3730; border-radius: 16px; padding: 20px 30px; text-align: center; min-width: 120px; }
-.stat-val { font-size: 28px; font-weight: 700; color: #d4af37; }
-.stat-lbl { font-size: 12px; color: #666; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
-.btn-row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
-.btn { padding: 16px 32px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; border: none; transition: all 0.3s; text-decoration: none; display: inline-block; }
-.btn-gold { background: linear-gradient(135deg, #d4af37, #f5d47a); color: #0a0a0a; box-shadow: 0 4px 20px rgba(212,175,55,0.4); }
-.btn-gold:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(212,175,55,0.5); }
-.btn-outline { background: transparent; color: #d4af37; border: 2px solid #d4af37; }
-.btn-outline:hover { background: rgba(212,175,55,0.1); transform: translateY(-3px); }
-.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; max-width: 900px; margin: 60px auto; padding: 0 20px; }
-.card { background: #111; border: 1px solid #d4af3730; border-radius: 20px; padding: 36px 24px; text-align: center; cursor: pointer; transition: all 0.3s; }
-.card:hover { border-color: #d4af37; transform: translateY(-6px); box-shadow: 0 16px 40px rgba(212,175,55,0.2); }
-.card-icon { font-size: 40px; margin-bottom: 14px; }
-.card-title { font-size: 18px; font-weight: 600; color: #d4af37; margin-bottom: 8px; }
-.card-desc { font-size: 13px; color: #666; line-height: 1.6; }
-.footer { text-align: center; padding: 40px 20px; border-top: 1px solid #1a1a1a; color: #444; font-size: 13px; }
-.footer span { color: #d4af37; }
-.status-dot { display: inline-block; width: 8px; height: 8px; background: #00ff88; border-radius: 50%; margin-right: 6px; animation: blink 2s infinite; }
-@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-@media (max-width: 600px) { .brand { font-size: 48px; } .mascot-img { width: 180px; height: 180px; } .mascot-wrapper { width: 180px; height: 180px; } }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DYNAX - Decentralized Blockchain</title>
+    <script src="https://cdn.jsdelivr.net/npm/elliptic@6.5.4/dist/elliptic.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-sha3@0.8.0/build/sha3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: linear-gradient(135deg, #1a0a00 0%, #2d1810 50%, #0a0a0a 100%);
+            min-height: 100vh;
+            color: white;
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 0.8; } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+        .hero { text-align: center; padding: 60px 20px; animation: slideUp 0.8s ease-out; }
+        .logo-container { position: relative; width: 150px; height: 150px; margin: 0 auto 30px; animation: float 3s ease-in-out infinite; }
+        .logo { width: 100%; height: 100%; border-radius: 50%; border: 4px solid #F7931A; box-shadow: 0 0 40px rgba(247, 147, 26, 0.5); object-fit: cover; }
+        .logo-glow { position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px; border-radius: 50%; background: radial-gradient(circle, rgba(247,147,26,0.3) 0%, transparent 70%); animation: pulse 2s ease-in-out infinite; }
+        h1 { font-size: 48px; font-weight: 700; margin-bottom: 16px; background: linear-gradient(135deg, #F7931A 0%, #FFA500 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { font-size: 18px; color: #a0a0a0; margin-bottom: 50px; line-height: 1.6; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .stat-card { background: rgba(247,147,26,0.1); border: 2px solid rgba(247, 147, 26, 0.3); border-radius: 16px; padding: 24px; text-align: center; animation: slideUp 0.5s ease-out; }
+        .stat-value { font-size: 36px; font-weight: 700; color: #F7931A; margin-bottom: 8px; }
+        .stat-label { font-size: 14px; color: #888; }
+        .nav-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-bottom: 60px; }
+        .nav-card { background: linear-gradient(135deg, rgba(247,147,26,0.1) 0%, rgba(255,140,0,0.05) 100%); border: 2px solid rgba(247, 147, 26, 0.3); border-radius: 20px; padding: 40px 24px; text-align: center; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); animation: slideUp 0.5s ease-out; }
+        .nav-card:hover { transform: translateY(-8px); border-color: #F7931A; box-shadow: 0 20px 40px rgba(247, 147, 26, 0.3); }
+        .nav-icon { font-size: 48px; margin-bottom: 16px; }
+        .nav-title { font-size: 20px; font-weight: 600; margin-bottom: 8px; color: #F7931A; }
+        .nav-desc { font-size: 14px; color: #888; line-height: 1.5; }
+        .content-section { background: linear-gradient(135deg, rgba(247,147,26,0.1) 0%, rgba(255,140,0,0.05) 100%); border: 2px solid rgba(247, 147, 26, 0.3); border-radius: 24px; padding: 40px; margin-top: 40px; animation: slideUp 0.5s ease-out; }
+        .section-title { font-size: 28px; font-weight: 700; text-align: center; margin-bottom: 30px; color: #F7931A; }
+        .balance-display { background: linear-gradient(135deg, #F7931A 0%, #FFA500 100%); border-radius: 20px; padding: 30px; text-align: center; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(247, 147, 26, 0.3); }
+        .balance-amount { font-size: 48px; font-weight: 700; color: white; }
+        .address-box { background: rgba(0,0,0,0.3); padding: 14px; border-radius: 12px; font-family: monospace; font-size: 12px; word-break: break-all; margin: 20px 0; border: 1px solid rgba(247, 147, 26, 0.3); }
+        input[type="file"], input[type="text"], input[type="number"], input[type="password"] { width: 100%; padding: 16px; border: 2px solid rgba(247, 147, 26, 0.3); border-radius: 12px; background: rgba(0,0,0,0.3); color: white; font-size: 15px; margin-bottom: 16px; transition: all 0.3s; }
+        input:focus { outline: none; border-color: #F7931A; box-shadow: 0 0 0 4px rgba(247, 147, 26, 0.1); }
+        button { width: 100%; padding: 18px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; margin: 8px 0; }
+        .btn-primary { background: linear-gradient(135deg, #F7931A 0%, #FFA500 100%); color: white; box-shadow: 0 4px 15px rgba(247, 147, 26, 0.4); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(247, 147, 26, 0.5); }        .btn-secondary { background: rgba(247, 147, 26, 0.2); color: #F7931A; border: 2px solid #F7931A; }
+        .btn-secondary:hover { background: rgba(247, 147, 26, 0.3); }
+        .hidden { display: none; }
+        .status { padding: 14px; border-radius: 12px; margin: 14px 0; text-align: center; font-weight: 600; }
+        .status.success { background: rgba(52, 199, 89, 0.2); color: #34C759; border: 1px solid #34C759; }
+        .status.error { background: rgba(255, 59, 48, 0.2); color: #FF3B30; border: 1px solid #FF3B30; }
+        .qr-container { background: white; padding: 24px; border-radius: 16px; text-align: center; margin: 20px 0; }
+        .tx-item { background: rgba(247,147,26,0.1); padding: 16px; border-radius: 12px; margin: 10px 0; border-left: 4px solid #F7931A; transition: all 0.3s; }
+        .tx-item:hover { transform: translateX(5px); }
+        .tx-in { border-left-color: #34C759; }
+        .tx-out { border-left-color: #FF3B30; }
+        .back-btn { position: fixed; top: 20px; left: 20px; background: rgba(247, 147, 26, 0.2); border: 2px solid #F7931A; color: #F7931A; padding: 12px 20px; border-radius: 12px; cursor: pointer; z-index: 1000; width: auto; transition: all 0.3s; }
+        .back-btn:hover { background: rgba(247, 147, 26, 0.3); transform: translateY(-2px); }
+        .block-item { background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px; margin: 12px 0; border: 1px solid rgba(247, 147, 26, 0.3); transition: all 0.3s; }
+        .block-item:hover { border-color: #F7931A; transform: translateX(5px); }
+        .block-hash { font-family: monospace; font-size: 12px; color: #888; word-break: break-all; margin: 8px 0; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; }
+        .mining-steps { background: rgba(0,0,0,0.3); padding: 24px; border-radius: 16px; margin: 20px 0; }
+        .mining-steps h3 { color: #F7931A; margin-bottom: 16px; }
+        .mining-steps ol { margin-left: 20px; line-height: 2; color: #ccc; }
+        .mining-steps code { background: rgba(247, 147, 26, 0.2); padding: 4px 8px; border-radius: 6px; font-family: monospace; color: #F7931A; }
+        .whitepaper-content { background: rgba(0,0,0,0.3); padding: 24px; border-radius: 16px; line-height: 1.8; color: #ccc; }
+        .whitepaper-content h3 { color: #F7931A; margin: 20px 0 10px; }
+        .whitepaper-content ul { margin-left: 20px; line-height: 2; }
+        .search-box { width: 100%; padding: 16px; border: 2px solid rgba(247, 147, 26, 0.3); border-radius: 12px; background: rgba(0,0,0,0.3); color: white; font-size: 15px; margin-bottom: 20px; }
+        .lang-switch { position: fixed; top: 20px; right: 20px; background: rgba(247, 147, 26, 0.2); border: 2px solid #F7931A; color: #F7931A; padding: 10px 16px; border-radius: 12px; cursor: pointer; z-index: 1000; width: auto; font-weight: 600; }
+        .lang-switch:hover { background: rgba(247, 147, 26, 0.3); }
+        @media (max-width: 768px) {
+            h1 { font-size: 36px; }
+            .nav-grid { grid-template-columns: 1fr; }
+            .balance-amount { font-size: 36px; }
+            .content-section { padding: 24px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
 </head>
 <body>
-<section class="hero">
-  <div class="mascot-wrapper">
-    <div class="mascot-glow"></div>
-    <img src="/assets/mascot.jpg" alt="DYNAX" class="mascot-img">
-  </div>
-  <div class="brand">DYNAX</div>
-  <div class="tagline"><span class="status-dot"></span>Decentralized Layer 1 Blockchain</div>
-  <div class="stats">
-    <div class="stat"><div class="stat-val" id="s-blocks">—</div><div class="stat-lbl">Blocks</div></div>
-    <div class="stat"><div class="stat-val" id="s-peers">—</div><div class="stat-lbl">Nodes</div></div>
-    <div class="stat"><div class="stat-val">DYX</div><div class="stat-lbl">Symbol</div></div>
-    <div class="stat"><div class="stat-val">50</div><div class="stat-lbl">Reward</div></div>
-  </div>
-  <div class="btn-row">
-    <a href="/wallet" class="btn btn-gold">🔐 Launch Wallet</a>
-    <a href="/explorer" class="btn btn-outline">🔍 Explorer</a>
-    <a href="/landing_backup.html" class="btn btn-outline">📄 Whitepaper</a>
-  </div>
-</section>
-<div class="cards">
-  <div class="card" onclick="location.href='/wallet'"><div class="card-icon">💎</div><div class="card-title">Wallet</div><div class="card-desc">ส่ง รับ และจัดการ DYX อย่างปลอดภัย</div></div>
-  <div class="card" onclick="location.href='/explorer'"><div class="card-icon">🔍</div><div class="card-title">Block Explorer</div><div class="card-desc">สำรวจ blocks และ transactions บน DYNAX</div></div>
-  <div class="card" onclick="location.href='/dex'"><div class="card-icon">💱</div><div class="card-title">DEX</div><div class="card-desc">ซื้อขาย DYX แบบ Decentralized</div></div>
-  <div class="card"><div class="card-icon">📄</div><div class="card-title">Whitepaper</div><div class="card-desc">SHA3-256 PoW • ECDSA • 11M Max Supply</div></div>
-</div>
-<footer class="footer">
-  <p>© 2026 <span>DYNAX</span> — Built by <span>Hideko Nanoura</span></p>
-  <p style="margin-top:8px">Network ID: 1337 • Ticker: DYX • Max Supply: 11,000,000</p>
-</footer>
-<script>
-fetch('/').then(r=>r.json()).then(d=>{
-  document.getElementById('s-blocks').textContent = d.blocks || '—';
-  document.getElementById('s-peers').textContent = (d.peers ?? 0) + 1;
-}).catch(()=>{});
-</script>
+    <button class="lang-switch" onclick="toggleLanguage()">🌐 <span id="lang-text">TH</span></button>
+    <button class="back-btn hidden" id="back-btn" onclick="backToHome()">← <span data-en="Back" data-th="กลับหน้าหลัก">กลับหน้าหลัก</span></button>
+    
+    <div class="container">
+        <div class="hero" id="hero-section">
+            <div class="logo-container">
+                <div class="logo-glow"></div>
+                <img src="logo.jpeg" alt="DYNAX" class="logo" onerror="this.outerHTML='<div class=\'logo\' style=\'background: linear-gradient(135deg, #F7931A 0%, #FFA500 100%); display: flex; align-items: center; justify-content: center; font-size: 60px; font-weight: bold; color: white;\'>D</div>';">
+            </div>
+            <h1>DYNAX</h1>
+            <p class="subtitle" data-en="Decentralized Blockchain Layer 1<br>Quantum Resistant • No ICO" data-th="บล็อกเชนแบบกระจายอำนาจ Layer 1<br>ทนทานต่อควอนตัม • ไม่มีการระดมทุน ICO">บล็อกเชนแบบกระจายอำนาจ Layer 1<br>ทนทานต่อควอนตัม • ไม่มีการระดมทุน ICO</p>
+            
+            <div class="stats-grid">
+                <div class="stat-card">                    <div class="stat-value" id="stat-blocks">0</div>
+                    <div class="stat-label" data-en="Total Blocks" data-th="บล็อกทั้งหมด">บล็อกทั้งหมด</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-txs">0</div>
+                    <div class="stat-label" data-en="Transactions" data-th="ธุรกรรม">ธุรกรรม</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-peers">1</div>
+                    <div class="stat-label" data-en="Active Nodes" data-th="โหนดออนไลน์">โหนดออนไลน์</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-difficulty">0000</div>
+                    <div class="stat-label" data-en="Difficulty" data-th="ความยาก">ความยาก</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="nav-grid" id="nav-grid">
+            <div class="nav-card" onclick="showSection('explorer')">
+                <div class="nav-icon">🔍</div>
+                <div class="nav-title" data-en="Block Explorer" data-th="นักสำรวจ">นักสำรวจ</div>
+                <div class="nav-desc" data-en="Explore blocks and transactions" data-th="สำรวจบล็อกและธุรกรรม">สำรวจบล็อกและธุรกรรม</div>
+            </div>
+            <div class="nav-card" onclick="showSection('mining')">
+                <div class="nav-icon">⛏️</div>
+                <div class="nav-title" data-en="Mining Guide" data-th="คู่มือการขุด">คู่มือการขุด</div>
+                <div class="nav-desc" data-en="Learn how to mine DYNAX" data-th="เรียนรู้วิธีการขุด">เรียนรู้วิธีการขุด</div>
+            </div>
+            <div class="nav-card" onclick="showSection('whitepaper')">
+                <div class="nav-icon">📄</div>
+                <div class="nav-title" data-en="Whitepaper" data-th="ไวท์เปเปอร์">ไวท์เปเปอร์</div>
+                <div class="nav-desc" data-en="Technical details" data-th="รายละเอียดทางเทคนิค">รายละเอียดทางเทคนิค</div>
+            </div>
+            <div class="nav-card" onclick="showSection('wallet')">
+                <div class="nav-icon">👛</div>
+                <div class="nav-title" data-en="Wallet" data-th="กระเป๋าตังค์">กระเป๋าตังค์</div>
+                <div class="nav-desc" data-en="Manage your coins" data-th="จัดการเหรียญของคุณ">จัดการเหรียญของคุณ</div>
+            </div>
+        </div>
+
+        <div class="content-section hidden" id="explorer-section">
+            <div class="section-title" data-en="Block Explorer" data-th="นักสำรวจบล็อก">นักสำรวจบล็อก</div>
+            <input type="text" class="search-box" id="block-search" placeholder="Search by Block Number or Hash..." onkeyup="searchBlocks()">
+            <div id="blocks-list"></div>
+        </div>
+
+        <div class="content-section hidden" id="mining-section">
+            <div class="section-title" data-en="Mining Guide" data-th="คู่มือการขุด">คู่มือการขุด</div>
+            <div class="mining-steps">                <h3 data-en="How to Mine DYNAX" data-th="วิธีการขุดเหรียญ DYNAX">วิธีการขุดเหรียญ DYNAX</h3>
+                <ol>
+                    <li data-en="Install Termux on Android" data-th="ติดตั้ง Termux บน Android">ติดตั้ง Termux บน Android</li>
+                    <li data-en="Clone the repository: <code>git clone https://github.com/yourusername/dynax.git</code>" data-th="Clone repository: <code>git clone https://github.com/yourusername/dynax.git</code>">Clone repository: <code>git clone https://github.com/yourusername/dynax.git</code></li>
+                    <li data-en="Run the node: <code>python3 dynax_node_v20.py</code>" data-th="รัน Node: <code>python3 dynax_node_v20.py</code>">รัน Node: <code>python3 dynax_node_v20.py</code></li>
+                    <li data-en="Send transactions to <code>/tx</code> endpoint" data-th="ส่งธุรกรรมไปที่ endpoint <code>/tx</code>">ส่งธุรกรรมไปที่ endpoint <code>/tx</code></li>
+                    <li data-en="Mine blocks: <code>curl http://127.0.0.1:6002/mine/YOUR_ADDRESS</code>" data-th="ขุด Block: <code>curl http://127.0.0.1:6002/mine/YOUR_ADDRESS</code>">ขุด Block: <code>curl http://127.0.0.1:6002/mine/YOUR_ADDRESS</code></li>
+                    <li data-en="Receive 50 DYX reward per block" data-th="รับรางวัล 50 DYX ต่อ Block">รับรางวัล 50 DYX ต่อ Block</li>
+                </ol>
+            </div>
+            <div class="mining-steps">
+                <h3 data-en="Technical Specifications" data-th="รายละเอียดทางเทคนิค">รายละเอียดทางเทคนิค</h3>
+                <p><strong data-en="Algorithm:" data-th="อัลกอริทึม:">อัลกอริทึม:</strong> SHA3-256 Proof of Work</p>
+                <p><strong data-en="Difficulty:" data-th="ความยาก:">ความยาก:</strong> 4 zeros (0000)</p>
+                <p><strong data-en="Block Reward:" data-th="รางวัลต่อ Block:">รางวัลต่อ Block:</strong> 50 DYX</p>
+                <p><strong data-en="Block Time:" data-th="เวลาต่อ Block:">เวลาต่อ Block:</strong> ~1-2 minutes</p>
+                <p><strong data-en="Signature:" data-th="ลายเซ็น:">ลายเซ็น:</strong> ECDSA + SHA3-256</p>
+                <p><strong data-en="Address Format:" data-th="รูปแบบ Address:">รูปแบบ Address:</strong> DX + SHA3-256(pubkey)[:40]</p>
+            </div>
+            <div class="mining-steps">
+                <h3 data-en="FAQ" data-th="คำถามที่พบบ่อย">คำถามที่พบบ่อย</h3>
+                <p><strong>Q: ต้องใช้ฮาร์ดแวร์อะไร?</strong><br>A: สามารถขุดบนมือถือ Android ผ่าน Termux ได้</p>
+                <p><strong>Q: ขุดคนเดียวหรือรวมกลุ่ม?</strong><br>A: ขุดคนเดียว (Solo Mining)</p>
+                <p><strong>Q: ใช้ไฟฟ้าเท่าไหร่?</strong><br>A: น้อยมาก เหมาะสำหรับขุดบนมือถือ</p>
+            </div>
+        </div>
+
+        <div class="content-section hidden" id="whitepaper-section">
+            <div class="section-title" data-en="Whitepaper" data-th="เอกสารไวท์เปเปอร์">เอกสารไวท์เปเปอร์</div>
+            <div class="whitepaper-content">
+                <h3 data-en="Introduction" data-th="บทนำ">บทนำ</h3>
+                <p data-en="DYNAX is a decentralized Layer 1 blockchain designed to be resistant to quantum computer attacks." data-th="DYNAX เป็นบล็อกเชนแบบกระจายอำนาจ Layer 1 ที่ออกแบบมาเพื่อทนทานต่อการโจมตีจากคอมพิวเตอร์ควอนตัม">DYNAX เป็นบล็อกเชนแบบกระจายอำนาจ Layer 1 ที่ออกแบบมาเพื่อทนทานต่อการโจมตีจากคอมพิวเตอร์ควอนตัม</p>
+                
+                <h3 data-en="Key Features" data-th="คุณสมบัติหลัก">คุณสมบัติหลัก</h3>
+                <ul>
+                    <li data-en="<strong>Decentralized:</strong> No central server controlling the network" data-th="<strong>ไร้ตัวกลาง:</strong> ไม่มีเซิร์ฟเวอร์กลางควบคุมเครือข่าย"><strong>ไร้ตัวกลาง:</strong> ไม่มีเซิร์ฟเวอร์กลางควบคุมเครือข่าย</li>
+                    <li data-en="<strong>Secure:</strong> ECDSA + SHA3-256 signature verification" data-th="<strong>ปลอดภัย:</strong> ใช้ ECDSA + SHA3-256 ในการตรวจสอบลายเซ็น"><strong>ปลอดภัย:</strong> ใช้ ECDSA + SHA3-256 ในการตรวจสอบลายเซ็น</li>
+                    <li data-en="<strong>Quantum Resistant:</strong> Designed to resist quantum computer attacks" data-th="<strong>ทนทานต่อควอนตัม:</strong> ออกแบบมาเพื่อต้านทานการโจมตีจากควอนตัมคอมพิวเตอร์"><strong>ทนทานต่อควอนตัม:</strong> ออกแบบมาเพื่อต้านทานการโจมตีจากควอนตัมคอมพิวเตอร์</li>
+                    <li data-en="<strong>No ICO:</strong> Coins distributed only through mining" data-th="<strong>ไม่มีการระดมทุน ICO:</strong> กระจายเหรียญผ่านการขุดเท่านั้น"><strong>ไม่มีการระดมทุน ICO:</strong> กระจายเหรียญผ่านการขุดเท่านั้น</li>
+                </ul>
+
+                <h3 data-en="Technical Architecture" data-th="โครงสร้างทางเทคนิค">โครงสร้างทางเทคนิค</h3>
+                <ul>
+                    <li data-en="<strong>Address Format:</strong> DX + SHA3-256(public_key)[:40]" data-th="<strong>รูปแบบ Address:</strong> DX + SHA3-256(public_key)[:40]"><strong>รูปแบบ Address:</strong> DX + SHA3-256(public_key)[:40]</li>
+                    <li data-en="<strong>Transaction:</strong> ECDSA signature verification" data-th="<strong>ธุรกรรม:</strong> ตรวจสอบลายเซ็น ECDSA"><strong>ธุรกรรม:</strong> ตรวจสอบลายเซ็น ECDSA</li>
+                    <li data-en="<strong>Consensus:</strong> Proof of Work (SHA3-256)" data-th="<strong>ฉันทามติ:</strong> Proof of Work (SHA3-256)"><strong>ฉันทามติ:</strong> Proof of Work (SHA3-256)</li>
+                    <li data-en="<strong>Block Time:</strong> Dynamic difficulty adjustment" data-th="<strong>เวลา Block:</strong> ปรับความยากแบบไดนามิก"><strong>เวลา Block:</strong> ปรับความยากแบบไดนามิก</li>
+                </ul>
+
+                <h3 data-en="Tokenomics" data-th="โทเคนโนมิกส์">โทเคนโนมิกส์</h3>                <ul>
+                    <li data-en="<strong>Total Supply:</strong> Unlimited (through mining)" data-th="<strong>อุปทานรวม:</strong> ไม่จำกัด (ผ่านทางการขุด)"><strong>อุปทานรวม:</strong> ไม่จำกัด (ผ่านทางการขุด)</li>
+                    <li data-en="<strong>Block Reward:</strong> 50 DYX" data-th="<strong>รางวัลต่อ Block:</strong> 50 DYX"><strong>รางวัลต่อ Block:</strong> 50 DYX</li>
+                    <li data-en="<strong>Transaction Fee:</strong> User-defined" data-th="<strong>ค่าธรรมเนียม:</strong> ผู้ใช้กำหนดเอง"><strong>ค่าธรรมเนียม:</strong> ผู้ใช้กำหนดเอง</li>
+                    <li data-en="<strong>Halving:</strong> None (fixed reward)" data-th="<strong>Halving:</strong> ไม่มี (รางวัลคงที่)"><strong>Halving:</strong> ไม่มี (รางวัลคงที่)</li>
+                </ul>
+
+                <h3 data-en="Roadmap" data-th="แผนการพัฒนา">แผนการพัฒนา</h3>
+                <ul>
+                    <li><strong>Phase 1:</strong> <span data-en="Basic blockchain implementation" data-th="การใช้งานบล็อกเชนพื้นฐาน">การใช้งานบล็อกเชนพื้นฐาน</span> ✅</li>
+                    <li><strong>Phase 2:</strong> <span data-en="Web wallet and UI" data-th="เว็บ Wallet และ UI">เว็บ Wallet และ UI</span> ✅</li>
+                    <li><strong>Phase 3:</strong> <span data-en="P2P network implementation" data-th="การใช้งานระบบ P2P Network">การใช้งานระบบ P2P Network</span> 🔄</li>
+                    <li><strong>Phase 4:</strong> <span data-en="Mobile app development" data-th="พัฒนาแอปมือถือ">พัฒนาแอปมือถือ</span> 📋</li>
+                    <li><strong>Phase 5:</strong> <span data-en="Smart contracts support" data-th="รองรับ Smart Contracts">รองรับ Smart Contracts</span> 📋</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="content-section hidden" id="wallet-section">
+            <div class="section-title" data-en="DYNAX Wallet" data-th="กระเป๋าตังค์ DYNAX">กระเป๋าตังค์ DYNAX</div>
+            
+            <div id="import-wallet">
+                <input type="file" id="wallet-file" accept=".json" onchange="importWallet()">
+                <p style="text-align: center; margin: 20px 0; color: #888;" data-en="Or enter Private Key:" data-th="หรือกรอก Private Key:">หรือกรอก Private Key:</p>
+                <input type="password" id="private-key" placeholder="Private Key (hex)">
+                <button class="btn-primary" onclick="importFromKey()" data-en="Import Wallet" data-th="นำเข้ากระเป๋า">นำเข้ากระเป๋า</button>
+            </div>
+
+            <div id="wallet-dashboard" class="hidden">
+                <div class="balance-display">
+                    <div style="font-size: 14px; opacity: 0.9; margin-bottom: 10px;" data-en="Available Balance" data-th="ยอดเงินคงเหลือ">ยอดเงินคงเหลือ</div>
+                    <div class="balance-amount" id="balance">0</div>
+                    <div style="font-size: 18px; opacity: 0.9;">DYX</div>
+                </div>
+                <div class="address-box" id="address"></div>
+                
+                <div class="nav-grid" style="margin-top: 24px;">
+                    <div class="nav-card" onclick="showSend()">
+                        <div class="nav-icon">📤</div>
+                        <div class="nav-title" data-en="Send" data-th="ส่ง">ส่ง</div>
+                    </div>
+                    <div class="nav-card" onclick="showReceive()">
+                        <div class="nav-icon">📥</div>
+                        <div class="nav-title" data-en="Receive" data-th="รับ">รับ</div>
+                    </div>
+                    <div class="nav-card" onclick="showQR()">
+                        <div class="nav-icon">📱</div>
+                        <div class="nav-title" data-en="QR Code" data-th="QR Code">QR Code</div>
+                    </div>
+                    <div class="nav-card" onclick="showHistory()">                        <div class="nav-icon">📊</div>
+                        <div class="nav-title" data-en="History" data-th="ประวัติ">ประวัติ</div>
+                    </div>
+                </div>
+
+                <button class="btn-secondary" onclick="logout()" style="margin-top: 20px;" data-en="Logout" data-th="ออกจากระบบ">ออกจากระบบ</button>
+            </div>
+
+            <div id="send-form" class="hidden">
+                <h3 style="margin-bottom: 20px; color: #F7931A;" data-en="Send DYX" data-th="ส่ง DYX">ส่ง DYX</h3>
+                <input type="text" id="to-address" placeholder="Recipient Address (DX...)" data-placeholder-en="Recipient Address (DX...)" data-placeholder-th="ที่อยู่ผู้รับ (DX...)">
+                <input type="number" id="amount" placeholder="Amount (DYX)" step="0.01" data-placeholder-en="Amount (DYX)" data-placeholder-th="จำนวน (DYX)">
+                <input type="number" id="fee" placeholder="Fee" value="0.01" step="0.01" data-placeholder-en="Fee" data-placeholder-th="ค่าธรรมเนียม">
+                <button class="btn-primary" onclick="sendTransaction()" data-en="Send Now" data-th="ส่งทันที">ส่งทันที</button>
+                <button class="btn-secondary" onclick="backToDashboard()" data-en="Back" data-th="ย้อนกลับ">ย้อนกลับ</button>
+                <div id="send-status"></div>
+            </div>
+
+            <div id="receive-form" class="hidden">
+                <h3 style="margin-bottom: 20px; color: #F7931A;" data-en="Receive DYX" data-th="รับ DYX">รับ DYX</h3>
+                <div class="address-box" id="receive-address"></div>
+                <button class="btn-primary" onclick="copyAddress()" data-en="Copy Address" data-th="คัดลอกที่อยู่">คัดลอกที่อยู่</button>
+                <button class="btn-secondary" onclick="backToDashboard()" data-en="Back" data-th="ย้อนกลับ">ย้อนกลับ</button>
+            </div>
+
+            <div id="qr-form" class="hidden">
+                <h3 style="margin-bottom: 20px; color: #F7931A;" data-en="QR Code" data-th="QR Code">QR Code</h3>
+                <div class="qr-container" id="qrcode"></div>
+                <button class="btn-secondary" onclick="backToDashboard()" data-en="Back" data-th="ย้อนกลับ">ย้อนกลับ</button>
+            </div>
+
+            <div id="history-form" class="hidden">
+                <h3 style="margin-bottom: 20px; color: #F7931A;" data-en="Transaction History" data-th="ประวัติธุรกรรม">ประวัติธุรกรรม</h3>
+                <div id="tx-list"></div>
+                <button class="btn-secondary" onclick="backToDashboard()" style="margin-top: 20px;" data-en="Back" data-th="ย้อนกลับ">ย้อนกลับ</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const NODE_URL = 'https://dynax-node2.onrender.com';
+        let currentWallet = null;
+        let ec = new elliptic.ec('secp256k1');
+        let currentLang = 'th';
+        let allBlocks = [];
+        let totalTxs = 0;
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'th' : 'en';
+            document.getElementById('lang-text').textContent = currentLang === 'en' ? 'TH' : 'EN';            
+            document.querySelectorAll('[data-en]').forEach(el => {
+                const key = el.getAttribute('data-' + currentLang);
+                if (key) {
+                    if (el.tagName === 'INPUT' && el.hasAttribute('placeholder')) {
+                        const placeholderKey = el.getAttribute('data-placeholder-' + currentLang);
+                        if (placeholderKey) el.placeholder = placeholderKey;
+                    } else {
+                        el.innerHTML = key;
+                    }
+                }
+            });
+            
+            localStorage.setItem('dynax_lang', currentLang);
+        }
+
+        function updateStats() {
+    console.log('=== UPDATE STATS STARTED ===');
+    console.log('API URL:', NODE_URL);
+            console.log('Updating stats...');
+            fetch(NODE_URL + '/chain').then(r => { console.log('Chain response:', r.status); return r; })
+                .then(res => {
+                    console.log('Response status:', res.status);
+                    return res.json();
+                })
+                .then(data => { console.log('Raw data:', data); const blocks = Array.isArray(data) ? data : (data.chain || []); console.log('Blocks array:', blocks.length);
+                    console.log('Blocks loaded:', blocks.length);
+                    document.getElementById('stat-blocks').textContent = blocks.length;
+                    let txCount = 0;
+                    blocks.forEach(b => {
+                        const txs = b.transactions || b.txs || b.data || [];
+                        txCount += txs.length;
+                    });
+                    document.getElementById('stat-txs').textContent = txCount;
+                    allBlocks = blocks;
+                    totalTxs = txCount;
+                    console.log('Stats updated:', blocks.length, 'blocks,', txCount, 'txs');
+                })
+                .catch(err => {
+                    console.error('Error loading stats:', err);
+                    document.getElementById('stat-blocks').textContent = 'Error';
+                });
+        }
+
+        function showSection(section) {
+            document.getElementById('hero-section').classList.add('hidden');
+            document.getElementById('nav-grid').classList.add('hidden');
+            document.getElementById('back-btn').classList.remove('hidden');
+            document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(section + '-section').classList.remove('hidden');
+            
+            if (section === 'explorer') {
+                loadBlocks();
+                updateStats();
+            }
+        }
+
+        function backToHome() {
+            document.getElementById('hero-section').classList.remove('hidden');
+            document.getElementById('nav-grid').classList.remove('hidden');
+            document.getElementById('back-btn').classList.add('hidden');            document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
+            updateStats();
+        }
+
+        function backToDashboard() {
+            ['send-form','receive-form','qr-form','history-form'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById('wallet-dashboard').classList.remove('hidden');
+        }
+
+        function showSend() {
+            document.getElementById('wallet-dashboard').classList.add('hidden');
+            document.getElementById('send-form').classList.remove('hidden');
+        }
+        function showReceive() {
+            document.getElementById('wallet-dashboard').classList.add('hidden');
+            document.getElementById('receive-form').classList.remove('hidden');
+            document.getElementById('receive-address').textContent = currentWallet.address;
+        }
+        function showQR() {
+            document.getElementById('wallet-dashboard').classList.add('hidden');
+            document.getElementById('qr-form').classList.remove('hidden');
+            setTimeout(() => {
+                QRCode.toCanvas(currentWallet.address, { width: 200 }, (err, canvas) => {
+                    if (!err) {
+                        const container = document.getElementById('qrcode');
+                        container.innerHTML = '';
+                        container.appendChild(canvas);
+                    }
+                });
+            }, 100);
+        }
+        function showHistory() {
+            document.getElementById('wallet-dashboard').classList.add('hidden');
+            document.getElementById('history-form').classList.remove('hidden');
+            loadHistory();
+        }
+
+        async function importWallet() {
+            const file = document.getElementById('wallet-file').files[0];
+            if (!file) return;
+            const text = await file.text();
+            const wallet = JSON.parse(text);
+            if (wallet.private_key) {
+                currentWallet = wallet;
+                showDashboard();
+            }
+        }
+        async function importFromKey() {
+            const key = document.getElementById('private-key').value.trim();
+            if (!key) return;
+            const keyPair = ec.keyFromPrivate(key, 'hex');
+            const pubKey = keyPair.getPublic('hex');
+            const hash = sha3_256(hexToBytes(pubKey));
+            const address = 'DX' + hash.substring(0, 40);
+            currentWallet = { private_key: key, public_key: pubKey, address: address };
+            showDashboard();
+        }
+
+        function showDashboard() {
+            document.getElementById('import-wallet').classList.add('hidden');
+            document.getElementById('wallet-dashboard').classList.remove('hidden');
+            document.getElementById('address').textContent = currentWallet.address;
+            updateBalance();
+        }
+
+        async function updateBalance() {
+            if (!currentWallet) return;
+            const res = await fetch(NODE_URL + '/balance/' + currentWallet.address);
+            const data = await res.json();
+            document.getElementById('balance').textContent = data.balance.toLocaleString();
+        }
+
+        async function sendTransaction() {
+            const to = document.getElementById('to-address').value.trim();
+            const amount = parseFloat(document.getElementById('amount').value);
+            const fee = parseFloat(document.getElementById('fee').value) || 0.01;
+            const statusDiv = document.getElementById('send-status');
+            
+            if (!to || !amount) {
+                const msg = currentLang === 'en' ? 'Please fill in all fields' : 'กรุณากรอกข้อมูลให้ครบ';
+                statusDiv.innerHTML = '<div class="status error">❌ ' + msg + '</div>';
+                return;
+            }
+
+            const msgDict = { amount: amount, fee: fee, from: currentWallet.address, to: to };
+            const msgText = JSON.stringify(msgDict, Object.keys(msgDict).sort());
+            const keyPair = ec.keyFromPrivate(currentWallet.private_key, 'hex');
+            const msgHash = sha3_256(new TextEncoder().encode(msgText));
+            const signature = keyPair.sign(msgHash, 'hex').toDER('hex');
+
+            const res = await fetch(NODE_URL + '/tx', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ from: currentWallet.address, to: to, amount: amount, fee: fee, signature: signature })
+            });
+
+            const data = await res.json();            if (res.status === 201) {
+                const msg = currentLang === 'en' ? '✅ Sent successfully!' : '✅ ส่งสำเร็จ!';
+                statusDiv.innerHTML = '<div class="status success">' + msg + '</div>';
+                updateBalance();
+            } else {
+                statusDiv.innerHTML = '<div class="status error">❌ ' + (data.error || (currentLang === 'en' ? 'Error' : 'เกิดข้อผิดพลาด')) + '</div>';
+            }
+        }
+
+        async function loadHistory() {
+            if (!currentWallet) return;
+            const res = await fetch(NODE_URL + '/txs/' + currentWallet.address);
+            const txs = await res.json();
+            const list = document.getElementById('tx-list');
+            
+            if (txs.length === 0) {
+                const msg = currentLang === 'en' ? 'No transactions yet' : 'ยังไม่มีธุรกรรม';
+                list.innerHTML = '<p style="text-align: center; color: #888;">' + msg + '</p>';
+                return;
+            }
+
+            list.innerHTML = txs.reverse().map(tx => {
+                const isIn = tx.to === currentWallet.address;
+                const fromTo = isIn ? (currentLang === 'en' ? 'From: ' : 'จาก: ') : (currentLang === 'en' ? 'To: ' : 'ไป: ');
+                return '<div class="tx-item ' + (isIn ? 'tx-in' : 'tx-out') + '">' +
+                    '<div style="font-size: 18px; font-weight: bold; color: ' + (isIn ? '#34C759' : '#FF3B30') + ';">' +
+                    (isIn ? '+' : '-') + parseFloat(tx.amount).toLocaleString() + ' DYX</div>' +
+                    '<div style="font-size: 12px; color: #888; margin-top: 4px;">' +
+                    fromTo + (tx.from === currentWallet.address ? tx.to : tx.from) + '</div>' +
+                    '<div style="font-size: 11px; color: #666; margin-top: 4px;">Block #' + tx.block + '</div></div>';
+            }).join('');
+        }
+
+        async function loadBlocks() {
+            const res = await fetch(NODE_URL + '/chain').then(r => { console.log('Chain response:', r.status); return r; });
+            const blocks = await res.json();
+            displayBlocks(blocks);
+        }
+
+        function displayBlocks(blocks) {
+            const list = document.getElementById('blocks-list');
+            if (blocks.length === 0) {
+                const msg = currentLang === 'en' ? 'No blocks yet' : 'ยังไม่มีบล็อก';
+                list.innerHTML = '<p style="text-align: center; color: #888;">' + msg + '</p>';
+                return;
+            }
+            
+            list.innerHTML = blocks.reverse().map(b => {
+                const txs = b.transactions || b.txs || b.data || [];
+                return '<div class="block-item">' +                    '<div style="font-size: 18px; font-weight: bold; color: #F7931A;">Block #' + b.index + '</div>' +
+                    '<div class="block-hash">' + b.hash + '</div>' +
+                    '<div style="font-size: 13px; color: #888; margin-top: 8px;">' +
+                    (currentLang === 'en' ? 'Transactions: ' : 'ธุรกรรม: ') + txs.length + ' | Nonce: ' + b.nonce + '</div></div>';
+            }).join('');
+        }
+
+        function searchBlocks() {
+            const searchTerm = document.getElementById('block-search').value.toLowerCase();
+            if (!searchTerm) {
+                displayBlocks(allBlocks);
+                return;
+            }
+            
+            const filtered = allBlocks.filter(b => {
+                return b.index.toString().includes(searchTerm) || 
+                       b.hash.toLowerCase().includes(searchTerm);
+            });
+            displayBlocks(filtered);
+        }
+
+        function copyAddress() {
+            navigator.clipboard.writeText(currentWallet.address);
+            const msg = currentLang === 'en' ? '✅ Address copied!' : '✅ คัดลอกแล้ว!';
+            alert(msg);
+        }
+
+        function logout() {
+            currentWallet = null;
+            document.getElementById('import-wallet').classList.remove('hidden');
+            document.getElementById('wallet-dashboard').classList.add('hidden');
+            ['send-form','receive-form','qr-form','history-form'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+        }
+
+        function hexToBytes(hex) {
+            const bytes = new Uint8Array(hex.length / 2);
+            for (let i = 0; i < hex.length; i += 2) {
+                bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+            }
+            return bytes;
+        }
+
+        // Auto-refresh stats every 30 seconds
+        setInterval(updateStats, 30000);
+
+        // Load saved language
+        window.onload = function() {
+            const savedLang = localStorage.getItem('dynax_lang');            if (savedLang && savedLang !== currentLang) {
+                toggleLanguage();
+            }
+            updateStats();
+        };
+    </script>
 </body>
 </html>
