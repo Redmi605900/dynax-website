@@ -349,21 +349,21 @@ def assets(filename):
 @app.route("/explorer")
 def explorer():
     try:
-        return open("explorer.html").read()
+        return open("static/explorer.html").read()
     except:
         return "Explorer not found", 404
 
 @app.route("/whitepaper")
 def whitepaper():
     try:
-        return open("whitepaper.html").read()
+        return open("static/whitepaper.html").read()
     except:
         return "Whitepaper not found", 404
 
 @app.route("/dex")
 def dex():
     try:
-        return open("dex.html").read()
+        return open("static/dex.html").read()
     except:
         return "DEX not found", 404
 

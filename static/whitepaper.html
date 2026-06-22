@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DYNAX Whitepaper</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:#0a0a0a;color:#fff;line-height:1.6;padding:20px}
+.container{max-width:800px;margin:0 auto}
+h1{color:#d4af37;text-align:center;margin:40px 0 20px}
+h2{color:#d4af37;margin:30px 0 15px;border-bottom:2px solid #d4af3730;padding-bottom:10px}
+h3{color:#f5d47a;margin:20px 0 10px}
+p{margin-bottom:15px;color:#ccc}
+ul{margin-left:20px;margin-bottom:15px;color:#ccc}
+li{margin-bottom:8px}
+.box{background:#111;border:1px solid #d4af3730;border-radius:12px;padding:20px;margin:20px 0}
+.highlight{background:linear-gradient(135deg,#1a1200,#0a0a0a);border:2px solid #d4af37;border-radius:12px;padding:20px;margin:20px 0}
+.highlight h4{color:#d4af37;margin-bottom:10px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:15px;margin:20px 0}
+.stat{background:#1a1a1a;border:1px solid #d4af3730;border-radius:8px;padding:15px;text-align:center}
+.stat-value{font-size:28px;font-weight:bold;color:#d4af37}
+.stat-label{font-size:12px;color:#666;margin-top:5px}
+.back{display:inline-block;padding:10px 25px;background:linear-gradient(135deg,#d4af37,#f5d47a);color:#000;text-decoration:none;border-radius:6px;margin-bottom:30px;font-weight:bold}
+.footer{text-align:center;color:#666;margin-top:40px;padding-top:20px;border-top:1px solid #1a1a1a;font-size:14px}
+</style>
+</head>
+<body>
+<div class="container">
+<a href="/" class="back">← Back to Home</a>
+
+<h1>🔷 DYNAX</h1>
+<p style="text-align:center;color:#888">Decentralized Layer 1 Blockchain<br>Whitepaper v1.0</p>
+
+<div class="box">
+<h2>📋 Executive Summary</h2>
+<p><strong>DYNAX</strong> is a decentralized Layer 1 blockchain platform built with Python and Flask. It provides fast, secure, and scalable infrastructure for decentralized applications.</p>
+
+<div class="highlight">
+<h4>🔐 Core Principles</h4>
+<ul>
+<li><strong>Decentralized:</strong> No central authority - peer-to-peer network</li>
+<li><strong>SHA3-256:</strong> Advanced cryptographic hashing (Keccak-256)</li><li><strong>Proof of Work:</strong> Secure consensus mechanism</li>
+<li><strong>Open Source:</strong> Transparent and auditable code</li>
+<li><strong>Trustless:</strong> No intermediaries required</li>
+</ul>
+</div>
+
+<div class="stats">
+<div class="stat"><div class="stat-value">11M</div><div class="stat-label">Max Supply DYX</div></div>
+<div class="stat"><div class="stat-value">1337</div><div class="stat-label">Network ID</div></div>
+<div class="stat"><div class="stat-value">PoW</div><div class="stat-label">Consensus</div></div>
+<div class="stat"><div class="stat-value">SHA3</div><div class="stat-label">Hashing</div></div>
+</div>
+</div>
+
+<div class="box">
+<h2>🔐 Cryptography & Security</h2>
+<div class="highlight">
+<h4>SHA3-256 Hashing Algorithm</h4>
+<p>DYNAX uses <strong>SHA3-256 (Keccak-256)</strong> for block hashing and transaction validation:</p>
+<ul>
+<li>✅ 256-bit security - resistant to quantum attacks</li>
+<li>✅ Collision resistance - impossible to find same hash</li>
+<li>✅ Avalanche effect - small change = different hash</li>
+<li>✅ NIST standard - approved by National Institute</li>
+<li>✅ Keccak sponge construction - modern design</li>
+</ul>
+</div>
+
+<h3>ECDSA Signatures</h3>
+<ul>
+<li>Private key generation and secure storage</li>
+<li>Public key derivation for addresses</li>
+<li>Transaction signing and verification</li>
+<li>Non-repudiation guarantees</li>
+</ul>
+
+<h3>Why SHA3-256?</h3>
+<ul>
+<li>Different from SHA-256 (Bitcoin uses SHA-256)</li>
+<li>Better security margins</li>
+<li>More resistant to future attacks</li>
+<li>Modern cryptographic standard</li>
+</ul>
+</div>
+
+<div class="box">
+<h2>🌐 Decentralized Architecture</h2>
+<div class="highlight">
+<h4>No Central Authority</h4>
+<p>DYNAX is <strong>fully decentralized</strong> - no central server, no company control:</p><ul>
+<li>🔗 Peer-to-Peer Network - direct communication</li>
+<li>🗳️ Consensus by Mining - distributed validation</li>
+<li>📊 Distributed Ledger - every node has full copy</li>
+<li>🔒 Trustless System - no central entity needed</li>
+<li>🛡️ Censorship Resistant - no one can block txs</li>
+</ul>
+</div>
+
+<h3>What Decentralized Means</h3>
+<ul>
+<li>✅ No CEO or board controls DYNAX</li>
+<li>✅ No central server to shut down</li>
+<li>✅ No one can freeze your funds</li>
+<li>✅ No government can block transactions</li>
+<li>✅ Code is open source and auditable</li>
+<li>✅ Anyone can run a node</li>
+</ul>
+</div>
+
+<div class="box">
+<h2>🔧 Technology Stack</h2>
+<h3>Core Components</h3>
+<ul>
+<li><strong>Node:</strong> Python + Flask + Socket.IO</li>
+<li><strong>Consensus:</strong> Proof of Work (PoW)</li>
+<li><strong>Hashing:</strong> SHA3-256 (Keccak-256)</li>
+<li><strong>Signatures:</strong> ECDSA</li>
+<li><strong>Smart Contracts:</strong> DVM (DYNAX Virtual Machine)</li>
+<li><strong>Web:</strong> HTML5, CSS3, JavaScript</li>
+</ul>
+
+<h3>Key Features</h3>
+<ul>
+<li>✅ Decentralized P2P network</li>
+<li>✅ SHA3-256 hashing</li>
+<li>✅ Block mining and validation</li>
+<li>✅ Smart contracts</li>
+<li>✅ Built-in wallet</li>
+<li>✅ Block explorer</li>
+<li>✅ DEX (Decentralized Exchange)</li>
+</ul>
+</div>
+
+<div class="box">
+<h2>💰 Token Economics</h2>
+<h3>DYX Token</h3>
+<ul>
+<li><strong>Name:</strong> DYNAX</li>
+<li><strong>Symbol:</strong> DYX</li><li><strong>Max Supply:</strong> 11,000,000 DYX</li>
+<li><strong>Block Reward:</strong> 50 DYX per block</li>
+<li><strong>Halving:</strong> Every 100,000 blocks</li>
+</ul>
+
+<h3>Distribution</h3>
+<ul>
+<li>⛏️ 40% - Mining Rewards</li>
+<li>👥 30% - Community</li>
+<li>💻 20% - Development</li>
+<li>📢 10% - Marketing</li>
+</ul>
+</div>
+
+<div class="box">
+<h2>🌐 Ecosystem</h2>
+<ul>
+<li><strong>Wallet:</strong> Send, receive, manage DYX</li>
+<li><strong>Explorer:</strong> View blocks and transactions</li>
+<li><strong>DEX:</strong> Decentralized exchange</li>
+<li><strong>DVM:</strong> Smart contract platform</li>
+<li><strong>Nodes:</strong> Distributed network</li>
+</ul>
+</div>
+
+<div class="box">
+<h2>🚀 Roadmap</h2>
+<h3>Phase 1 - Foundation (Q1 2026)</h3>
+<ul>
+<li>✅ Core blockchain</li>
+<li>✅ P2P network</li>
+<li>✅ Wallet & Explorer</li>
+<li>✅ Testnet</li>
+</ul>
+
+<h3>Phase 2 - Expansion (Q2 2026)</h3>
+<ul>
+<li>🔄 DEX</li>
+<li>🔄 DVM (Smart Contracts)</li>
+<li>🔄 Mainnet launch</li>
+<li>🔄 Documentation</li>
+</ul>
+
+<h3>Phase 3 - Growth (Q3-Q4 2026)</h3>
+<ul>
+<li>📋 Mobile app</li>
+<li>📋 Cross-chain bridges</li>
+<li>📋 Partnerships</li>
+<li>📋 Community</li>
+</ul></div>
+
+<div class="box">
+<h2>📞 Contact</h2>
+<p><strong>Website:</strong> https://dynax-website-2.onrender.com<br>
+<strong>GitHub:</strong> https://github.com/Redmi605900/dynax-website<br>
+<strong>Network ID:</strong> 1337<br>
+<strong>Ticker:</strong> DYX</p>
+</div>
+
+<div class="footer">
+<p>© 2026 DYNAX - Layer 1 Blockchain Platform</p>
+<p>Whitepaper v1.0 | June 2026</p>
+<p style="color:#d4af37;margin-top:10px">Decentralized • SHA3-256 • Proof of Work</p>
+</div>
+
+</div>
+</body>
+</html>
