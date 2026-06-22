@@ -349,23 +349,23 @@ def assets(filename):
 @app.route("/explorer")
 def explorer():
     try:
-        return open("static/explorer.html").read()
+        return open("explorer.html").read()
     except:
-        return "Explorer not found", 404
-
-@app.route("/whitepaper")
-def whitepaper():
-    try:
-        return open("static/whitepaper.html").read()
-    except:
-        return "Whitepaper not found", 404
+        return "Not found", 404
 
 @app.route("/dex")
 def dex():
     try:
-        return open("static/dex.html").read()
+        return open("dex.html").read()
     except:
-        return "DEX not found", 404
+        return "Not found", 404
+
+@app.route("/whitepaper")
+def whitepaper():
+    try:
+        return open("whitepaper.html").read()
+    except:
+        return "Not found", 404
 
 if __name__ == "__main__":
     print("=== DYNAX V20 SECURE NODE STARTED ===")
