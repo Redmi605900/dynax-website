@@ -286,6 +286,7 @@ async function loadTransactions() {
   } catch (error) {
     document.getElementById('txList').innerHTML = 
       `<div class="error-state">Error loading transactions: ${error.message}</div>`;
+    document.getElementById('totalTx').textContent = 'ERR';
   }
 }
 async function loadContracts() {
