@@ -272,7 +272,7 @@ async function loadTransactions() {
       <div class="tx-item">
         <div class="tx-header">
           <span class="block-number">Block #${tx.blockIndex}</span>
-          <span class="timestamp">${new Date(tx.timestamp).toLocaleString()}</span>
+          <span class="timestamp">${new Date(tx.timestamp * 1000).toLocaleString()}</span>
         </div>
         <div class="tx-from">
           <span class="from-address">From: ${tx.from || 'SYSTEM'}</span>
@@ -290,8 +290,8 @@ async function loadTransactions() {
 }
 async function loadContracts() {
   try {
-    const response = await fetch(`${API_URL}/contracts`);
-    const contracts = await response.json();
+    // contracts not yet implemented
+    const contracts = [];
     
     const container = document.getElementById('contractsList');
     
