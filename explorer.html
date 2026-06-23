@@ -293,9 +293,11 @@ async function loadContracts() {
   try {
     // contracts not yet implemented
     const contracts = [];
+    document.getElementById('totalContracts').textContent = '0';
     
     const container = document.getElementById('contractsList');
     
+    document.getElementById('contractsList').innerHTML = '<div class="empty-state">🧠 Smart Contracts — Coming Soon</div>';
     if (!contracts || contracts.length === 0) {
       document.getElementById('totalContracts').textContent = '0';
       container.innerHTML = `
