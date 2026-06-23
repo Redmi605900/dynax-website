@@ -49,6 +49,33 @@ def manifest():
 def sw():
     return send_file('sw.js', mimetype='application/javascript')
 
+
+NODE = 'https://dynax-node2.onrender.com'
+
+@app.route('/balance/<addr>')
+def proxy_balance(addr):
+    import requests
+    r = requests.get(f'{NODE}/balance/{addr}', timeout=5)
+    return r.text, r.status_code, {'Content-Type': 'application/json'}
+
+@app.route('/tx', methods=['POST'])
+def proxy_tx():
+    import requests
+    r = requests.post(f'{NODE}/tx', json=request.json, timeout=5)
+    return r.text, r.status_code, {'Content-Type': 'application/json'}
+
+@app.route('/txs/<addr>')
+def proxy_txs(addr):
+    import requests
+    r = requests.get(f'{NODE}/txs/{addr}', timeout=5)
+    return r.text, r.status_code, {'Content-Type': 'application/json'}
+
+@app.route('/tx/send', methods=['POST'])
+def proxy_tx_send():
+    import requests
+    r = requests.post(f'{NODE}/tx/send', json=request.json, timeout=5)
+    return r.text, r.status_code, {'Content-Type': 'application/json'}
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
