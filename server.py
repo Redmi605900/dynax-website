@@ -76,6 +76,25 @@ def proxy_tx_send():
     r = requests.post(f'{NODE}/tx/send', json=request.json, timeout=5)
     return r.text, r.status_code, {'Content-Type': 'application/json'}
 
+
+@app.route('/dex/pool')
+def proxy_dex_pool():
+    import requests
+    r = requests.get(f'{NODE}/dex/pool', timeout=5)
+    return r.text, r.status_code, {'Content-Type': 'application/json'}
+
+@app.route('/dex/swap', methods=['POST'])
+def proxy_dex_swap():
+    import requests
+    r = requests.post(f'{NODE}/dex/swap', json=request.json, timeout=5)
+    return r.text, r.status_code, {'Content-Type': 'application/json'}
+
+@app.route('/dex/liquidity', methods=['POST'])
+def proxy_dex_liquidity():
+    import requests
+    r = requests.post(f'{NODE}/dex/liquidity', json=request.json, timeout=5)
+    return r.text, r.status_code, {'Content-Type': 'application/json'}
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
