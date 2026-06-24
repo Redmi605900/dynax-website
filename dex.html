@@ -148,9 +148,9 @@
             try {
                 const r = await fetch(`${API}/mine/${addr}`);
                 const d = await r.json();
-                if(d.success) {
-                    const blockIndex = d.block ? d.block.index : 'N/A';
-                    const blockHash = d.block ? d.block.hash : 'N/A';
+                if(d.status === 'mined') {
+                    const blockIndex = d.block !== undefined ? d.block : 'N/A';
+                    const blockHash = 'N/A';
                     el.innerHTML = `<span class="success">✅ Block #${blockIndex} mined!<br>Hash: ${blockHash.substring(0,20)}...</span>`;
                 } else {
                     el.innerHTML = `<span class="error">❌ ${d.error || 'Mining failed'}</span>`;
