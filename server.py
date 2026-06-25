@@ -154,6 +154,11 @@ def api_faucet():
         }, timeout=10)
 
         faucet_claims[to_addr] = now
+        # Auto-mine เพื่อ confirm tx
+        try:
+            requests.get(f'{NODE}/mine/{FAUCET_ADDRESS}', timeout=30)
+        except:
+            pass
         return jsonify({"success": True, "amount": amount, "to": to_addr})
     except Exception as e:
         import traceback
