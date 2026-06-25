@@ -1,4 +1,4 @@
-from flask import Flask, send_file, jsonify
+from flask import Flask, send_file, jsonify, request
 import os
 
 app = Flask(__name__, static_folder='assets', static_url_path='/assets')
