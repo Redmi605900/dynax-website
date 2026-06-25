@@ -50,7 +50,7 @@ def sw():
     return send_file('sw.js', mimetype='application/javascript')
 
 
-NODE = 'https://dynax-node2.onrender.com'
+NODE = 'https://web-production-8bbb8.up.railway.app'
 
 @app.route('/balance/<addr>')
 def proxy_balance(addr):
@@ -155,8 +155,10 @@ def api_faucet():
 
         faucet_claims[to_addr] = now
         # Auto-mine เพื่อ confirm tx
+        import time as _time
+        _time.sleep(2)
         try:
-            requests.get(f'{NODE}/mine/{FAUCET_ADDRESS}', timeout=30)
+            requests.get(f'{NODE}/mine/{FAUCET_ADDRESS}', timeout=60)
         except:
             pass
         return jsonify({"success": True, "amount": amount, "to": to_addr})
