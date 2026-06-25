@@ -153,7 +153,7 @@ def api_faucet():
             "private_key": FAUCET_PRIVATE_KEY
         }, timeout=10)
 
-        if r.status_code == 200:
+        if r.status_code == 200 and ("mempool_size" in r.text or "success" in r.text):
             faucet_claims[to_addr] = now
             return jsonify({"success": True, "amount": amount, "to": to_addr})
         else:
