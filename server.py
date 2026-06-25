@@ -142,110 +142,25 @@ def api_faucet():
         amount = FAUCET_AMOUNT
         fee = 0.01
         msg = json.dumps({"amount": amount, "fee": fee, "from": FAUCET_ADDRESS, "to": to_addr}, sort_keys=True)
-cat > faucet.html << 'EOF'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DYNAX Faucet</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #0a0a0a; color: #fff; font-family: 'Courier New', monospace; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-  .container { max-width: 500px; width: 90%; }
-  h1 { color: #d4af37; font-size: 2rem; text-align: center; margin-bottom: 0.5rem; }
-  .subtitle { color: #888; text-align: center; margin-bottom: 2rem; }
-  .box { background: #111; border: 1px solid #d4af37; border-radius: 12px; padding: 2rem; }
-  .info { display: flex; justify-content: space-between; margin-bottom: 1.5rem; }
-  .info-item { text-align: center; }
-  .info-item .value { color: #d4af37; font-size: 1.5rem; font-weight: bold; }
-  .info-item .label { color: #888; font-size: 0.8rem; margin-top: 0.3rem; }
-  input { width: 100%; padding: 0.8rem; background: #1a1a1a; border: 1px solid #333; border-radius: 8px; color: #fff; font-family: monospace; font-size: 0.85rem; margin-bottom: 1rem; }
-  input:focus { outline: none; border-color: #d4af37; }
-  button { width: 100%; padding: 1rem; background: #d4af37; color: #000; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
-  button:hover { background: #f0c040; }
-  button:disabled { background: #555; cursor: not-allowed; }
-  .result { margin-top: 1rem; padding: 1rem; border-radius: 8px; text-align: center; display: none; }
-  .result.success { background: #0a2a0a; border: 1px solid #2a7a2a; color: #4caf50; }
-  .result.error { background: #2a0a0a; border: 1px solid #7a2a2a; color: #f44336; }
-  .nav { text-align: center; margin-top: 1.5rem; }
-  .nav a { color: #d4af37; text-decoration: none; margin: 0 1rem; }
-  .footer { margin-top: 2rem; text-align: center; color: #444; font-size: 0.8rem; }
-</style>
-</head>
-<body>
-<div class="container">
-  <h1>💧 DYNAX Faucet</h1>
-  <p class="subtitle">Get free DYX to get started</p>
-  <div class="box">
-    <div class="info">
-      <div class="info-item">
-        <div class="value">10 DYX</div>
-        <div class="label">Per Claim</div>
-      </div>
-      <div class="info-item">
-        <div class="value">12h</div>
-        <div class="label">Cooldown</div>
-      </div>
-      <div class="info-item">
-        <div class="value">FREE</div>
-        <div class="label">No Registration</div>
-      </div>
-    </div>
-    <input type="text" id="address" placeholder="Enter your DX... wallet address" />
-    <button id="claimBtn" onclick="claim()">💧 Claim 10 DYX</button>
-    <div class="result" id="result"></div>
-  </div>
-  <div class="nav">
-    <a href="/">Home</a>
-    <a href="/wallet">Wallet</a>
-    <a href="/explorer">Explorer</a>
-  </div>
-  <div class="footer">
-    <p>Decentralized • No KYC • Trustless</p>
-  </div>
-</div>
-<script>
-async function claim() {
-  const addr = document.getElementById('address').value.trim();
-  const btn = document.getElementById('claimBtn');
-  const result = document.getElementById('result');
 
-  if (!addr.startsWith('DX')) {
-    showResult('error', 'Please enter a valid DX... address');
-    return;
-  }
+        sig = sk.sign(hashlib.sha3_256(msg.encode()).digest()).hex()
 
-  btn.disabled = true;
-  btn.textContent = 'Processing...';
+        r = requests.post(f'{NODE}/tx/send', json={
+            "from": FAUCET_ADDRESS,
+            "to": to_addr,
+            "amount": amount,
+            "fee": fee,
+            "private_key": FAUCET_PRIVATE_KEY
+        }, timeout=10)
 
-  try {
-    const r = await fetch('/api/faucet', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({address: addr})
-    });
-    const data = await r.json();
+        if r.status_code == 200:
+            faucet_claims[to_addr] = now
+            return jsonify({"success": True, "amount": amount, "to": to_addr})
+        else:
+            return jsonify({"error": "Transaction failed", "detail": r.text}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-    if (data.success) {
-      showResult('success', `✅ Successfully sent 10 DYX to ${addr.slice(0,12)}...`);
-    } else {
-      showResult('error', '❌ ' + (data.error || 'Something went wrong'));
-    }
-  } catch(e) {
-    showResult('error', '❌ Network error, please try again');
-  }
-
-  btn.disabled = false;
-  btn.textContent = '💧 Claim 10 DYX';
-}
-
-function showResult(type, msg) {
-  const el = document.getElementById('result');
-  el.className = 'result ' + type;
-  el.textContent = msg;
-  el.style.display = 'block';
-}
-</script>
-</body>
-</html>
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port, debug=False)
