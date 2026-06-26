@@ -235,14 +235,15 @@ async function loadBlocks() {
     
     document.getElementById('totalBlocks').textContent = blocks.length;
     
-    const container = document.getElementById('blocksList');
+    window.allBlocks = blocks;
+const container = document.getElementById('blocksList');
     if (blocks.length === 0) {
       container.innerHTML = '<div class="empty-state">No blocks yet</div>';
       return;
     }
     
     container.innerHTML = blocks.map(block => `
-      <div class="block-item">
+      <div class="block-item" onclick='showBlockById(${block.index})'>
         <div class="block-header">
           <span class="block-number">Block #${block.index}</span>
           <span class="timestamp">${new Date(block.timestamp * 1000).toLocaleString()}</span>
@@ -349,6 +350,7 @@ loadBlocks();
 setTimeout(loadTransactions, 1000);
 setTimeout(loadContracts, 1500);
 
+function showBlockById(idx) { const block = window.allBlocks.find(b => b.index === idx); showBlock(block); }
 function showBlock(block) {
   document.getElementById("modal-title").textContent = "Block #" + block.index;
   const txs = block.transactions || [];
