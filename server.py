@@ -41,6 +41,10 @@ def api_stats():
     except:
         return jsonify({'blocks': 0, 'transactions': 0, 'nodes': 1, 'status': 'online'})
 
+@app.route('/logo.png')
+def logo():
+    return send_file('logo.png', mimetype='image/png')
+
 @app.route('/manifest.json')
 def manifest():
     return send_file('manifest.json', mimetype='application/json')
