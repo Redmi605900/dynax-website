@@ -145,6 +145,20 @@ body {
   font-weight: bold;
   margin-bottom: 20px;
 }
+
+.modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y:auto; }
+.modal-content { background:#111; border:1px solid #d4af37; border-radius:12px; margin:20px auto; padding:20px; max-width:600px; }
+.modal-title { color:#d4af37; font-size:18px; font-weight:bold; margin-bottom:16px; }
+.modal-close { float:right; cursor:pointer; color:#888; font-size:20px; }
+.detail-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #222; font-size:13px; }
+.detail-label { color:#888; min-width:120px; }
+.detail-value { color:#fff; word-break:break-all; text-align:right; max-width:70%; }
+.detail-value.gold { color:#d4af37; }
+.tx-item { background:#1a1a1a; border-radius:8px; padding:10px; margin-top:8px; font-size:12px; }
+.tx-from { color:#888; }
+.tx-amount { color:#4caf50; font-weight:bold; }
+.block-item { cursor:pointer; transition:border-color 0.2s; }
+.block-item:hover { border-color:#d4af37; }
 </style>
 </head>
 <body>
@@ -334,6 +348,46 @@ async function loadContracts() {
 loadBlocks();
 setTimeout(loadTransactions, 1000);
 setTimeout(loadContracts, 1500);
+
+function showBlock(block) {
+  document.getElementById("modal-title").textContent = "Block #" + block.index;
+  const txs = block.transactions || [];
+  const size = (JSON.stringify(block).length / 1024).toFixed(1);
+  const time = new Date(block.timestamp * 1000).toLocaleString();
+  
+  let txHtml = txs.map(tx => `
+    <div class="tx-item">
+      <div class="tx-from">From: ${tx.from || "SYSTEM"}</div>
+      <div class="tx-from">To: ${tx.to || "-"}</div>
+      <div class="tx-amount">Amount: ${tx.amount} DYX</div>
+    </div>
+  `).join("");
+
+  document.getElementById("modal-body").innerHTML = `
+    <div class="detail-row"><span class="detail-label">Hash</span><span class="detail-value">${block.hash}</span></div>
+    <div class="detail-row"><span class="detail-label">Previous Hash</span><span class="detail-value">${block.prev_hash || "-"}</span></div>
+    <div class="detail-row"><span class="detail-label">Timestamp</span><span class="detail-value gold">${time}</span></div>
+    <div class="detail-row"><span class="detail-label">Nonce</span><span class="detail-value gold">${block.nonce}</span></div>
+    <div class="detail-row"><span class="detail-label">Transactions</span><span class="detail-value gold">${txs.length}</span></div>
+    <div class="detail-row"><span class="detail-label">Reward</span><span class="detail-value gold">50 DYX</span></div>
+    <div class="detail-row"><span class="detail-label">Size</span><span class="detail-value">${size} KB</span></div>
+    <div style="margin-top:12px;color:#d4af37;font-size:13px">Transactions:</div>
+    ${txHtml || "<div style='color:#888;font-size:12px;margin-top:8px'>No transactions</div>"}
+  `;
+  document.getElementById("blockModal").style.display = "block";
+}
+
+function closeModal() {
+  document.getElementById("blockModal").style.display = "none";
+}
 </script>
+
+<div class="modal" id="blockModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-content">
+    <span class="modal-close" onclick="closeModal()">✕</span>
+    <div class="modal-title" id="modal-title">Block Details</div>
+    <div id="modal-body"></div>
+  </div>
+</div>
 </body>
 </html>
