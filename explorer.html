@@ -231,7 +231,7 @@ async function loadBlocks() {
       <div class="block-item">
         <div class="block-header">
           <span class="block-number">Block #${block.index}</span>
-          <span class="timestamp">${new Date(block.timestamp).toLocaleString()}</span>
+          <span class="timestamp">${new Date(block.timestamp * 1000).toLocaleString()}</span>
         </div>
         <div class="block-hash">Hash: ${block.hash}</div>
         <div class="block-info">
