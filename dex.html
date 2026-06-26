@@ -6,68 +6,81 @@
 <title>DYNAX DEX</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: #0a0a0a; color: #f0c040; font-family: Arial, sans-serif; padding: 20px; }
-.header { text-align: center; padding: 20px 0; border-bottom: 1px solid #333; margin-bottom: 20px; }
-h1 { font-size: 28px; color: #f0c040; }
-.subtitle { color: #888; font-size: 14px; margin-top: 5px; }
-.card { background: #111; border: 1px solid #333; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
-.card h2 { color: #f0c040; margin-bottom: 15px; font-size: 18px; }
-.price-box { display: flex; justify-content: space-around; margin-bottom: 20px; }
-.price-item { text-align: center; }
-.price-value { font-size: 24px; font-weight: bold; color: #f0c040; }
-.price-label { font-size: 12px; color: #888; margin-top: 5px; }
-input { width: 100%; background: #0a0a0a; color: #f0c040; border: 1px solid #444; padding: 12px; border-radius: 8px; margin: 8px 0; font-size: 16px; }
-select { width: 100%; background: #0a0a0a; color: #f0c040; border: 1px solid #444; padding: 12px; border-radius: 8px; margin: 8px 0; font-size: 16px; }
-button { width: 100%; background: #f0c040; color: #000; border: none; padding: 14px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+body { background: #0a0a0a; color: #f0c040; font-family: Arial, sans-serif; padding: 16px; }
+.back { display: inline-block; margin-bottom: 16px; color: #f0c040; text-decoration: none; border: 1px solid #f0c040; padding: 8px 16px; border-radius: 4px; }
+.header { text-align: center; padding: 16px 0; border-bottom: 1px solid #333; margin-bottom: 16px; }
+h1 { font-size: 24px; color: #f0c040; }
+.subtitle { color: #888; font-size: 13px; margin-top: 4px; }
+.card { background: #111; border: 1px solid #333; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.card h2 { color: #f0c040; margin-bottom: 12px; font-size: 16px; }
+.pool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.pool-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.stat { background: #1a1a1a; padding: 10px; border-radius: 8px; text-align: center; }
+.stat-value { font-size: 18px; font-weight: bold; color: #f0c040; }
+.stat-label { font-size: 11px; color: #888; margin-top: 3px; }
+.badge { display: inline-block; background: #1a2a1a; color: #4caf50; border: 1px solid #2a4a2a; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px; }
+select, input { width: 100%; background: #0a0a0a; color: #f0c040; border: 1px solid #444; padding: 12px; border-radius: 8px; margin: 6px 0; font-size: 15px; }
+button { width: 100%; background: #f0c040; color: #000; border: none; padding: 14px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 8px; }
 button:hover { background: #ffd700; }
-.result { margin-top: 15px; padding: 12px; background: #1a1a1a; border-radius: 8px; font-size: 14px; line-height: 1.6; }
+.preview { background: #0d1a0d; border: 1px solid #2a4a2a; border-radius: 8px; padding: 12px; margin-top: 10px; display: none; }
+.preview-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; border-bottom: 1px solid #1a2a1a; }
+.preview-row:last-child { border-bottom: none; }
+.preview-label { color: #888; }
+.preview-value { color: #f0c040; font-weight: bold; }
+.preview-value.green { color: #4caf50; }
+.preview-value.red { color: #f44336; }
+.result { margin-top: 10px; padding: 10px; background: #1a1a1a; border-radius: 8px; font-size: 13px; }
 .success { color: #4caf50; }
 .error { color: #f44336; }
-.pool-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.stat { background: #1a1a1a; padding: 12px; border-radius: 8px; text-align: center; }
-.stat-value { font-size: 20px; font-weight: bold; }
-.stat-label { font-size: 12px; color: #888; margin-top: 4px; }
-.back { display: inline-block; margin-bottom: 20px; color: #f0c040; text-decoration: none; border: 1px solid #f0c040; padding: 8px 16px; border-radius: 4px; }
+.divider { text-align: center; color: #555; margin: 4px 0; font-size: 20px; }
+.fee-info { display: flex; justify-content: space-between; font-size: 12px; color: #888; margin-top: 4px; }
 </style>
 </head>
 <body>
 <a href="/" class="back">← หน้าหลัก</a>
 <div class="header">
   <h1>⚡ DYNAX DEX</h1>
-  <div class="subtitle">Decentralized Exchange — AMM (x*y=k)</div>
+  <div class="subtitle">Decentralized Exchange — AMM (x*y=k) <span class="badge">● Live</span></div>
 </div>
 
 <div class="card">
   <h2>📊 Pool Status</h2>
-  <div class="price-box">
-    <div class="price-item">
-      <div class="price-value" id="price">-</div>
-      <div class="price-label">DYX/USDT</div>
-    </div>
-    <div class="price-item">
-      <div class="price-value" id="dyx-reserve">-</div>
-      <div class="price-label">DYX Reserve</div>
-    </div>
-    <div class="price-item">
-      <div class="price-value" id="usdt-reserve">-</div>
-      <div class="price-label">USDT Reserve</div>
-    </div>
+  <div class="pool-grid">
+    <div class="stat"><div class="stat-value" id="dyx-reserve">-</div><div class="stat-label">DYX Reserve</div></div>
+    <div class="stat"><div class="stat-value" id="usdt-reserve">-</div><div class="stat-label">USDT Reserve</div></div>
+  </div>
+  <div class="pool-grid-3">
+    <div class="stat"><div class="stat-value" id="price">-</div><div class="stat-label">Price (USDT)</div></div>
+    <div class="stat"><div class="stat-value" id="tvl">-</div><div class="stat-label">Pool TVL</div></div>
+    <div class="stat"><div class="stat-value">0.30%</div><div class="stat-label">Swap Fee</div></div>
   </div>
   <button onclick="loadPool()">🔄 Refresh</button>
 </div>
 
 <div class="card">
   <h2>🔄 Swap</h2>
-  <select id="token-in">
+  <select id="token-in" onchange="calcPreview()">
     <option value="DYX">DYX</option>
     <option value="USDT">USDT</option>
   </select>
-  <input type="number" id="amount-in" placeholder="จำนวนที่ต้องการแลก">
-  <select id="token-out">
+  <input type="number" id="amount-in" placeholder="จำนวนที่ต้องการแลก" oninput="calcPreview()">
+  <div class="divider">↓</div>
+  <select id="token-out" onchange="calcPreview()">
     <option value="USDT">USDT</option>
     <option value="DYX">DYX</option>
   </select>
+
+  <div class="preview" id="swap-preview">
+    <div class="preview-row"><span class="preview-label">You Pay</span><span class="preview-value" id="p-pay">-</span></div>
+    <div class="preview-row"><span class="preview-label">You Receive</span><span class="preview-value green" id="p-receive">-</span></div>
+    <div class="preview-row"><span class="preview-label">Fee (0.30%)</span><span class="preview-value" id="p-fee">-</span></div>
+    <div class="preview-row"><span class="preview-label">Minimum Received</span><span class="preview-value" id="p-min">-</span></div>
+    <div class="preview-row"><span class="preview-label">Price Impact</span><span class="preview-value red" id="p-impact">-</span></div>
+    <div class="preview-row"><span class="preview-label">Rate</span><span class="preview-value" id="p-rate">-</span></div>
+  </div>
+
   <button onclick="doSwap()">⚡ Swap</button>
+  <div class="fee-info"><span>Slippage: 0.5%</span><span>Fee: 0.30%</span></div>
   <div id="swap-result" class="result" style="display:none"></div>
 </div>
 
@@ -77,74 +90,137 @@ button:hover { background: #ffd700; }
     <option value="DYX">DYX</option>
     <option value="USDT">USDT</option>
   </select>
-  <input type="number" id="liq-amount" placeholder="จำนวนที่ต้องการเพิ่ม">
+  <input type="number" id="liq-amount" placeholder="จำนวนที่ต้องการเพิ่ม" oninput="calcLiquidity()">
+
+  <div class="preview" id="liq-preview">
+    <div class="preview-row"><span class="preview-label">Your Share</span><span class="preview-value green" id="l-share">-</span></div>
+    <div class="preview-row"><span class="preview-label">LP Tokens</span><span class="preview-value" id="l-lp">-</span></div>
+    <div class="preview-row"><span class="preview-label">Pool Ratio</span><span class="preview-value" id="l-ratio">-</span></div>
+  </div>
+
   <button onclick="addLiquidity()">➕ Add Liquidity</button>
   <div id="liq-result" class="result" style="display:none"></div>
 </div>
 
 <script>
 const API = window.location.origin;
+const FEE = 0.003;
+const SLIPPAGE = 0.005;
+let poolData = null;
 
 async function loadPool() {
   try {
     const r = await fetch(`${API}/dex/pool`);
-    const d = await r.json();
-    document.getElementById('price').textContent = d.price_dyx_usdt;
-    document.getElementById('dyx-reserve').textContent = Math.round(d.DYX).toLocaleString();
-    document.getElementById('usdt-reserve').textContent = Math.round(d.USDT).toLocaleString();
+    poolData = await r.json();
+    const dyx = poolData.DYX;
+    const usdt = poolData.USDT;
+    const price = poolData.price_dyx_usdt;
+    const tvl = (dyx * price + usdt).toFixed(0);
+    document.getElementById("price").textContent = price.toFixed(4);
+    document.getElementById("dyx-reserve").textContent = Math.round(dyx).toLocaleString();
+    document.getElementById("usdt-reserve").textContent = Math.round(usdt).toLocaleString();
+    document.getElementById("tvl").textContent = "$" + parseInt(tvl).toLocaleString();
   } catch(e) {
-    document.getElementById('price').textContent = 'Error';
+    document.getElementById("price").textContent = "Error";
   }
 }
 
+function calcPreview() {
+  if (!poolData) return;
+  const amountIn = parseFloat(document.getElementById("amount-in").value);
+  const tokenIn = document.getElementById("token-in").value;
+  const tokenOut = document.getElementById("token-out").value;
+  if (!amountIn || amountIn <= 0 || tokenIn === tokenOut) {
+    document.getElementById("swap-preview").style.display = "none";
+    return;
+  }
+  const x = tokenIn === "DYX" ? poolData.DYX : poolData.USDT;
+  const y = tokenIn === "DYX" ? poolData.USDT : poolData.DYX;
+  const amountInWithFee = amountIn * (1 - FEE);
+  const fee = amountIn * FEE;
+  const amountOut = (y * amountInWithFee) / (x + amountInWithFee);
+  const minReceived = amountOut * (1 - SLIPPAGE);
+  const priceImpact = (amountIn / (x + amountIn) * 100).toFixed(2);
+  const rate = (amountOut / amountIn).toFixed(4);
+
+  document.getElementById("p-pay").textContent = amountIn.toFixed(4) + " " + tokenIn;
+  document.getElementById("p-receive").textContent = amountOut.toFixed(4) + " " + tokenOut;
+  document.getElementById("p-fee").textContent = fee.toFixed(4) + " " + tokenIn;
+  document.getElementById("p-min").textContent = minReceived.toFixed(4) + " " + tokenOut;
+  document.getElementById("p-impact").textContent = priceImpact + "%";
+  document.getElementById("p-rate").textContent = "1 " + tokenIn + " = " + rate + " " + tokenOut;
+  document.getElementById("swap-preview").style.display = "block";
+}
+
+function calcLiquidity() {
+  if (!poolData) return;
+  const amount = parseFloat(document.getElementById("liq-amount").value);
+  const token = document.getElementById("liq-token").value;
+  if (!amount || amount <= 0) {
+    document.getElementById("liq-preview").style.display = "none";
+    return;
+  }
+  const totalPool = token === "DYX" ? poolData.DYX : poolData.USDT;
+  const share = (amount / (totalPool + amount) * 100).toFixed(2);
+  const lpTokens = Math.round(amount * 0.5);
+  const ratio = token === "DYX" 
+    ? "2 DYX : 1 USDT" 
+    : "1 USDT : 2 DYX";
+
+  document.getElementById("l-share").textContent = share + "%";
+  document.getElementById("l-lp").textContent = lpTokens.toLocaleString() + " LP";
+  document.getElementById("l-ratio").textContent = ratio;
+  document.getElementById("liq-preview").style.display = "block";
+}
+
 async function doSwap() {
-  const tokenIn = document.getElementById('token-in').value;
-  const tokenOut = document.getElementById('token-out').value;
-  const amountIn = parseFloat(document.getElementById('amount-in').value);
-  const el = document.getElementById('swap-result');
-  el.style.display = 'block';
-  if(!amountIn || amountIn <= 0) { el.innerHTML = '<span class="error">กรุณาใส่จำนวน</span>'; return; }
-  if(tokenIn === tokenOut) { el.innerHTML = '<span class="error">เลือก token ต่างกัน</span>'; return; }
-  el.innerHTML = 'กำลัง swap...';
+  const tokenIn = document.getElementById("token-in").value;
+  const tokenOut = document.getElementById("token-out").value;
+  const amountIn = parseFloat(document.getElementById("amount-in").value);
+  const el = document.getElementById("swap-result");
+  el.style.display = "block";
+  if (!amountIn || amountIn <= 0) { el.innerHTML = "<span class=error>กรุณาใส่จำนวน</span>"; return; }
+  if (tokenIn === tokenOut) { el.innerHTML = "<span class=error>เลือก token ต่างกัน</span>"; return; }
+  el.innerHTML = "กำลัง swap...";
   try {
     const r = await fetch(`${API}/dex/swap`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
       body: JSON.stringify({token_in: tokenIn, token_out: tokenOut, amount_in: amountIn})
     });
     const d = await r.json();
-    if(d.success) {
-      el.innerHTML = `<span class="success">✅ ${d.swapped}<br>Rate: ${d.rate}</span>`;
+    if (d.success) {
+      el.innerHTML = "<span class=success>✅ " + d.swapped + "<br>Rate: " + d.rate + "</span>";
       loadPool();
     } else {
-      el.innerHTML = `<span class="error">❌ ${d.error}</span>`;
+      el.innerHTML = "<span class=error>❌ " + d.error + "</span>";
     }
   } catch(e) {
-    el.innerHTML = `<span class="error">Error: ${e.message}</span>`;
+    el.innerHTML = "<span class=error>Error: " + e.message + "</span>";
   }
 }
 
 async function addLiquidity() {
-  const token = document.getElementById('liq-token').value;
-  const amount = parseFloat(document.getElementById('liq-amount').value);
-  const el = document.getElementById('liq-result');
-  el.style.display = 'block';
-  if(!amount || amount <= 0) { el.innerHTML = '<span class="error">กรุณาใส่จำนวน</span>'; return; }
+  const token = document.getElementById("liq-token").value;
+  const amount = parseFloat(document.getElementById("liq-amount").value);
+  const el = document.getElementById("liq-result");
+  el.style.display = "block";
+  if (!amount || amount <= 0) { el.innerHTML = "<span class=error>กรุณาใส่จำนวน</span>"; return; }
   try {
     const r = await fetch(`${API}/dex/liquidity`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
       body: JSON.stringify({token, amount})
     });
     const d = await r.json();
-    if(d.success) {
-      el.innerHTML = `<span class="success">✅ เพิ่ม Liquidity สำเร็จ</span>`;
+    if (d.success) {
+      el.innerHTML = "<span class=success>✅ เพิ่ม Liquidity สำเร็จ</span>";
       loadPool();
     } else {
-      el.innerHTML = `<span class="error">❌ ${d.error}</span>`;
+      el.innerHTML = "<span class=error>❌ " + d.error + "</span>";
     }
   } catch(e) {
-    el.innerHTML = `<span class="error">Error: ${e.message}</span>`;
+    el.innerHTML = "<span class=error>Error: " + e.message + "</span>";
   }
 }
 
