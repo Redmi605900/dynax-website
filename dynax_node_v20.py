@@ -96,7 +96,8 @@ class DynaxNode:
         while True:
             raw = json.dumps(block, sort_keys=True)
             h = hashlib.sha3_256(raw.encode()).hexdigest()
-            if h.startswith("0000"):
+            difficulty = get_difficulty(self.chain)
+            if h.startswith(difficulty):
                 block["hash"] = h
                 break
             block["nonce"] += 1
@@ -396,7 +397,7 @@ def auto_connect_bootstrap():
     # Static peers
     static_peers = [
         "https://dynax-node.onrender.com",
-        "https://web-production-8bbb8.up.railway.app",
+        "https://dynax-node2.onrender.com",
     ]
     for p in static_peers:
         node.peers.add(p)
@@ -561,6 +562,39 @@ def receive_tx():
     threading.Thread(target=broadcast_tx, args=(tx,), daemon=True).start()
     return jsonify({"status": "received", "mempool_size": len(node.mempool)})
 
+
+def get_difficulty(chain):
+    """คำนวณ difficulty จาก block time เฉลี่ย"""
+    TARGET_BLOCK_TIME = 12  # วินาที
+    ADJUST_EVERY = 10  # ปรับทุก 10 blocks
+    MIN_DIFF = 3  # ขั้นต่ำ 3 zeros
+    MAX_DIFF = 6  # สูงสุด 6 zeros
+    
+    if len(chain) < ADJUST_EVERY + 1:
+        return "0000"  # default 4 zeros
+    
+    # เอา 10 blocks ล่าสุด
+    recent = chain[-ADJUST_EVERY:]
+    time_taken = recent[-1]["timestamp"] - recent[0]["timestamp"]
+    
+    if time_taken <= 0:
+        return "0000"
+    
+    avg_time = time_taken / ADJUST_EVERY
+    current_zeros = len("0000")  # เริ่มจาก 4
+    
+    # ปรับ difficulty
+    if avg_time < TARGET_BLOCK_TIME * 0.5:
+        # เร็วเกินไป → เพิ่ม difficulty
+        new_zeros = min(current_zeros + 1, MAX_DIFF)
+    elif avg_time > TARGET_BLOCK_TIME * 2:
+        # ช้าเกินไป → ลด difficulty
+        new_zeros = max(current_zeros - 1, MIN_DIFF)
+    else:
+        new_zeros = current_zeros
+    
+    return "0" * new_zeros
+
 def validate_chain(chain):
     """ตรวจสอบ chain ว่าถูกต้องไหม"""
     import hashlib as _hl
@@ -585,7 +619,13 @@ def validate_chain(chain):
             return False
         
         # เช็ค PoW (hash ต้องขึ้นต้นด้วย 0000)
-        if not block.get("hash", "").startswith("0000"):
+        expected_diff = get_difficulty(chain[:i])
+        # ตรวจ difficulty ใน block ต้องตรงกับที่คำนวณได้
+        if block.get("difficulty") and block["difficulty"] != expected_diff:
+            print(f"Invalid difficulty at block {i}: expected {expected_diff} got {block['difficulty']}")
+            return False
+        # ตรวจ hash ต้องผ่าน PoW ตาม expected difficulty
+        if not block.get("hash", "").startswith(expected_diff):
             print(f"Invalid PoW at block {i}")
             return False
     
