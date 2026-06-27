@@ -44,7 +44,18 @@ class DynaxNode:
         else: self.create_genesis()
 
     def create_genesis(self):
-        genesis = {"index": 0, "timestamp": int(time.time()), "transactions": [], "prev_hash": "0"*64, "nonce": 0}
+        genesis = {
+            "index": 0,
+            "timestamp": 1780771234,
+            "transactions": [
+                {"from": "GENESIS", "to": "DXa5ae9ccc94279d4f52b4f4e694a5a3b2f4f5ece3", "amount": 300000},
+                {"from": "GENESIS", "to": "DX2cd2db91dd4e11e56b3a90e8219b9b11f16d498d", "amount": 7000},
+                {"from": "GENESIS", "to": "DXb2913cfc7756e6675fadbcb35cd595e680b330d3", "amount": 445},
+                {"from": "GENESIS", "to": "DXe0e2eb885049e91123a0ab6f4bf62064d4572170", "amount": 137}
+            ],
+            "prev_hash": "0"*64,
+            "nonce": 0
+        }
         genesis["hash"] = hashlib.sha3_256(json.dumps(genesis, sort_keys=True).encode()).hexdigest()
         self.chain = [genesis]
         self.save_chain()
@@ -77,7 +88,6 @@ class DynaxNode:
         return {"status": "queued", "tx": tx}
 
     def mine(self, miner):
-        if not self.mempool: return {"error": "no tx"}
         reward = {"from": "SYSTEM", "to": miner, "amount": 50, "timestamp": int(time.time())}
         txs = self.mempool[:50]
         self.mempool = self.mempool[50:]
@@ -123,7 +133,7 @@ def balance(addr): return jsonify({"address": addr, "balance": node.balance(addr
 def mine(miner): return jsonify(node.mine(miner))
 
 @app.route("/")
-def home(): return jsonify({"network": "DYNAX v20 Secure", "blocks": len(node.chain)})
+def home(): return jsonify({"network": "DYNAX v20 Secure", "blocks": len(node.chain), "api_v1": True})
 
 
 @app.route("/wallet")
@@ -290,6 +300,20 @@ def show_pending():
     })
 
 
+@app.route("/stats")
+def stats():
+    chain = node.chain
+    txs = sum(len(node.get_txs(b)) for b in chain)
+    return jsonify({
+        "blocks": len(chain),
+        "transactions": txs,
+        "nodes": len(node.peers) + 1,
+        "difficulty": "0000",
+        "symbol": "DYX",
+        "reward": 50,
+        "status": "online"
+    })
+
 @app.route("/peers")
 def get_peers():
     return jsonify({"peers": list(node.peers)})
@@ -351,22 +375,250 @@ def explorer():
     try:
         return open("explorer.html").read()
     except:
-        return "Not found", 404
-
-@app.route("/dex")
-def dex():
-    try:
-        return open("dex.html").read()
-    except:
-        return "Not found", 404
+        return "explorer.html not found", 404
 
 @app.route("/whitepaper")
 def whitepaper():
     try:
         return open("whitepaper.html").read()
     except:
-        return "Not found", 404
+        return "whitepaper.html not found", 404
+
+@app.route("/dex")
+def dex():
+    try:
+        return open("dex.html").read()
+    except:
+        return "dex.html not found", 404
+
+
+def auto_connect_bootstrap():
+    # Static peers
+    static_peers = [
+        "https://dynax-node.onrender.com",
+    ]
+    for p in static_peers:
+        node.peers.add(p)
+
+    import time
+    time.sleep(10)
+    bootstrap = os.environ.get("BOOTSTRAP_NODE", "")
+    if bootstrap:
+        try:
+            import requests
+            requests.post(f"{bootstrap}/peers/add", json={"peer": os.environ.get("MY_URL", "")}, timeout=5)
+            node.peers.add(bootstrap)
+            print(f"Connected to bootstrap: {bootstrap}")
+        except Exception as e:
+            print(f"Bootstrap connect failed: {e}")
+
+import threading
+threading.Thread(target=auto_connect_bootstrap, daemon=True).start()
+
+
+# DEX Liquidity Pool
+import json as _json
+
+POOL_FILE = "liquidity_pool.json"
+
+def load_pool():
+    if os.path.exists(POOL_FILE):
+        with open(POOL_FILE) as f:
+            return _json.load(f)
+    return {"DYX": 100000, "USDT": 50000}
+
+def save_pool(pool):
+    with open(POOL_FILE, "w") as f:
+        _json.dump(pool, f)
+
+liquidity_pool = load_pool()
+
+@app.route("/dex/pool")
+def dex_pool():
+    price = liquidity_pool["USDT"] / liquidity_pool["DYX"]
+    return jsonify({
+        "DYX": liquidity_pool["DYX"],
+        "USDT": liquidity_pool["USDT"],
+        "price_dyx_usdt": round(price, 6)
+    })
+
+@app.route("/dex/swap", methods=["POST"])
+def dex_swap():
+    try:
+        data = request.get_json()
+        token_in = data["token_in"]
+        token_out = data["token_out"]
+        amount_in = float(data["amount_in"])
+        if amount_in <= 0:
+            return jsonify({"error": "Amount must be positive"}), 400
+        reserve_in = liquidity_pool[token_in]
+        reserve_out = liquidity_pool[token_out]
+        amount_out = (amount_in * reserve_out) / (reserve_in + amount_in)
+        liquidity_pool[token_in] += amount_in
+        liquidity_pool[token_out] -= amount_out
+        save_pool(liquidity_pool)
+        return jsonify({
+            "success": True,
+            "swapped": f"{amount_in} {token_in} -> {round(amount_out,6)} {token_out}",
+            "rate": round(amount_out/amount_in, 6),
+            "pool": liquidity_pool
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route("/dex/liquidity", methods=["POST"])
+def dex_add_liquidity():
+    try:
+        data = request.get_json()
+        token = data["token"]
+        amount = float(data["amount"])
+        if amount <= 0:
+            return jsonify({"error": "Amount must be positive"}), 400
+        liquidity_pool[token] = liquidity_pool.get(token, 0) + amount
+        save_pool(liquidity_pool)
+        return jsonify({"success": True, "pool": liquidity_pool})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 if __name__ == "__main__":
     print("=== DYNAX V20 SECURE NODE STARTED ===")
-    app.run(host="0.0.0.0", port=6002)
+    
+# ===== BRIDGE API v1 =====
+@app.route("/api/v1/info")
+def api_info():
+    return jsonify({
+        "network": "DYNAX",
+        "version": "v20",
+        "network_id": 1337,
+        "ticker": "DYX",
+        "max_supply": 11000000,
+        "block_reward": 50,
+        "algorithm": "SHA3-256 PoW",
+        "blocks": len(node.chain),
+        "status": "online"
+    })
+
+@app.route("/api/v1/balance/<addr>")
+def api_balance(addr):
+    bal = node.get_balance(addr)
+    return jsonify({"address": addr, "balance": bal, "symbol": "DYX"})
+
+@app.route("/api/v1/tx/<txid>")
+def api_tx(txid):
+    for block in node.chain:
+        for tx in block.get("transactions", []):
+            if tx.get("signature", "")[:16] == txid[:16]:
+                return jsonify({"found": True, "tx": tx, "block": block["index"]})
+    return jsonify({"found": False, "txid": txid}), 404
+
+@app.route("/api/v1/blocks")
+def api_blocks():
+    limit = int(request.args.get("limit", 10))
+    return jsonify({"total": len(node.chain), "blocks": node.chain[-limit:]})
+
+@app.route("/api/v1/send", methods=["POST"])
+def api_send():
+    return send_tx_with_key()
+
+@app.route("/api/v1/peers", methods=["GET"])
+def api_peers():
+    return jsonify({"peers": list(node.peers), "count": len(node.peers)})
+
+@app.route("/api/v1/peers/add", methods=["POST"])
+def api_peers_add():
+    data = request.json
+    peer = data.get("peer")
+    if peer:
+        node.peers.add(peer)
+        return jsonify({"success": True, "peer": peer})
+    return jsonify({"error": "peer required"}), 400
+
+
+
+
+def broadcast_tx(tx):
+    """ส่ง transaction ไปให้ทุก peer"""
+    import requests as _req
+    for peer in list(node.peers):
+        try:
+            _req.post(f"{peer}/receive_tx", json=tx, timeout=3)
+        except:
+            pass
+
+@app.route("/receive_tx", methods=["POST"])
+def receive_tx():
+    """รับ transaction จาก peer"""
+    tx = request.json
+    if not tx:
+        return jsonify({"error": "no tx"}), 400
+    # เช็คว่ามีใน mempool แล้วหรือยัง
+    for existing in node.mempool:
+        if existing.get("signature") == tx.get("signature"):
+            return jsonify({"status": "already have tx"})
+    node.mempool.append(tx)
+    # relay ต่อไปยัง peer อื่น
+    threading.Thread(target=broadcast_tx, args=(tx,), daemon=True).start()
+    return jsonify({"status": "received", "mempool_size": len(node.mempool)})
+
+def validate_chain(chain):
+    """ตรวจสอบ chain ว่าถูกต้องไหม"""
+    import hashlib as _hl
+    for i in range(1, len(chain)):
+        block = chain[i]
+        prev = chain[i-1]
+        
+        # เช็ค previous hash
+        if block.get("prev_hash") != prev.get("hash"):
+            print(f"Invalid prev_hash at block {i}")
+            return False
+        
+        # เช็ค hash ของ block
+        raw = _hl.sha3_256(
+            __import__("json").dumps(
+                {k: v for k, v in block.items() if k != "hash"}, 
+                sort_keys=True
+            ).encode()
+        ).hexdigest()
+        if raw != block.get("hash"):
+            print(f"Invalid hash at block {i}")
+            return False
+        
+        # เช็ค PoW (hash ต้องขึ้นต้นด้วย 0000)
+        if not block.get("hash", "").startswith("0000"):
+            print(f"Invalid PoW at block {i}")
+            return False
+    
+    return True
+
+def auto_sync_loop():
+    import time
+    import requests as _req
+    time.sleep(15)  # รอให้ node start ก่อน
+    while True:
+        try:
+            longest = node.chain
+            for peer in list(node.peers):
+                try:
+                    r = _req.get(f"{peer}/chain", timeout=5)
+                    peer_chain = r.json()
+                    if validate_chain(peer_chain):
+                        peer_work = sum(16 ** (64 - len(b.get("hash","").lstrip("0"))) for b in peer_chain)
+                        cur_work = sum(16 ** (64 - len(b.get("hash","").lstrip("0"))) for b in longest)
+                        if peer_work > cur_work:
+                            longest = peer_chain
+                            print(f"Found higher work chain from {peer}: {len(peer_chain)} blocks")
+                except:
+                    pass
+            if len(longest) > len(node.chain):
+                node.chain = longest
+                node.save_chain()
+                print(f"Auto-synced to {len(node.chain)} blocks")
+        except Exception as e:
+            print(f"Auto-sync error: {e}")
+        time.sleep(30)
+
+threading.Thread(target=auto_sync_loop, daemon=True).start()
+print("Auto-sync thread started")
+
+app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 6002)))
+
