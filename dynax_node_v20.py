@@ -396,6 +396,7 @@ def auto_connect_bootstrap():
     # Static peers
     static_peers = [
         "https://dynax-node.onrender.com",
+        "https://web-production-8bbb8.up.railway.app",
     ]
     for p in static_peers:
         node.peers.add(p)
