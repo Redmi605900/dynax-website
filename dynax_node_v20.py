@@ -32,8 +32,19 @@ class DynaxNode:
         self.chain = []
         self.mempool = []
         self.peers = set()
+        self._load_initial_peers()
         self.CHAIN_FILE = "dynax_chain.json"
         self.load_chain()
+
+    def _load_initial_peers(self):
+        try:
+            import json as _j
+            peers = _j.load(open("peers.json"))
+            for p in peers:
+                self.peers.add(p)
+            print(f"Loaded {len(peers)} peers from peers.json")
+        except:
+            pass
 
     def load_chain(self):
         if os.path.exists(self.CHAIN_FILE):
@@ -89,6 +100,7 @@ class DynaxNode:
 
     def mine(self, miner):
         reward = {"from": "SYSTEM", "to": miner, "amount": 50, "timestamp": int(time.time())}
+        clean_mempool()
         txs = self.mempool[:50]
         self.mempool = self.mempool[50:]
         prev_hash = self.chain[-1]["hash"] if self.chain else "0"*64
@@ -354,9 +366,7 @@ def sync_chain():
                 longest = peer_chain
         except:
             pass
-    if len(longest) > len(node.chain):
-        node.chain = longest
-        node.save_chain()
+    if reorg_chain(longest):
         return jsonify({"status": "synced", "blocks": len(node.chain)})
     return jsonify({"status": "already longest", "blocks": len(node.chain)})
 
@@ -424,14 +434,24 @@ import json as _json
 POOL_FILE = "liquidity_pool.json"
 
 def load_pool():
-    if os.path.exists(POOL_FILE):
-        with open(POOL_FILE) as f:
-            return _json.load(f)
-    return {"DYX": 100000, "USDT": 50000}
+    """คำนวณ pool state จาก chain"""
+    pool = {"DYX": 100000, "USDT": 50000}
+    for block in node.chain:
+        for tx in block.get("transactions", []):
+            if tx.get("type") == "dex_swap":
+                pool[tx["token_in"]] = pool.get(tx["token_in"], 0) + tx["amount_in"]
+                pool[tx["token_out"]] = pool.get(tx["token_out"], 0) - tx["amount_out"]
+            elif tx.get("type") == "dex_liquidity":
+                pool[tx["token"]] = pool.get(tx["token"], 0) + tx["amount"]
+    return pool
 
 def save_pool(pool):
     with open(POOL_FILE, "w") as f:
         _json.dump(pool, f)
+
+def get_pool():
+    """ดึง pool state ล่าสุดจาก chain"""
+    return load_pool()
 
 liquidity_pool = load_pool()
 
@@ -476,8 +496,20 @@ def dex_add_liquidity():
         amount = float(data["amount"])
         if amount <= 0:
             return jsonify({"error": "Amount must be positive"}), 400
-        liquidity_pool[token] = liquidity_pool.get(token, 0) + amount
-        save_pool(liquidity_pool)
+        pool = get_pool()
+        pool[token] = pool.get(token, 0) + amount
+        
+        liq_tx = {
+            "type": "dex_liquidity",
+            "token": token,
+            "amount": amount,
+            "timestamp": int(__import__("time").time()),
+            "from": "DEX",
+            "to": "DEX"
+        }
+        node.mempool.append(liq_tx)
+        save_pool(pool)
+        liquidity_pool.update(pool)
         return jsonify({"success": True, "pool": liquidity_pool})
     except Exception as e:
         return jsonify({"error": str(e)}), 400
@@ -554,9 +586,8 @@ def receive_tx():
     if not tx:
         return jsonify({"error": "no tx"}), 400
     # เช็คว่ามีใน mempool แล้วหรือยัง
-    for existing in node.mempool:
-        if existing.get("signature") == tx.get("signature"):
-            return jsonify({"status": "already have tx"})
+    if is_duplicate_tx(tx):
+        return jsonify({"status": "already have tx"})
     node.mempool.append(tx)
     # relay ต่อไปยัง peer อื่น
     threading.Thread(target=broadcast_tx, args=(tx,), daemon=True).start()
@@ -594,6 +625,91 @@ def get_difficulty(chain):
         new_zeros = current_zeros
     
     return "0" * new_zeros
+
+
+
+def get_nonce(addr):
+    """นับจำนวน tx ที่ส่งจาก address นี้"""
+    count = 0
+    for block in node.chain:
+        for tx in block.get("transactions", []):
+            if tx.get("from") == addr:
+                count += 1
+    return count
+
+def check_replay(tx):
+    """ตรวจสอบ replay attack - tx เดิมส่งซ้ำ"""
+    sig = tx.get("signature")
+    if not sig:
+        return False
+    for block in node.chain:
+        for t in block.get("transactions", []):
+            if t.get("signature") == sig:
+                return True
+    return False
+
+
+def calc_cumulative_work(chain):
+    """คำนวณ cumulative work ของ chain"""
+    total = 0
+    for block in chain:
+        h = block.get("hash", "")
+        zeros = len(h) - len(h.lstrip("0"))
+        total += 16 ** zeros
+    return total
+
+def reorg_chain(new_chain):
+    """เปลี่ยน chain ถ้า new_chain มี cumulative work มากกว่า"""
+    if not validate_chain(new_chain):
+        return False
+    new_work = calc_cumulative_work(new_chain)
+    cur_work = calc_cumulative_work(node.chain)
+    if new_work > cur_work:
+        print(f"Reorg: {len(node.chain)} -> {len(new_chain)} blocks")
+        node.chain = new_chain
+        node.save_chain()
+        # คืน tx ที่ถูก orphan กลับ mempool
+        confirmed = set()
+        for block in new_chain:
+            for tx in block.get("transactions", []):
+                confirmed.add(tx.get("signature",""))
+        for block in node.chain:
+            for tx in block.get("transactions", []):
+                sig = tx.get("signature","")
+                if sig and sig not in confirmed:
+                    node.mempool.append(tx)
+        return True
+    return False
+
+def clean_mempool():
+    """ลบ tx ซ้ำและจัดลำดับตาม fee"""
+    seen = set()
+    unique = []
+    for tx in node.mempool:
+        sig = tx.get("signature", str(tx.get("timestamp","")))
+        if sig not in seen:
+            seen.add(sig)
+            unique.append(tx)
+    # เรียงตาม fee มากไปน้อย
+    unique.sort(key=lambda x: float(x.get("fee", 0)), reverse=True)
+    # จำกัด 1000 tx
+    node.mempool = unique[:1000]
+
+def is_duplicate_tx(tx):
+    """ตรวจว่า tx อยู่ใน mempool หรือ chain แล้วไหม"""
+    sig = tx.get("signature")
+    if not sig:
+        return False
+    # เช็ค mempool
+    for m in node.mempool:
+        if m.get("signature") == sig:
+            return True
+    # เช็ค chain
+    for block in node.chain:
+        for t in block.get("transactions", []):
+            if t.get("signature") == sig:
+                return True
+    return False
 
 def validate_chain(chain):
     """ตรวจสอบ chain ว่าถูกต้องไหม"""
@@ -650,15 +766,104 @@ def auto_sync_loop():
                             print(f"Found higher work chain from {peer}: {len(peer_chain)} blocks")
                 except:
                     pass
-            if len(longest) > len(node.chain):
-                node.chain = longest
-                node.save_chain()
-                print(f"Auto-synced to {len(node.chain)} blocks")
+            if reorg_chain(longest):
+                print(f"Auto-synced/reorged to {len(node.chain)} blocks")
         except Exception as e:
             print(f"Auto-sync error: {e}")
         time.sleep(30)
 
 threading.Thread(target=auto_sync_loop, daemon=True).start()
+PEERS_FILE = "peers.json"
+MAX_PEERS = 100
+MAX_NEW_PEERS_PER_ROUND = 10
+MAX_FAILURES = 5
+peer_lock = threading.Lock()
+peer_failures = {}
+
+def save_peers():
+    try:
+        import json as _j
+        with peer_lock:
+            _j.dump(list(node.peers), open(PEERS_FILE, "w"))
+    except: pass
+
+def load_peers():
+    try:
+        import json as _j
+        peers = _j.load(open(PEERS_FILE))
+        for p in peers:
+            node.peers.add(p)
+        print(f"Loaded {len(peers)} peers")
+    except: pass
+
+def is_valid_peer(url):
+    if not url: return False
+    if not (url.startswith("http://") or url.startswith("https://")): return False
+    if len(url) > 200: return False
+    return True
+
+def verify_peer(url):
+    import requests as _req
+    try:
+        r = _req.get(f"{url}/api/v1/info", timeout=5)
+        data = r.json()
+        return (data.get("network_id") == 1337 and data.get("network") == "DYNAX")
+    except: return False
+
+def remove_dead_peers():
+    import requests as _req
+    to_remove = []
+    with peer_lock:
+        peers_copy = list(node.peers)
+    for peer in peers_copy:
+        try:
+            _req.get(f"{peer}/stats", timeout=3)
+            peer_failures[peer] = 0
+        except:
+            peer_failures[peer] = peer_failures.get(peer, 0) + 1
+            if peer_failures[peer] >= MAX_FAILURES:
+                to_remove.append(peer)
+    for peer in to_remove:
+        with peer_lock:
+            node.peers.discard(peer)
+        print(f"Removed dead peer: {peer}")
+
+def peer_discovery_loop():
+    import time
+    import requests as _req
+    load_peers()
+    time.sleep(20)
+    my_url = os.environ.get("MY_URL", "")
+    while True:
+        try:
+            new_peers = set()
+            with peer_lock:
+                peers_copy = list(node.peers)
+            for peer in peers_copy:
+                try:
+                    r = _req.get(f"{peer}/peers", timeout=5)
+                    data = r.json()
+                    for p in data.get("peers", []):
+                        if (p and p != my_url and p not in node.peers
+                                and is_valid_peer(p) and len(node.peers) < MAX_PEERS):
+                            new_peers.add(p)
+                except: pass
+            added = 0
+            for p in list(new_peers)[:MAX_NEW_PEERS_PER_ROUND]:
+                if verify_peer(p):
+                    with peer_lock:
+                        node.peers.add(p)
+                    added += 1
+                    print(f"Discovered: {p}")
+            remove_dead_peers()
+            save_peers()
+        except Exception as e:
+            print(f"Peer discovery error: {e}")
+        time.sleep(60)
+
+threading.Thread(target=peer_discovery_loop, daemon=True).start()
+print("Peer discovery started")
+
 print("Auto-sync thread started")
 
 app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 6002)))
