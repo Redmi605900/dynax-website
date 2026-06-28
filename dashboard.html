@@ -133,10 +133,11 @@ th { color:#666; font-weight:normal; }
 
 <script>
 const API = window.location.origin;
+const NODE = "https://web-production-8bbb8.up.railway.app";
 
 async function loadAll() {
   try {
-    const stats = await fetch(API + "/stats").then(r=>r.json());
+    const stats = await fetch(NODE + "/stats").then(r=>r.json());
     document.getElementById("status").textContent = stats.status || "online";
     document.getElementById("blocks").textContent = stats.blocks || "-";
     document.getElementById("nodes").textContent = stats.nodes || "-";
@@ -145,12 +146,12 @@ async function loadAll() {
   } catch(e) {}
 
   try {
-    const pending = await fetch(API + "/pending").then(r=>r.json());
+    const pending = await fetch(NODE + "/pending").then(r=>r.json());
     document.getElementById("mempool").textContent = pending.count || 0;
   } catch(e) {}
 
   try {
-    const peers = await fetch(API + "/peers").then(r=>r.json());
+    const peers = await fetch(NODE + "/peers").then(r=>r.json());
     const list = peers.peers || [];
     document.getElementById("peer-list").innerHTML = list.length === 0
       ? "<div style=color:#666>No peers connected</div>"
@@ -158,12 +159,12 @@ async function loadAll() {
   } catch(e) {}
 
   try {
-    const info = await fetch(API + "/api/v1/info").then(r=>r.json());
+    const info = await fetch(NODE + "/api/v1/info").then(r=>r.json());
     document.getElementById("version").textContent = "v" + (info.version || "20");
   } catch(e) {}
 
   try {
-    const blocks = await fetch(API + "/blocks").then(r=>r.json());
+    const blocks = await fetch(NODE + "/blocks").then(r=>r.json());
     if (!blocks.slice) return;
     const recent = blocks.slice(-20).reverse();
     
