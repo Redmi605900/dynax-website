@@ -99,7 +99,10 @@ class DynaxNode:
         return {"status": "queued", "tx": tx}
 
     def mine(self, miner):
-        reward = {"from": "SYSTEM", "to": miner, "amount": 50, "timestamp": int(time.time())}
+        clean_mempool()
+        txs_pending = self.mempool[:50]
+        total_fees = calc_total_fees(txs_pending)
+        reward = {"from": "SYSTEM", "to": miner, "amount": 50 + total_fees, "fee": 0, "timestamp": int(time.time())}
         clean_mempool()
         txs = self.mempool[:50]
         self.mempool = self.mempool[50:]
@@ -268,7 +271,10 @@ def send_tx_with_key():
     from_addr = data.get('from')
     to_addr = data.get('to')
     amount = data.get('amount')
-    fee = data.get('fee', 0.01)
+    fee = float(data.get('fee', 0.01))
+    min_fee = get_min_fee()
+    if fee < min_fee:
+        return jsonify({"error": f"Fee too low. Minimum: {min_fee} DYX"}), 400
     private_key_hex = data.get('private_key')
     
     if not all([from_addr, to_addr, amount, private_key_hex]):
@@ -313,6 +319,23 @@ def show_pending():
     })
 
 
+
+@app.route("/snapshot")
+def snapshot():
+    chainwork = 0
+    for b in node.chain:
+        h = b.get("hash","")
+        zeros = len(h) - len(h.lstrip("0"))
+        chainwork += 16 ** zeros
+
+    return jsonify({
+        "height": len(node.chain),
+        "chainwork": chainwork,
+        "blocks": node.chain,
+        "peers": list(node.peers)
+    })
+
+
 @app.route("/stats")
 def stats():
     chain = node.chain
@@ -346,6 +369,10 @@ def receive_block():
     if not block:
         return jsonify({"error": "no block"}), 400
     # เช็ก index ไม่ซ้ำ
+    # ตรวจ signature ทุก tx ใน block
+    for tx in block.get("transactions", []):
+        if not verify_tx_signature(tx):
+            return jsonify({"error": "invalid tx signature"}), 400
     if any(b["index"] == block["index"] for b in node.chain):
         return jsonify({"status": "already have"}), 200
     # เช็ก prev_hash ต่อกัน
@@ -681,6 +708,58 @@ def reorg_chain(new_chain):
         return True
     return False
 
+
+
+def verify_tx_signature(tx):
+    """ตรวจสอบ signature ของ transaction"""
+    try:
+        from ecdsa import VerifyingKey, SECP256k1, BadSignatureError
+        import hashlib as _hl
+        
+        sender = tx.get("from")
+        if sender in ("SYSTEM", "GENESIS", "DEX"):
+            return True
+            
+        signature = tx.get("signature")
+        if not signature:
+            return False
+            
+        # หา public key จาก chain
+        pub_hex = None
+        for block in node.chain:
+            for t in block.get("transactions", []):
+                if t.get("from") == sender and t.get("public_key"):
+                    pub_hex = t["public_key"]
+                    break
+                    
+        if not pub_hex:
+            return True  # ยังไม่มี tx เก่า ผ่านไปก่อน
+            
+        msg = _hl.sha3_256(
+            __import__("json").dumps(
+                {"amount": tx["amount"], "fee": tx.get("fee",0), 
+                 "from": tx["from"], "to": tx["to"]}, 
+                sort_keys=True, separators=(",",":")
+            ).encode()
+        ).digest()
+        
+        vk = VerifyingKey.from_string(bytes.fromhex(pub_hex), curve=SECP256k1)
+        vk.verify(bytes.fromhex(signature), msg)
+        return True
+    except:
+        return False
+
+def calc_total_fees(txs):
+    """คำนวณ fee รวมจาก transactions"""
+    return sum(float(tx.get("fee", 0)) for tx in txs if tx.get("from") != "SYSTEM")
+
+def get_min_fee():
+    """คำนวณ minimum fee จาก mempool"""
+    if len(node.mempool) < 100:
+        return 0.01  # mempool ยังว่าง fee ขั้นต่ำปกติ
+    fees = sorted([float(tx.get("fee", 0)) for tx in node.mempool])
+    return fees[len(fees)//2]  # median fee
+
 def clean_mempool():
     """ลบ tx ซ้ำและจัดลำดับตาม fee"""
     seen = set()
@@ -866,5 +945,282 @@ print("Peer discovery started")
 
 print("Auto-sync thread started")
 
+
+import hashlib as _hl
+import json as _json
+
+def get_chain_hash(chain):
+    """คำนวณ hash ของ chain ทั้งหมดสำหรับ verify"""
+    data = _json.dumps([b.get("hash","") for b in chain], separators=(",",":"))
+    return _hl.sha3_256(data.encode()).hexdigest()
+
+@app.route("/snapshot")
+def get_snapshot():
+    """ส่ง chain snapshot สำหรับ node ใหม่"""
+    chain = node.chain
+    return _json.dumps({
+        "height": len(chain),
+        "chain_hash": get_chain_hash(chain),
+        "chain": chain,
+        "network_id": 1337,
+        "symbol": "DYX"
+    }), 200, {"Content-Type": "application/json"}
+
+@app.route("/snapshot/info")
+def snapshot_info():
+    """ข้อมูล snapshot โดยไม่ต้อง download chain"""
+    return jsonify({
+        "height": len(node.chain),
+        "chain_hash": get_chain_hash(node.chain),
+        "network_id": 1337,
+        "peers": list(node.peers)
+    })
+
+def sync_from_snapshot(peer_url):
+    """โหลด chain จาก snapshot ของ peer"""
+    import requests as _req
+    try:
+        print(f"Downloading snapshot from {peer_url}...")
+        r = _req.get(f"{peer_url}/snapshot", timeout=60)
+        data = r.json()
+        
+        # ตรวจสอบ network_id
+        if data.get("network_id") != 1337:
+            print("Wrong network_id!")
+            return False
+            
+        chain = data.get("chain", [])
+        chain_hash = data.get("chain_hash")
+        
+        # verify chain hash
+        if get_chain_hash(chain) != chain_hash:
+            print("Chain hash mismatch!")
+            return False
+            
+        # validate chain
+        if not validate_chain(chain):
+            print("Invalid chain!")
+            return False
+            
+        # เปรียบเทียบ cumulative work
+        if calc_cumulative_work(chain) > calc_cumulative_work(node.chain):
+            node.chain = chain
+            node.save_chain()
+            print(f"Snapshot synced! Height: {len(chain)}")
+            return True
+        else:
+            print("Current chain has more work")
+            return False
+    except Exception as e:
+        print(f"Snapshot sync error: {e}")
+        return False
+
+def initial_snapshot_sync():
+    """sync chain จาก snapshot ตอน node เริ่มต้น"""
+    import time
+    time.sleep(5)
+    static_peers = [
+        "https://web-production-8bbb8.up.railway.app",
+        "https://dynax-node2.onrender.com",
+        "https://dynax-node.onrender.com"
+    ]
+    for peer in static_peers:
+        try:
+            r = __import__("requests").get(f"{peer}/snapshot/info", timeout=5)
+            info = r.json()
+            if info.get("height", 0) > len(node.chain):
+                if sync_from_snapshot(peer):
+                    print(f"Initial sync from {peer} complete!")
+                    break
+        except:
+            pass
+
+threading.Thread(target=initial_snapshot_sync, daemon=True).start()
+print("Snapshot sync initialized")
+
+
+def sync_mempool_from_peers():
+    """ดึง mempool จากทุก peer"""
+    import requests as _req
+    for peer in list(node.peers):
+        try:
+            r = _req.get(f"{peer}/pending", timeout=5)
+            data = r.json()
+            txs = data.get("transactions", [])
+            added = 0
+            for tx in txs:
+                if not is_duplicate_tx(tx) and not check_replay(tx):
+                    node.mempool.append(tx)
+                    added += 1
+            if added > 0:
+                print(f"Mempool sync: +{added} tx from {peer}")
+        except:
+            pass
+    clean_mempool()
+
+def mempool_sync_loop():
+    """sync mempool ทุก 15 วินาที"""
+    import time
+    time.sleep(25)
+    while True:
+        try:
+            sync_mempool_from_peers()
+        except Exception as e:
+            print(f"Mempool sync error: {e}")
+        time.sleep(15)
+
+threading.Thread(target=mempool_sync_loop, daemon=True).start()
+print("Mempool sync started")
+
+
+def reconstruct_state():
+    """คำนวณ state ทั้งหมดจาก chain ล้วนๆ"""
+    state = {
+        "balances": {},
+        "dex_pool": {"DYX": 100000, "USDT": 50000},
+        "total_supply": 0,
+        "tx_count": 0,
+        "nonces": {}
+    }
+    
+    for block in node.chain:
+        for tx in block.get("transactions", []):
+            sender = tx.get("from", "")
+            receiver = tx.get("to", "")
+            amount = float(tx.get("amount", 0))
+            fee = float(tx.get("fee", 0))
+            tx_type = tx.get("type", "transfer")
+            
+            if tx_type == "dex_swap":
+                token_in = tx.get("token_in")
+                token_out = tx.get("token_out")
+                amt_in = float(tx.get("amount_in", 0))
+                amt_out = float(tx.get("amount_out", 0))
+                if token_in and token_out:
+                    state["dex_pool"][token_in] = state["dex_pool"].get(token_in, 0) + amt_in
+                    state["dex_pool"][token_out] = state["dex_pool"].get(token_out, 0) - amt_out
+                    
+            elif tx_type == "dex_liquidity":
+                token = tx.get("token")
+                amt = float(tx.get("amount", 0))
+                if token:
+                    state["dex_pool"][token] = state["dex_pool"].get(token, 0) + amt
+                    
+            else:
+                # transfer ปกติ
+                if sender == "SYSTEM" or sender == "GENESIS":
+                    state["balances"][receiver] = state["balances"].get(receiver, 0) + amount
+                    state["total_supply"] += amount
+                elif sender:
+                    state["balances"][sender] = state["balances"].get(sender, 0) - amount - fee
+                    state["balances"][receiver] = state["balances"].get(receiver, 0) + amount
+                    state["nonces"][sender] = state["nonces"].get(sender, 0) + 1
+                    
+            state["tx_count"] += 1
+    
+    return state
+
+@app.route("/state")
+def get_state():
+    """ดึง state ปัจจุบันที่ derive จาก chain"""
+    state = reconstruct_state()
+    return jsonify({
+        "total_supply": state["total_supply"],
+        "tx_count": state["tx_count"],
+        "dex_pool": state["dex_pool"],
+        "block_height": len(node.chain),
+        "status": "reconstructed_from_chain"
+    })
+
+@app.route("/state/balance/<addr>")
+def state_balance(addr):
+    """ดึง balance จาก state reconstruction"""
+    state = reconstruct_state()
+    return jsonify({
+        "address": addr,
+        "balance": state["balances"].get(addr, 0),
+        "nonce": state["nonces"].get(addr, 0),
+        "source": "chain_reconstruction"
+    })
+
+
+
+import hmac as _hmac
+import hashlib as _hl2
+import time as _time2
+
+P2P_SECRET = os.environ.get("P2P_SECRET", "dynax_network_1337")
+
+def sign_p2p_message(data):
+    """สร้าง signature สำหรับ P2P message"""
+    timestamp = int(_time2.time())
+    payload = f"{timestamp}:{data}"
+    sig = _hmac.new(
+        P2P_SECRET.encode(),
+        payload.encode(),
+        _hl2.sha256
+    ).hexdigest()
+    return {"timestamp": timestamp, "signature": sig}
+
+def verify_p2p_message(timestamp, signature, data):
+    """ตรวจสอบ P2P message"""
+    # ตรวจ timestamp ไม่เกิน 60 วินาที
+    if abs(int(_time2.time()) - int(timestamp)) > 60:
+        return False
+    payload = f"{timestamp}:{data}"
+    expected = _hmac.new(
+        P2P_SECRET.encode(),
+        payload.encode(),
+        _hl2.sha256
+    ).hexdigest()
+    return _hmac.compare_digest(signature, expected)
+
+@app.route("/p2p/verify", methods=["POST"])
+def p2p_verify():
+    """ตรวจสอบว่า node นี้เป็น DYNAX node จริง"""
+    data = request.json
+    timestamp = data.get("timestamp")
+    signature = data.get("signature")
+    challenge = data.get("challenge", "")
+    
+    if verify_p2p_message(timestamp, signature, challenge):
+        return jsonify({
+            "verified": True,
+            "network_id": 1337,
+            "node": "DYNAX v20"
+        })
+    return jsonify({"verified": False}), 401
+
+def broadcast_block_signed(block):
+    """ส่ง block พร้อม P2P signature"""
+    import requests as _req
+    block_data = __import__("json").dumps(block, sort_keys=True)
+    auth = sign_p2p_message(block_data[:64])
+    
+    for peer in list(node.peers):
+        try:
+            _req.post(f"{peer}/receive_block", 
+                json={**block, "_p2p_ts": auth["timestamp"], "_p2p_sig": auth["signature"]},
+                timeout=5)
+        except:
+            pass
+
+
 app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 6002)))
+
+
+
+def download_snapshot(peer):
+    try:
+        r = requests.get(f"{peer}/snapshot", timeout=20)
+        data = r.json()
+
+        if data["height"] > len(node.chain):
+            node.chain = data["blocks"]
+            node.peers.update(data.get("peers", []))
+            node.save_chain()
+            print(f"Snapshot synced: {len(node.chain)} blocks")
+
+    except Exception as e:
+        print("Snapshot sync failed:", e)
 
