@@ -114,6 +114,19 @@ FAUCET_AMOUNT = 10
 FAUCET_COOLDOWN = 43200  # 12 ชั่วโมง
 faucet_claims = {}  # {address: timestamp}
 
+
+@app.route('/testnet')
+def testnet_info():
+    return jsonify({
+        "mode": "TESTNET",
+        "warning": "This is a test network. Coins have no real value.",
+        "chain_may_reset": True,
+        "faucet": "https://dynax-website-2.onrender.com/faucet",
+        "explorer": "https://dynax-website-2.onrender.com/explorer",
+        "network_id": 1337,
+        "symbol": "DYX"
+    })
+
 @app.route('/dashboard')
 def dashboard():
     return send_file('dashboard.html')
