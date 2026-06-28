@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DYNAX Network Dashboard</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#0a0a0a; color:#fff; font-family:monospace; padding:16px; }
+h1 { color:#d4af37; text-align:center; margin-bottom:20px; font-size:1.5rem; }
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+.grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px; }
+.grid-4 { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:10px; margin-bottom:10px; }
+.card { background:#111; border:1px solid #333; border-radius:10px; padding:12px; }
+.card h3 { color:#888; font-size:0.75rem; margin-bottom:6px; text-transform:uppercase; }
+.value { font-size:1.4rem; font-weight:bold; color:#fff; }
+.value.green { color:#4caf50; }
+.value.gold { color:#d4af37; }
+.value.red { color:#f44336; }
+.value.small { font-size:1rem; }
+.label { font-size:0.7rem; color:#555; margin-top:3px; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:4px; }
+.dot-green { background:#4caf50; animation:blink 2s infinite; }
+.section { background:#111; border:1px solid #333; border-radius:10px; padding:14px; margin-bottom:10px; }
+.section h3 { color:#d4af37; margin-bottom:10px; font-size:0.9rem; }
+.node-item { background:#1a1a1a; border-radius:6px; padding:8px; margin-top:6px; font-size:0.75rem; display:flex; justify-content:space-between; }
+.back { display:inline-block; color:#d4af37; text-decoration:none; border:1px solid #d4af37; padding:6px 14px; border-radius:4px; margin-bottom:16px; font-size:0.85rem; }
+.refresh { background:#d4af37; color:#000; border:none; padding:10px; border-radius:6px; cursor:pointer; font-weight:bold; width:100%; margin-top:8px; }
+table { width:100%; border-collapse:collapse; font-size:0.75rem; }
+td,th { padding:6px 4px; border-bottom:1px solid #1a1a1a; }
+th { color:#666; font-weight:normal; }
+.tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:0.7rem; }
+.tag-green { background:#0a2a0a; color:#4caf50; border:1px solid #2a4a2a; }
+.tag-red { background:#2a0a0a; color:#f44336; border:1px solid #4a2a2a; }
+</style>
+</head>
+<body>
+<a href="/" class="back">← Home</a>
+<h1>📡 DYNAX Network Dashboard</h1>
+
+<div class="grid-3">
+  <div class="card">
+    <h3>Network Status</h3>
+    <div class="value green"><span class="dot dot-green"></span><span id="status">-</span></div>
+    <div class="label">Network</div>
+  </div>
+  <div class="card">
+    <h3>Node Version</h3>
+    <div class="value gold" id="version">v20</div>
+    <div class="label">DYNAX Protocol</div>
+  </div>
+  <div class="card">
+    <h3>Network ID</h3>
+    <div class="value">1337</div>
+    <div class="label">Chain ID</div>
+  </div>
+</div>
+
+<div class="grid-4">
+  <div class="card">
+    <h3>Total Blocks</h3>
+    <div class="value gold" id="blocks">-</div>
+    <div class="label">Chain Height</div>
+  </div>
+  <div class="card">
+    <h3>Connected Nodes</h3>
+    <div class="value" id="nodes">-</div>
+    <div class="label">Peers</div>
+  </div>
+  <div class="card">
+    <h3>Mempool</h3>
+    <div class="value" id="mempool">-</div>
+    <div class="label">Pending TX</div>
+  </div>
+  <div class="card">
+    <h3>Block Reward</h3>
+    <div class="value gold" id="reward">-</div>
+    <div class="label">DYX/block</div>
+  </div>
+</div>
+
+<div class="grid-4">
+  <div class="card">
+    <h3>Difficulty</h3>
+    <div class="value small" id="difficulty">-</div>
+    <div class="label">Leading Zeros</div>
+  </div>
+  <div class="card">
+    <h3>Avg Block Time</h3>
+    <div class="value" id="blocktime">-</div>
+    <div class="label">seconds</div>
+  </div>
+  <div class="card">
+    <h3>Total Supply</h3>
+    <div class="value small gold" id="supply">-</div>
+    <div class="label">DYX mined</div>
+  </div>
+  <div class="card">
+    <h3>Fork Status</h3>
+    <div class="value small green" id="fork">No Fork</div>
+    <div class="label">Chain status</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Est. Hash Rate</h3>
+    <div class="value small" id="hashrate">-</div>
+    <div class="label">Network Power</div>
+  </div>
+  <div class="card">
+    <h3>Chain Work</h3>
+    <div class="value small" id="chainwork">-</div>
+    <div class="label">Cumulative PoW</div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>🔗 Connected Peers</h3>
+  <div id="peer-list"><div style="color:#666">Loading...</div></div>
+</div>
+
+<div class="section">
+  <h3>📦 Latest Blocks</h3>
+  <table>
+    <tr><th>#</th><th>Hash</th><th>TX</th><th>Nonce</th><th>Time</th></tr>
+    <tbody id="block-table"></tbody>
+  </table>
+</div>
+
+<button class="refresh" onclick="loadAll()">🔄 Refresh</button>
+
+<script>
+const API = window.location.origin;
+
+async function loadAll() {
+  try {
+    const stats = await fetch(API + "/stats").then(r=>r.json());
+    document.getElementById("status").textContent = stats.status || "online";
+    document.getElementById("blocks").textContent = stats.blocks || "-";
+    document.getElementById("nodes").textContent = stats.nodes || "-";
+    document.getElementById("reward").textContent = stats.reward || "50";
+    document.getElementById("difficulty").textContent = stats.difficulty || "0000";
+  } catch(e) {}
+
+  try {
+    const pending = await fetch(API + "/pending").then(r=>r.json());
+    document.getElementById("mempool").textContent = pending.count || 0;
+  } catch(e) {}
+
+  try {
+    const peers = await fetch(API + "/peers").then(r=>r.json());
+    const list = peers.peers || [];
+    document.getElementById("peer-list").innerHTML = list.length === 0
+      ? "<div style=color:#666>No peers connected</div>"
+      : list.map(p => `<div class="node-item"><span style="color:#d4af37">${p}</span><span class="tag tag-green">● Online</span></div>`).join("");
+  } catch(e) {}
+
+  try {
+    const info = await fetch(API + "/api/v1/info").then(r=>r.json());
+    document.getElementById("version").textContent = "v" + (info.version || "20");
+  } catch(e) {}
+
+  try {
+    const blocks = await fetch(API + "/blocks").then(r=>r.json());
+    if (!blocks.slice) return;
+    const recent = blocks.slice(-20).reverse();
+    
+    // คำนวณ avg block time
+    if (recent.length >= 2) {
+      const times = [];
+      for (let i=0; i<Math.min(recent.length-1, 10); i++) {
+        const diff = recent[i].timestamp - recent[i+1].timestamp;
+        if (diff > 0) times.push(diff);
+      }
+      if (times.length > 0) {
+        const avg = times.reduce((a,b)=>a+b,0)/times.length;
+        document.getElementById("blocktime").textContent = avg.toFixed(1) + "s";
+        
+        // estimate hash rate
+        const difficulty = recent[0].difficulty || "0000";
+        const zeros = difficulty.length;
+        const hashesPerBlock = Math.pow(16, zeros);
+        const hashRate = hashesPerBlock / avg;
+        if (hashRate > 1e6) document.getElementById("hashrate").textContent = (hashRate/1e6).toFixed(2) + " MH/s";
+        else if (hashRate > 1e3) document.getElementById("hashrate").textContent = (hashRate/1e3).toFixed(2) + " KH/s";
+        else document.getElementById("hashrate").textContent = hashRate.toFixed(0) + " H/s";
+      }
+    }
+    
+    // Total Supply
+    let supply = 0;
+    blocks.forEach(b => {
+      (b.transactions||[]).forEach(tx => {
+        if (tx.from === "SYSTEM") supply += tx.amount || 50;
+      });
+    });
+    document.getElementById("supply").textContent = supply.toLocaleString() + " DYX";
+    
+    // Chain Work
+    let work = 0;
+    blocks.forEach(b => {
+      const h = b.hash || "";
+      const zeros = h.length - h.replace(/^0+/,"").length;
+      work += Math.pow(16, zeros);
+    });
+    document.getElementById("chainwork").textContent = work.toExponential(2);
+    
+    // Block table
+    document.getElementById("block-table").innerHTML = recent.slice(0,10).map(b => `
+      <tr>
+        <td>#${b.index}</td>
+        <td>${(b.hash||"").slice(0,10)}...</td>
+        <td>${(b.transactions||[]).length}</td>
+        <td>${b.nonce||0}</td>
+        <td>${new Date(b.timestamp*1000).toLocaleTimeString()}</td>
+      </tr>
+    `).join("");
+  } catch(e) {}
+}
+
+loadAll();
+setInterval(loadAll, 15000);
+</script>
+</body>
+</html>

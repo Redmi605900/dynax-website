@@ -114,6 +114,10 @@ FAUCET_AMOUNT = 10
 FAUCET_COOLDOWN = 43200  # 12 ชั่วโมง
 faucet_claims = {}  # {address: timestamp}
 
+@app.route('/dashboard')
+def dashboard():
+    return send_file('dashboard.html')
+
 @app.route('/start')
 def start_page():
     return send_file('getting-started.html')
