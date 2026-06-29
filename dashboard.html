@@ -180,11 +180,11 @@ th { color:#666; font-weight:normal; }
 
 <script>
 const API = window.location.origin;
-const NODE = "https://web-production-8bbb8.up.railway.app";
+
 
 async function loadAll() {
   try {
-    const stats = await fetch(NODE + "/stats").then(r=>r.json());
+    const stats = await fetch("/api/node/stats").then(r=>r.json());
     document.getElementById("status").textContent = stats.status || "online";
     document.getElementById("blocks").textContent = stats.blocks || "-";
     document.getElementById("nodes").textContent = stats.nodes || "-";
@@ -193,12 +193,12 @@ async function loadAll() {
   } catch(e) {}
 
   try {
-    const pending = await fetch(NODE + "/pending").then(r=>r.json());
+    const pending = await fetch("/api/node/pending").then(r=>r.json());
     document.getElementById("mempool").textContent = pending.count || 0;
   } catch(e) {}
 
   try {
-    const peers = await fetch(NODE + "/peers").then(r=>r.json());
+    const peers = await fetch("/api/node/peers").then(r=>r.json());
     const list = peers.peers || [];
     document.getElementById("peer-list").innerHTML = list.length === 0
       ? "<div style=color:#666>No peers connected</div>"
@@ -206,12 +206,12 @@ async function loadAll() {
   } catch(e) {}
 
   try {
-    const info = await fetch(NODE + "/api/v1/info").then(r=>r.json());
+    const info = await fetch("/api/node/info").then(r=>r.json());
     document.getElementById("version").textContent = "v" + (info.version || "20");
   } catch(e) {}
 
   try {
-    const blocks = await fetch(NODE + "/blocks").then(r=>r.json());
+    const blocks = await fetch("/api/node/blocks").then(r=>r.json());
     if (!blocks.slice) return;
     const recent = blocks.slice(-20).reverse();
     
@@ -271,20 +271,20 @@ async function loadAll() {
 
   // Snapshot info
   try {
-    const snap = await fetch(NODE + "/snapshot/info").then(r=>r.json());
+    const snap = await fetch("/api/node/snapshot/info").then(r=>r.json());
     document.getElementById("snapheight").textContent = snap.height || "-";
   } catch(e) {}
 
   // State info
   try {
-    const state = await fetch(NODE + "/state").then(r=>r.json());
+    const state = await fetch("/api/node/state").then(r=>r.json());
     const tps = state.tx_count / Math.max(state.block_height * 12, 1);
     document.getElementById("tps").textContent = tps.toFixed(4);
   } catch(e) {}
 
   // Chain size estimate
   try {
-    const blocks = await fetch(NODE + "/blocks").then(r=>r.json());
+    const blocks = await fetch("/api/node/blocks").then(r=>r.json());
     if (blocks.length) {
       const sizeBytes = JSON.stringify(blocks).length;
       document.getElementById("chainsize").textContent = (sizeBytes/1024/1024).toFixed(2) + " MB";
