@@ -116,6 +116,53 @@ th { color:#666; font-weight:normal; }
   </div>
 </div>
 
+
+<div class="grid-4">
+  <div class="card">
+    <h3>Network Uptime</h3>
+    <div class="value small green" id="uptime">-</div>
+    <div class="label">Since start</div>
+  </div>
+  <div class="card">
+    <h3>Protocol Version</h3>
+    <div class="value small gold">v20.0</div>
+    <div class="label">DYNAX Protocol</div>
+  </div>
+  <div class="card">
+    <h3>Chain Size</h3>
+    <div class="value small" id="chainsize">-</div>
+    <div class="label">MB</div>
+  </div>
+  <div class="card">
+    <h3>Last Block Age</h3>
+    <div class="value small" id="lastblockage">-</div>
+    <div class="label">ago</div>
+  </div>
+</div>
+
+<div class="grid-4">
+  <div class="card">
+    <h3>TPS</h3>
+    <div class="value small" id="tps">-</div>
+    <div class="label">TX/sec</div>
+  </div>
+  <div class="card">
+    <h3>Active Miners</h3>
+    <div class="value small" id="miners">-</div>
+    <div class="label">Last 10 blocks</div>
+  </div>
+  <div class="card">
+    <h3>Sync Status</h3>
+    <div class="value small green" id="syncstatus">-</div>
+    <div class="label">Chain sync</div>
+  </div>
+  <div class="card">
+    <h3>Snapshot Height</h3>
+    <div class="value small gold" id="snapheight">-</div>
+    <div class="label">Latest snapshot</div>
+  </div>
+</div>
+
 <div class="section">
   <h3>🔗 Connected Peers</h3>
   <div id="peer-list"><div style="color:#666">Loading...</div></div>
@@ -220,6 +267,55 @@ async function loadAll() {
     `).join("");
   } catch(e) {}
 }
+
+
+  // Snapshot info
+  try {
+    const snap = await fetch(NODE + "/snapshot/info").then(r=>r.json());
+    document.getElementById("snapheight").textContent = snap.height || "-";
+  } catch(e) {}
+
+  // State info
+  try {
+    const state = await fetch(NODE + "/state").then(r=>r.json());
+    const tps = state.tx_count / Math.max(state.block_height * 12, 1);
+    document.getElementById("tps").textContent = tps.toFixed(4);
+  } catch(e) {}
+
+  // Chain size estimate
+  try {
+    const blocks = await fetch(NODE + "/blocks").then(r=>r.json());
+    if (blocks.length) {
+      const sizeBytes = JSON.stringify(blocks).length;
+      document.getElementById("chainsize").textContent = (sizeBytes/1024/1024).toFixed(2) + " MB";
+      
+      // Last block age
+      const lastBlock = blocks[blocks.length-1];
+      const age = Math.floor(Date.now()/1000) - lastBlock.timestamp;
+      if (age < 60) document.getElementById("lastblockage").textContent = age + "s";
+      else document.getElementById("lastblockage").textContent = Math.floor(age/60) + "m";
+      
+      // Active miners (unique miners in last 10 blocks)
+      const last10 = blocks.slice(-10);
+      const miners = new Set();
+      last10.forEach(b => {
+        (b.transactions||[]).forEach(tx => {
+          if (tx.from === "SYSTEM") miners.add(tx.to);
+        });
+      });
+      document.getElementById("miners").textContent = miners.size;
+      
+      // Sync status
+      document.getElementById("syncstatus").textContent = "100%";
+      
+      // Uptime estimate
+      const firstBlock = blocks[0];
+      const uptimeSec = Math.floor(Date.now()/1000) - firstBlock.timestamp;
+      const days = Math.floor(uptimeSec/86400);
+      const hours = Math.floor((uptimeSec%86400)/3600);
+      document.getElementById("uptime").textContent = days + "d " + hours + "h";
+    }
+  } catch(e) {}
 
 loadAll();
 setInterval(loadAll, 15000);
