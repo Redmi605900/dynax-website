@@ -111,35 +111,6 @@ def proxy(path, timeout=5):
     except:
         return "{}", 500, {"Content-Type": "application/json"}
 
-@app.route("/api/node/stats")
-def api_node_stats():
-    return proxy("/stats")
-
-@app.route("/api/node/peers")
-def api_node_peers():
-    return proxy("/peers")
-
-@app.route("/api/node/blocks")
-def api_node_blocks():
-    return proxy("/blocks", timeout=10)
-
-@app.route("/api/node/state")
-def api_node_state():
-    return proxy("/state", timeout=10)
-
-@app.route("/api/node/pending")
-def api_node_pending():
-    return proxy("/pending")
-
-@app.route("/api/node/snapshot/info")
-def api_node_snapshot():
-    return proxy("/snapshot/info")
-
-@app.route("/api/node/info")
-def api_node_info():
-    return proxy("/api/v1/info")
-
-if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
 
