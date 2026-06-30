@@ -179,39 +179,39 @@ th { color:#666; font-weight:normal; }
 <button class="refresh" onclick="loadAll()">🔄 Refresh</button>
 
 <script>
-const API = window.location.origin;
+const API = "https://dynax-node2.onrender.com";
 
 
 async function loadAll() {
   try {
-    const stats = await fetch("/api/node/stats").then(r=>r.json());
+    const stats = await fetch(`${API}/`).then(r=>r.json());
     document.getElementById("status").textContent = stats.status || "online";
     document.getElementById("blocks").textContent = stats.blocks || "-";
     document.getElementById("nodes").textContent = stats.nodes || "-";
     document.getElementById("reward").textContent = stats.reward || "50";
     document.getElementById("difficulty").textContent = stats.difficulty || "0000";
-  } catch(e) {}
+  } catch(e) { console.error("API Error:", e); }
 
   try {
-    const pending = await fetch("/api/node/pending").then(r=>r.json());
+    const pending = await fetch(`${API}/mempool`).then(r=>r.json());
     document.getElementById("mempool").textContent = pending.count || 0;
-  } catch(e) {}
+  } catch(e) { console.error("API Error:", e); }
 
   try {
-    const peers = await fetch("/api/node/peers").then(r=>r.json());
+    const peers = await fetch(`${API}/peers`).then(r=>r.json());
     const list = peers.peers || [];
     document.getElementById("peer-list").innerHTML = list.length === 0
       ? "<div style=color:#666>No peers connected</div>"
       : list.map(p => `<div class="node-item"><span style="color:#d4af37">${p}</span><span class="tag tag-green">● Online</span></div>`).join("");
-  } catch(e) {}
+  } catch(e) { console.error("API Error:", e); }
 
   try {
-    const info = await fetch("/api/node/info").then(r=>r.json());
+    const info = await fetch(`${API}/info`).then(r=>r.json());
     document.getElementById("version").textContent = "v" + (info.version || "20");
-  } catch(e) {}
+  } catch(e) { console.error("API Error:", e); }
 
   try {
-    const blocks = await fetch("/api/node/blocks").then(r=>r.json());
+    const blocks = await fetch(`${API}/chain`).then(r=>r.json());
     if (!blocks.slice) return;
     const recent = blocks.slice(-20).reverse();
     
@@ -265,26 +265,27 @@ async function loadAll() {
         <td>${new Date(b.timestamp*1000).toLocaleTimeString()}</td>
       </tr>
     `).join("");
-  } catch(e) {}
+  } catch(e) {
+    alert("blocks error: " + e);
 }
 
 
   // Snapshot info
   try {
-    const snap = await fetch("/api/node/snapshot/info").then(r=>r.json());
+    const snap = await fetch(`${API}/snapshot`).then(r=>r.json());
     document.getElementById("snapheight").textContent = snap.height || "-";
-  } catch(e) {}
+  } catch(e) { console.error("API Error:", e); }
 
   // State info
   try {
-    const state = await fetch("/api/node/state").then(r=>r.json());
+    const state = await fetch(`${API}/state`).then(r=>r.json());
     const tps = state.tx_count / Math.max(state.block_height * 12, 1);
     document.getElementById("tps").textContent = tps.toFixed(4);
-  } catch(e) {}
+  } catch(e) { console.error("API Error:", e); }
 
   // Chain size estimate
   try {
-    const blocks = await fetch("/api/node/blocks").then(r=>r.json());
+    const blocks = await fetch(`${API}/chain`).then(r=>r.json());
     if (blocks.length) {
       const sizeBytes = JSON.stringify(blocks).length;
       document.getElementById("chainsize").textContent = (sizeBytes/1024/1024).toFixed(2) + " MB";
@@ -315,7 +316,8 @@ async function loadAll() {
       const hours = Math.floor((uptimeSec%86400)/3600);
       document.getElementById("uptime").textContent = days + "d " + hours + "h";
     }
-  } catch(e) {}
+  } catch(e) { console.error("API Error:", e); }
+}   // ปิด async function loadAll()
 
 loadAll();
 setInterval(loadAll, 15000);
