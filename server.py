@@ -245,3 +245,7 @@ def api_node_info():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
+@app.route('/dvm')
+def dvm_page():
+    return send_file('dvm.html')
