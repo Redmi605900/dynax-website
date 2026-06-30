@@ -187,13 +187,14 @@ async function loadAll() {
     const stats = await fetch(`${API}/`).then(r=>r.json());
     document.getElementById("status").textContent = stats.status || "online";
     document.getElementById("blocks").textContent = stats.blocks || "-";
-    document.getElementById("nodes").textContent = stats.nodes || "-";
+    const peersData = await fetch(`${API}/peers`).then(r=>r.json());
+        document.getElementById("nodes").textContent = (peersData.peers || []).length || 1;
     document.getElementById("reward").textContent = stats.reward || "50";
     document.getElementById("difficulty").textContent = stats.difficulty || "0000";
   } catch(e) { console.error("API Error:", e); }
 
   try {
-    const pending = await fetch(`${API}/mempool`).then(r=>r.json());
+    const pending = await fetch(`${API}/pending`).then(r=>r.json());
     document.getElementById("mempool").textContent = pending.count || 0;
   } catch(e) { console.error("API Error:", e); }
 
