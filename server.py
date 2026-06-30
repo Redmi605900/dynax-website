@@ -242,6 +242,11 @@ def api_node_snapshot():
 def api_node_info():
     return proxy("/api/v1/info")
 
+
+@app.route('/events')
+def events_page():
+    return send_file('events.html')
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)

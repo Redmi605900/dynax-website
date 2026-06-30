@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DYNAX Events Explorer</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%); color: #fff; min-height: 100vh; padding: 20px; }
+.container { max-width: 1400px; margin: 0 auto; }
+h1 { text-align: center; margin-bottom: 30px; color: #d4af37; font-size: 2.5em; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+.stat-card { background: rgba(255,255,255,0.05); border-radius: 15px; padding: 25px; text-align: center; border: 1px solid rgba(212,175,55,0.2); }
+.stat-value { font-size: 2em; color: #d4af37; font-weight: bold; }
+.stat-label { color: #aaa; margin-top: 10px; }
+.filters { background: rgba(255,255,255,0.05); border-radius: 15px; padding: 25px; margin-bottom: 30px; border: 1px solid rgba(212,175,55,0.2); }
+.filters h2 { color: #d4af37; margin-bottom: 20px; }
+.filter-row { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
+.filter-row input { flex: 1; min-width: 200px; padding: 12px; border: 1px solid rgba(212,175,55,0.3); border-radius: 8px; background: rgba(0,0,0,0.3); color: #fff; }
+button { background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%); color: #0a0e27; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-right: 10px; }
+button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(212,175,55,0.4); }
+.events-list { display: grid; gap: 15px; }
+.event-item { background: rgba(255,255,255,0.05); border-radius: 15px; padding: 25px; border: 1px solid rgba(212,175,55,0.2); }
+.event-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.event-name { background: rgba(78,205,196,0.2); color: #4ecdc4; padding: 6px 15px; border-radius: 20px; font-weight: bold; }
+.event-time { color: #aaa; font-size: 0.9em; }
+.event-data { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; font-family: monospace; white-space: pre-wrap; word-break: break-all; color: #4ecdc4; }
+.event-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; margin-top: 15px; font-size: 0.9em; }
+.event-meta p { color: #aaa; }
+.event-meta code { color: #4ecdc4; word-break: break-all; }
+.loading { text-align: center; padding: 40px; color: #d4af37; }
+.spinner { border: 3px solid rgba(212,175,55,0.1); border-top: 3px solid #d4af37; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.empty { text-align: center; padding: 40px; color: #666; }
+.nav { text-align: center; margin-bottom: 20px; }
+.nav a { color: #d4af37; text-decoration: none; margin: 0 15px; }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="nav">
+<a href="/">🏠 Home</a>
+<a href="/dashboard">📊 Dashboard</a>
+<a href="/explorer">🔍 Explorer</a>
+<a href="/dvm">🔧 DVM</a>
+<a href="/events">📜 Events</a></div>
+<h1>📜 DYNAX Events Explorer</h1>
+<div class="stats" id="stats">
+<div class="stat-card"><div class="stat-value">-</div><div class="stat-label">Total Events</div></div>
+<div class="stat-card"><div class="stat-value">-</div><div class="stat-label">Contracts with Events</div></div>
+</div>
+<div class="filters">
+<h2>🔍 Filter Events</h2>
+<div class="filter-row">
+<input type="text" id="filterContract" placeholder="Contract Address (optional)">
+<input type="text" id="filterEvent" placeholder="Event Name (e.g. StorageChanged)">
+</div>
+<div class="filter-row">
+<input type="number" id="filterFrom" placeholder="From Block" value="0">
+<input type="number" id="filterTo" placeholder="To Block (optional)">
+</div>
+<button onclick="loadEvents()">🔍 Apply Filters</button>
+<button onclick="clearFilters()">🗑️ Clear</button>
+<button onclick="loadStats()">🔄 Refresh Stats</button>
+</div>
+<h2 style="color:#d4af37;margin-bottom:20px">📋 Recent Events</h2>
+<div id="eventsList" class="events-list">
+<div class="loading"><div class="spinner"></div>Loading events...</div>
+</div>
+</div>
+<script>
+const API = "https://dynax-node2.onrender.com";
+async function loadStats() {
+try {
+const res = await fetch(API + "/events/stats");
+const data = await res.json();
+document.getElementById("stats").innerHTML = '<div class="stat-card"><div class="stat-value">' + data.total_events + '</div><div class="stat-label">Total Events</div></div><div class="stat-card"><div class="stat-value">' + data.contracts_with_events + '</div><div class="stat-label">Contracts with Events</div></div>';
+} catch(e) { console.error(e); }
+}
+async function loadEvents() {
+const list = document.getElementById("eventsList");
+list.innerHTML = '<div class="loading"><div class="spinner"></div>Loading...</div>';
+const contract = document.getElementById("filterContract").value;
+const event = document.getElementById("filterEvent").value;
+const fromBlock = document.getElementById("filterFrom").value || 0;
+const toBlock = document.getElementById("filterTo").value;
+let url = API + "/events/logs?from_block=" + fromBlock;
+if (contract) url += "&contract=" + encodeURIComponent(contract);
+if (event) url += "&event=" + encodeURIComponent(event);
+if (toBlock) url += "&to_block=" + toBlock;
+try {
+const res = await fetch(url);
+const events = await res.json();
+if (events.length === 0) { list.innerHTML = '<div class="empty">No events found</div>'; return; }
+list.innerHTML = events.reverse().map(e => '<div class="event-item"><div class="event-header"><span class="event-name">' + e.event_name + '</span><span class="event-time">' + new Date(e.timestamp * 1000).toLocaleString() + '</span></div><div class="event-meta"><p><strong>Contract:</strong> <code>' + e.contract_address + '</code></p><p><strong>Block:</strong> <code>' + e.block_number + '</code></p></div><div class="event-data">' + JSON.stringify(e.data, null, 2) + '</div></div>').join('');} catch(e) { list.innerHTML = '<div class="empty" style="color:#e74c3c">Error: ' + e.message + '</div>'; }
+}
+function clearFilters() {
+document.getElementById("filterContract").value = "";
+document.getElementById("filterEvent").value = "";
+document.getElementById("filterFrom").value = "0";
+document.getElementById("filterTo").value = "";
+loadEvents();
+}
+loadStats();
+loadEvents();
+setInterval(loadStats, 30000);
+</script>
+</body>
+</html>
