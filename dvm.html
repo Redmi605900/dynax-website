@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DYNAX DVM - Smart Contracts</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 30px; color: #d4af37; font-size: 2.5em; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .card { background: rgba(255, 255, 255, 0.05); border-radius: 15px; padding: 25px; border: 1px solid rgba(212, 175, 55, 0.2); }
+        .card h2 { color: #d4af37; margin-bottom: 20px; font-size: 1.5em; }
+        label { display: block; margin-bottom: 8px; color: #aaa; }
+        input, textarea { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 8px; background: rgba(0, 0, 0, 0.3); color: #fff; font-family: monospace; }
+        textarea { min-height: 100px; resize: vertical; }
+        button { background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%); color: #0a0e27; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-right: 10px; }
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4); }
+        .result { margin-top: 15px; padding: 15px; background: rgba(0, 0, 0, 0.3); border-radius: 8px; border-left: 4px solid #d4af37; font-family: monospace; white-space: pre-wrap; word-break: break-all; }
+        .contract-list { display: grid; gap: 15px; }
+        .contract-item { background: rgba(0, 0, 0, 0.3); padding: 20px; border-radius: 10px; border: 1px solid rgba(212, 175, 55, 0.2); }
+        .contract-item h3 { color: #d4af37; margin-bottom: 10px; }
+        .contract-item p { margin: 5px 0; color: #aaa; }
+        .address { font-family: monospace; color: #4ecdc4; word-break: break-all; }
+        .loading { text-align: center; padding: 20px; color: #d4af37; }
+        .spinner { border: 3px solid rgba(212, 175, 55, 0.1); border-top: 3px solid #d4af37; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .nav { text-align: center; margin-bottom: 20px; }
+        .nav a { color: #d4af37; text-decoration: none; margin: 0 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="/">🏠 Home</a>
+            <a href="/dashboard">📊 Dashboard</a>
+            <a href="/dvm.html">🔧 DVM</a>
+        </div>
+                <h1>🔧 DYNAX DVM - Smart Contracts</h1>
+        
+        <div class="grid">
+            <div class="card">
+                <h2>📦 Deploy Contract</h2>
+                <label>Owner Address:</label>
+                <input type="text" id="deployOwner" placeholder="DXa5ae9ccc94279d4f52b4f4e694a5a3b2f4f5ece3">
+                <label>Contract Code:</label>
+                <textarea id="deployCode" placeholder="contract HelloWorld { }"></textarea>
+                <label>Nonce:</label>
+                <input type="number" id="deployNonce" value="1">
+                <button onclick="deployContract()">Deploy</button>
+                <div id="deployResult"></div>
+            </div>
+
+            <div class="card">
+                <h2>⚡ Execute Contract</h2>
+                <label>Contract Address:</label>
+                <input type="text" id="execAddress" placeholder="CX99fe29111215407c74dbdb8b162ccd60fbed04a9">
+                <label>Method:</label>
+                <input type="text" id="execMethod" placeholder="get, set, balance, transfer">
+                <label>Arguments (JSON):</label>
+                <input type="text" id="execArgs" placeholder='["msg"]'>
+                <label>Caller:</label>
+                <input type="text" id="execCaller" placeholder="DXa5ae9ccc94279d4f52b4f4e694a5a3b2f4f5ece3">
+                <button onclick="executeContract()">Execute</button>
+                <div id="execResult"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📋 Deployed Contracts</h2>
+            <button onclick="loadContracts()">🔄 Refresh</button>
+            <div id="contractList" class="contract-list">
+                <div class="loading"><div class="spinner"></div>Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = "https://dynax-node2.onrender.com";
+
+        async function deployContract() {
+            const owner = document.getElementById('deployOwner').value;
+            const code = document.getElementById('deployCode').value;
+            const nonce = parseInt(document.getElementById('deployNonce').value);
+            if (!owner || !code) { alert('Please fill owner and code'); return; }
+            
+            const div = document.getElementById('deployResult');
+            div.innerHTML = '<div class="loading"><div class="spinner"></div>Deploying...</div>';            
+            try {
+                const res = await fetch(`${API}/dvm/deploy`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({owner, code, nonce})
+                });
+                const result = await res.json();
+                div.innerHTML = `<div class="result">${JSON.stringify(result, null, 2)}</div>`;
+                loadContracts();
+            } catch(e) {
+                div.innerHTML = `<div class="result" style="border-left-color:#e74c3c">Error: ${e.message}</div>`;
+            }
+        }
+
+        async function executeContract() {
+            const address = document.getElementById('execAddress').value;
+            const method = document.getElementById('execMethod').value;
+            const argsStr = document.getElementById('execArgs').value;
+            const caller = document.getElementById('execCaller').value;
+            if (!address || !method) { alert('Please fill address and method'); return; }
+            
+            let args = [];
+            try { args = JSON.parse(argsStr || '[]'); } catch(e) { alert('Invalid JSON'); return; }
+            
+            const div = document.getElementById('execResult');
+            div.innerHTML = '<div class="loading"><div class="spinner"></div>Executing...</div>';
+            
+            try {
+                const res = await fetch(`${API}/dvm/execute`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({address, method, args, caller})
+                });
+                const result = await res.json();
+                div.innerHTML = `<div class="result">${JSON.stringify(result, null, 2)}</div>`;
+            } catch(e) {
+                div.innerHTML = `<div class="result" style="border-left-color:#e74c3c">Error: ${e.message}</div>`;
+            }
+        }
+
+        async function loadContracts() {
+            const div = document.getElementById('contractList');
+            div.innerHTML = '<div class="loading"><div class="spinner"></div>Loading...</div>';
+            
+            try {
+                const res = await fetch(`${API}/dvm/contracts`);
+                const contracts = await res.json();
+                
+                if (contracts.length === 0) {                    div.innerHTML = '<div class="loading">No contracts deployed</div>';
+                    return;
+                }
+                
+                div.innerHTML = contracts.map(c => `
+                    <div class="contract-item">
+                        <h3>📄 Contract</h3>
+                        <p><strong>Address:</strong> <span class="address">${c.address}</span></p>
+                        <p><strong>Owner:</strong> <span class="address">${c.owner}</span></p>
+                        <p><strong>Code:</strong> ${c.code}</p>
+                        <p><strong>Balance:</strong> ${c.balance} DYX</p>
+                        <p><strong>Storage:</strong> <pre style="background:rgba(0,0,0,0.3);padding:10px;border-radius:5px">${JSON.stringify(c.storage,null,2)}</pre></p>
+                        <div style="margin-top:15px">
+                            <input type="text" id="method_${c.address}" placeholder="Method (get/set)" style="width:48%;display:inline-block">
+                            <input type="text" id="args_${c.address}" placeholder='Args ["key"]' style="width:48%;display:inline-block">
+                            <button onclick="quickExecute('${c.address}')">Execute</button>
+                            <div id="result_${c.address}"></div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch(e) {
+                div.innerHTML = `<div class="result" style="border-left-color:#e74c3c">Error: ${e.message}</div>`;
+            }
+        }
+
+        async function quickExecute(address) {
+            const method = document.getElementById(`method_${address}`).value;
+            const argsStr = document.getElementById(`args_${address}`).value;
+            if (!method) { alert('Enter method'); return; }
+            
+            let args = [];
+            try { args = JSON.parse(argsStr || '[]'); } catch(e) { alert('Invalid JSON'); return; }
+            
+            const div = document.getElementById(`result_${address}`);
+            div.innerHTML = '<div class="loading"><div class="spinner"></div>Executing...</div>';
+            
+            try {
+                const res = await fetch(`${API}/dvm/execute`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({address, method, args, caller: "DXa5ae9ccc94279d4f52b4f4e694a5a3b2f4f5ece3"})
+                });
+                const result = await res.json();
+                div.innerHTML = `<div class="result">${JSON.stringify(result, null, 2)}</div>`;
+            } catch(e) {
+                div.innerHTML = `<div class="result" style="border-left-color:#e74c3c">Error: ${e.message}</div>`;
+            }
+        }
+
+        loadContracts();        setInterval(loadContracts, 30000);
+    </script>
+</body>
+</html>
