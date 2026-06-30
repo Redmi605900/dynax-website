@@ -87,10 +87,10 @@ body {
   <p style="margin-top:8px">Network ID: 1337 • Ticker: DYX • Max Supply: 11,000,000</p>
 </footer>
 <script>
-fetch('https://dynax-node2.onrender.com/stats').then(r=>r.json()).then(d=>{
+fetch('https://dynax-node2.onrender.com/').then(r=>r.json()).then(d=>{
   document.getElementById('s-blocks').textContent = d.blocks || '—';
-  document.getElementById('s-peers').textContent = d.nodes || 1;
-}).catch(()=>{});
+  document.getElementById('s-peers').textContent = d.peers || 1;
+}).catch(e=>{console.error('API Error:',e);});
 </script>
 </body>
 </html>
