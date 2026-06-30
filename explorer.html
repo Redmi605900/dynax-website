@@ -210,7 +210,7 @@ body {
     <!-- Smart Contracts Tab -->
     <div id="contractsTab" style="display:none;">
       <h2 class="section-title">Smart Contracts</h2>
-      <button class="refresh-btn" onclick="loadContracts()">Refresh Contracts;</button>
+      <button class="refresh-btn" onclick="loadSmartContracts()">🔄 Refresh Contracts</button>
       <div id="contractsList"></div>
     </div>
   </div>
@@ -391,76 +391,57 @@ function closeModal() {
     <div id="modal-body"></div>
   </div>
 </div>
+    
+<script>
+async function loadSmartContracts() {
+    try {
+        const response = await fetch('https://dynax-node2.onrender.com/dvm/contracts');
+        const contracts = await response.json();
+        
+        const container = document.getElementById('contractsList');
+        if (!container) {
+            console.error('contractsList not found');
+            return;
+        }
+        
+        if (contracts.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:40px;color:#666">No Smart Contracts Deployed Yet</div>';
+            return;
+        }
+        
+        container.innerHTML = contracts.map(c => `
+            <div style="background:rgba(212,175,55,0.1);padding:20px;border-radius:10px;margin:10px 0;border:1px solid rgba(212,175,55,0.3)">
+                <h3 style="color:#d4af37;margin-bottom:10px">📄 Contract</h3>
+                <p><strong>Address:</strong> <code style="color:#4ecdc4;word-break:break-all">${c.address}</code></p>
+                <p><strong>Owner:</strong> <code style="color:#4ecdc4;word-break:break-all">${c.owner}</code></p>
+                <p><strong>Code:</strong> ${c.code}</p>
+                <p><strong>Balance:</strong> ${c.balance} DYX</p>
+                <p><strong>Created:</strong> ${new Date(c.created_at * 1000).toLocaleString()}</p>
+                <p><strong>Storage:</strong></p>                <pre style="background:rgba(0,0,0,0.3);padding:10px;border-radius:5px;overflow-x:auto;color:#4ecdc4">${JSON.stringify(c.storage, null, 2)}</pre>
+            </div>
+        `).join('');
+    } catch(error) {
+        console.error('Error loading contracts:', error);
+        const container = document.getElementById('contractsList');
+        if (container) {
+            container.innerHTML = '<div style="text-align:center;padding:20px;color:#e74c3c">Error loading contracts: ' + error.message + '</div>';
+        }
+    }
+}
 
-    <script>
-    async function loadSmartContracts() {
-        try {
-            const response = await fetch('https://dynax-node2.onrender.com/dvm/contracts');
-            const contracts = await response.json();
-            
-            const container = document.getElementById('contracts-container');
-            if (contracts.length === 0) {
-                container.innerHTML = '<div style="text-align:center;padding:40px;color:#666">No Smart Contracts Deployed Yet</div>';
-                return;
-            }
-            
-            container.innerHTML = contracts.map(c => `
-                <div style="background:rgba(212,175,55,0.1);padding:20px;border-radius:10px;margin:10px 0;border:1px solid rgba(212,175,55,0.3)">
-                    <h3 style="color:#d4af37;margin-bottom:10px">📄 Contract</h3>
-                    <p><strong>Address:</strong> <code style="color:#4ecdc4">${c.address}</code></p>
-                    <p><strong>Owner:</strong> <code style="color:#4ecdc4">${c.owner}</code></p>
-                    <p><strong>Code:</strong> ${c.code}</p>
-                    <p><strong>Balance:</strong> ${c.balance} DYX</p>
-                    <p><strong>Storage:</strong> <pre style="background:rgba(0,0,0,0.3);padding:10px;border-radius:5px">${JSON.stringify(c.storage, null, 2)}</pre></p>
-                </div>
-            `).join('');
-        } catch(error) {
-            console.error('Error loading contracts:', error);
+// Auto-load when contracts tab is shown
+const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+        if (mutation.target.id === 'contractsTab' && mutation.target.style.display !== 'none') {
+            loadSmartContracts();
         }
-    }
-    
-    // Auto-load on page load
-    document.addEventListener('DOMContentLoaded', loadSmartContracts);
-    </script>
-    
-    <script>
-    async function loadSmartContracts() {
-        try {
-            const response = await fetch('https://dynax-node2.onrender.com/dvm/contracts');
-            const contracts = await response.json();
-            
-            const container = document.getElementById('contracts-container');
-            if (!container) return;
-            
-            if (contracts.length === 0) {                container.innerHTML = '<div style="text-align:center;padding:40px;color:#666">No Smart Contracts Deployed Yet</div>';
-                return;
-            }
-            
-            container.innerHTML = contracts.map(c => `
-                <div style="background:rgba(212,175,55,0.1);padding:20px;border-radius:10px;margin:10px 0;border:1px solid rgba(212,175,55,0.3)">
-                    <h3 style="color:#d4af37;margin-bottom:10px">📄 Contract</h3>
-                    <p><strong>Address:</strong> <code style="color:#4ecdc4;word-break:break-all">${c.address}</code></p>
-                    <p><strong>Owner:</strong> <code style="color:#4ecdc4;word-break:break-all">${c.owner}</code></p>
-                    <p><strong>Code:</strong> ${c.code}</p>
-                    <p><strong>Balance:</strong> ${c.balance} DYX</p>
-                    <p><strong>Storage:</strong> <pre style="background:rgba(0,0,0,0.3);padding:10px;border-radius:5px;overflow-x:auto">${JSON.stringify(c.storage, null, 2)}</pre></p>
-                </div>
-            `).join('');
-        } catch(error) {
-            console.error('Error loading contracts:', error);
-            const container = document.getElementById('contracts-container');
-            if (container) {
-                container.innerHTML = '<div style="text-align:center;padding:20px;color:#e74c3c">Error loading contracts</div>';
-            }
-        }
-    }
-    
-    // Auto-load on page load
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', loadSmartContracts);
-    } else {
-        loadSmartContracts();
-    }
-    </script>
-    </body>
+    });
+});
+
+const contractsTab = document.getElementById('contractsTab');
+if (contractsTab) {
+    observer.observe(contractsTab, { attributes: true, attributeFilter: ['style'] });
+}
+</script>
+</body>
 </html>
