@@ -111,7 +111,6 @@ class DynaxNode:
         while True:
             raw = json.dumps(block, sort_keys=True)
             h = hashlib.sha3_256(raw.encode()).hexdigest()
-            difficulty = get_difficulty(self.chain)
             if h.startswith(difficulty):
                 block["hash"] = h
                 break
