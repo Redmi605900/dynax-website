@@ -265,19 +265,20 @@ async function loadAll() {
         <td>${new Date(b.timestamp*1000).toLocaleTimeString()}</td>
       </tr>
     `).join("");
-  } catch(e) {}
+  
+} catch(e) {}
 }
 
 
   // Snapshot info
-  try {
+  
     const snap = await fetch(NODE + "/snapshot/info").then(r=>r.json());
     document.getElementById("snapheight").textContent = snap.height || "-";
   } catch(e) {}
 
   // State info
   try {
-    const state = await fetch(NODE + "/state").then(r=>r.json());
+a    const state = await fetch(NODE + "/state").then(r=>r.json());
     const tps = state.tx_count / Math.max(state.block_height * 12, 1);
     document.getElementById("tps").textContent = tps.toFixed(4);
   } catch(e) {}
