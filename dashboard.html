@@ -280,7 +280,7 @@ async function loadAll() {
 
   // State info
   try {
-a    const state = await fetch(NODE + "/state").then(r=>r.json());
+    const state = await fetch(NODE + "/state").then(r=>r.json());
     const tps = state.tx_count / Math.max(state.block_height * 12, 1);
     document.getElementById("tps").textContent = tps.toFixed(4);
   } catch(e) {}
