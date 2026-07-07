@@ -269,7 +269,7 @@ async function loadAll() {
     `).join("");
   
 } catch(e) {}
-}
+try {
 
 
   // Snapshot info
@@ -319,6 +319,7 @@ async function loadAll() {
       document.getElementById("uptime").textContent = days + "d " + hours + "h";
     }
   } catch(e) {}
+  }
 
 loadAll();
 setInterval(loadAll, 15000);
