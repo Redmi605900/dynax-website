@@ -1229,3 +1229,4 @@ def download_snapshot(peer):
     except Exception as e:
         print("Snapshot sync failed:", e)
 
+
