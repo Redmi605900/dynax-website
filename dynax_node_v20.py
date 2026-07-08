@@ -385,18 +385,23 @@ def receive_block():
 @app.route("/sync")
 def sync_chain():
     longest = node.chain
+    print(f"DEBUG: starting sync, own chain length={len(longest)}, peers={node.peers}")
     for peer in node.peers:
         try:
-            r = requests.get(f"{peer}/chain", timeout=3)
+            r = requests.get(f"{peer}/chain", timeout=10)
             peer_chain = r.json()
+            print(f"DEBUG: got {len(peer_chain)} blocks from {peer}")
             if len(peer_chain) > len(longest):
                 longest = peer_chain
-        except:
-            pass
-    if reorg_chain(longest):
+                print(f"DEBUG: {peer} is now the longest with {len(longest)} blocks")
+        except Exception as e:
+            print(f"Sync error from {peer}: {e}")
+    print(f"DEBUG: final longest before reorg={len(longest)}")
+    result = reorg_chain(longest)
+    print(f"DEBUG: reorg_chain returned {result}")
+    if result:
         return jsonify({"status": "synced", "blocks": len(node.chain)})
     return jsonify({"status": "already longest", "blocks": len(node.chain)})
-
 
 @app.route("/assets/<path:filename>")
 def assets(filename):
