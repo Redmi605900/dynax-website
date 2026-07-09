@@ -1025,7 +1025,7 @@ def initial_snapshot_sync():
     import time
     time.sleep(5)
     static_peers = [
-        "https://web-production-8bbb8.up.railway.app",
+        "https://dynax-node2.onrender.com",
         "https://dynax-node2.onrender.com",
         "https://dynax-node.onrender.com"
     ]

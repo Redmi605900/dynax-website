@@ -54,7 +54,7 @@ def sw():
     return send_file('sw.js', mimetype='application/javascript')
 
 
-NODE = 'https://web-production-8bbb8.up.railway.app'
+NODE = 'https://dynax-node2.onrender.com'
 
 @app.route('/balance/<addr>')
 def proxy_balance(addr):
