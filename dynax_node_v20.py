@@ -643,7 +643,7 @@ def get_difficulty(chain):
     if time_taken <= 0:
         return "0000"
     
-    avg_time = time_taken / ADJUST_EVERY
+    avg_time = time_taken / (ADJUST_EVERY - 1)
     current_zeros = len("0000")  # เริ่มจาก 4
     
     # ปรับ difficulty
