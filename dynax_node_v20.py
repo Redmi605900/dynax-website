@@ -378,7 +378,11 @@ def receive_block():
     # เช็ก prev_hash ต่อกัน
     if node.chain and block.get("prev_hash") != node.chain[-1]["hash"]:
         return jsonify({"error": "invalid prev_hash"}), 400
+    # ตรวจสอบยอดเงินคงเหลือ ป้องกัน double-spend
+    if not validate_block_balances(block, node.chain):
+        return jsonify({"error": "insufficient balance in block"}), 400
     node.chain.append(block)
+    update_pubkey_cache_from_block(block)
     node.save_chain()
     return jsonify({"status": "accepted", "block": block["index"]})
 
@@ -715,44 +719,120 @@ def reorg_chain(new_chain):
 
 
 
+# Cache: address -> public_key (เพื่อไม่ต้องวนลูปทั้งเชนทุกครั้ง)
+PUBKEY_CACHE = {}
+
+def update_pubkey_cache_from_block(block):
+    """เรียกทุกครั้งที่มี block ใหม่ เพื่ออัปเดต cache"""
+    for t in block.get("transactions", []):
+        sender = t.get("from")
+        pk = t.get("public_key")
+        if sender and pk and sender not in PUBKEY_CACHE:
+            PUBKEY_CACHE[sender] = pk
+
+def rebuild_pubkey_cache():
+    """สร้าง cache ใหม่ทั้งหมดจาก chain ปัจจุบัน (เรียกตอน startup)"""
+    PUBKEY_CACHE.clear()
+    for block in node.chain:
+        update_pubkey_cache_from_block(block)
+    print(f"DEBUG: pubkey cache rebuilt, {len(PUBKEY_CACHE)} addresses")
+
+# Cache: address -> public_key (เพื่อไม่ต้องวนลูปทั้งเชนทุกครั้ง)
+PUBKEY_CACHE = {}
+
+def update_pubkey_cache_from_block(block):
+    """เรียกทุกครั้งที่มี block ใหม่ เพื่ออัปเดต cache"""
+    for t in block.get("transactions", []):
+        sender = t.get("from")
+        pk = t.get("public_key")
+        if sender and pk and sender not in PUBKEY_CACHE:
+            PUBKEY_CACHE[sender] = pk
+
+def rebuild_pubkey_cache():
+    """สร้าง cache ใหม่ทั้งหมดจาก chain ปัจจุบัน (เรียกตอน startup)"""
+    PUBKEY_CACHE.clear()
+    for block in node.chain:
+        update_pubkey_cache_from_block(block)
+    print(f"DEBUG: pubkey cache rebuilt, {len(PUBKEY_CACHE)} addresses")
+
 def verify_tx_signature(tx):
-    """ตรวจสอบ signature ของ transaction"""
+    """ตรวจสอบ signature ของ transaction (เข้มงวด + ใช้ cache)"""
     try:
         from ecdsa import VerifyingKey, SECP256k1, BadSignatureError
         import hashlib as _hl
-        
+
         sender = tx.get("from")
-        if sender in ("SYSTEM", "GENESIS", "DEX"):
+        if sender in ("SYSTEM", "GENESIS", "DEX", "NETWORK"):
             return True
-            
+
         signature = tx.get("signature")
         if not signature:
             return False
-            
-        # หา public key จาก chain
-        pub_hex = None
-        for block in node.chain:
-            for t in block.get("transactions", []):
-                if t.get("from") == sender and t.get("public_key"):
-                    pub_hex = t["public_key"]
-                    break
-                    
+
+        pub_hex = PUBKEY_CACHE.get(sender)
+
         if not pub_hex:
-            return True  # ยังไม่มี tx เก่า ผ่านไปก่อน
-            
+            pub_hex = tx.get("public_key")
+
+        if not pub_hex:
+            for block in node.chain:
+                for t in block.get("transactions", []):
+                    if t.get("from") == sender and t.get("public_key"):
+                        pub_hex = t["public_key"]
+                        PUBKEY_CACHE[sender] = pub_hex
+
+        if not pub_hex:
+            print(f"DEBUG: reject tx from {sender} - no public_key found")
+            return False
+
+        pub_bytes = bytes.fromhex(pub_hex)
+        derived_addr = pubkey_to_address(pub_bytes)
+        if derived_addr.lower() != sender.lower():
+            print(f"DEBUG: reject tx - public_key mismatch for {sender}")
+            return False
+
         msg = _hl.sha3_256(
             __import__("json").dumps(
-                {"amount": tx["amount"], "fee": tx.get("fee",0), 
-                 "from": tx["from"], "to": tx["to"]}, 
+                {"amount": tx["amount"], "fee": tx.get("fee",0),
+                 "from": tx["from"], "to": tx["to"]},
                 sort_keys=True, separators=(",",":")
             ).encode()
         ).digest()
-        
-        vk = VerifyingKey.from_string(bytes.fromhex(pub_hex), curve=SECP256k1)
+
+        vk = VerifyingKey.from_string(pub_bytes, curve=SECP256k1)
         vk.verify(bytes.fromhex(signature), msg)
         return True
-    except:
+    except Exception as e:
+        print(f"DEBUG: signature verify error: {e}")
         return False
+
+def validate_block_balances(block, chain_before_block):
+    """ตรวจสอบยอดเงินคงเหลือของทุก tx ในบล็อก (ป้องกัน double-spend)"""
+    spent = {}
+    for tx in block.get("transactions", []):
+        sender = tx.get("from")
+        if sender in ("SYSTEM", "GENESIS", "DEX", "NETWORK"):
+            continue
+        amount = float(tx.get("amount", 0))
+        fee = float(tx.get("fee", 0))
+        total_needed = amount + fee
+
+        balance = 0
+        for b in chain_before_block:
+            for t in b.get("transactions", []):
+                if t.get("to") == sender:
+                    balance += float(t.get("amount", 0))
+                if t.get("from") == sender:
+                    balance -= float(t.get("amount", 0)) + float(t.get("fee", 0))
+
+        already_spent = spent.get(sender, 0)
+        if balance - already_spent < total_needed:
+            print(f"DEBUG: reject block - {sender} insufficient balance (has {balance - already_spent}, needs {total_needed})")
+            return False
+
+        spent[sender] = already_spent + total_needed
+
+    return True
 
 def calc_total_fees(txs):
     """คำนวณ fee รวมจาก transactions"""
