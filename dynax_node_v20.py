@@ -461,7 +461,27 @@ def auto_connect_bootstrap():
             print(f"Bootstrap connect failed: {e}")
 
 import threading
-threading.Thread(target=auto_connect_bootstrap, daemon=True).start()
+def resilient_loop(func, name, *args, **kwargs):
+    """รันฟังก์ชันแบบ infinite loop พร้อม auto-restart ถ้า error หรือหลุดออกมาเอง"""
+    while True:
+        try:
+            func(*args, **kwargs)
+            print(f"[AUTO-RESTART] {name} exited normally, restarting in 5s...")
+        except Exception as e:
+            print(f"[AUTO-RESTART] {name} crashed: {e}, restarting in 5s...")
+        time.sleep(5)
+
+def resilient_loop(func, name, *args, **kwargs):
+    """รันฟังก์ชันแบบ infinite loop พร้อม auto-restart ถ้า error หรือหลุดออกมาเอง"""
+    while True:
+        try:
+            func(*args, **kwargs)
+            print(f"[AUTO-RESTART] {name} exited normally, restarting in 5s...")
+        except Exception as e:
+            print(f"[AUTO-RESTART] {name} crashed: {e}, restarting in 5s...")
+        time.sleep(5)
+
+threading.Thread(target=resilient_loop, args=(auto_connect_bootstrap, "auto_connect_bootstrap"), daemon=True).start()
 
 
 # DEX Liquidity Pool
@@ -936,7 +956,7 @@ def auto_sync_loop():
             print(f"Auto-sync error: {e}")
         time.sleep(30)
 
-threading.Thread(target=auto_sync_loop, daemon=True).start()
+threading.Thread(target=resilient_loop, args=(auto_sync_loop, "auto_sync_loop"), daemon=True).start()
 PEERS_FILE = "peers.json"
 MAX_PEERS = 100
 MAX_NEW_PEERS_PER_ROUND = 10
@@ -1025,7 +1045,7 @@ def peer_discovery_loop():
             print(f"Peer discovery error: {e}")
         time.sleep(60)
 
-threading.Thread(target=peer_discovery_loop, daemon=True).start()
+threading.Thread(target=resilient_loop, args=(peer_discovery_loop, "peer_discovery_loop"), daemon=True).start()
 print("Peer discovery started")
 
 print("Auto-sync thread started")
@@ -1154,7 +1174,7 @@ def mempool_sync_loop():
             print(f"Mempool sync error: {e}")
         time.sleep(15)
 
-threading.Thread(target=mempool_sync_loop, daemon=True).start()
+threading.Thread(target=resilient_loop, args=(mempool_sync_loop, "mempool_sync_loop"), daemon=True).start()
 print("Mempool sync started")
 
 
