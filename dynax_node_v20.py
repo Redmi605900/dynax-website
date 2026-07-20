@@ -9,6 +9,49 @@ from ecdsa import VerifyingKey, SECP256k1
 
 app = Flask(__name__)
 
+# ===== Categorized Logging =====
+import sys as _sys
+import os as _os
+from datetime import datetime as _dt
+
+_os.makedirs("logs", exist_ok=True)
+
+class _CategorizedLogger:
+    def __init__(self, original):
+        self.original = original
+        self.files = {
+            "error": open("logs/error.log", "a", buffering=1),
+            "mining": open("logs/mining.log", "a", buffering=1),
+            "network": open("logs/network.log", "a", buffering=1),
+            "general": open("logs/general.log", "a", buffering=1),
+        }
+
+    def _categorize(self, msg):
+        m = msg.lower()
+        if any(k in m for k in ["error", "traceback", "exception", "invalid", "reject", "fail"]):
+            return "error"
+        if any(k in m for k in ["mine", "auto-mine", "mining", "block reward"]):
+            return "mining"
+        if any(k in m for k in ["peer", "sync", "broadcast", "connect", "tunnel"]):
+            return "network"
+        return "general"
+
+    def write(self, message):
+        self.original.write(message)
+        if message.strip():
+            ts = _dt.now().strftime("%Y-%m-%d %H:%M:%S")
+            cat = self._categorize(message)
+            self.files[cat].write(f"{ts} - {message}" + ("\n" if not message.endswith("\n") else ""))
+
+    def flush(self):
+        self.original.flush()
+        for f in self.files.values():
+            f.flush()
+
+_sys.stdout = _CategorizedLogger(_sys.stdout)
+# ===== End Categorized Logging =====
+
+
 def pubkey_to_address(pubkey_bytes):
     h = hashlib.sha3_256(pubkey_bytes).hexdigest()
     return "DX" + h[:40]
@@ -118,6 +161,7 @@ class DynaxNode:
             block["nonce"] += 1
         self.chain.append(block)
         self.save_chain()
+        print(f"Block {block['index']} mined successfully with nonce {block['nonce']}")
         
         # Broadcast new block to all peers
         for peer in list(self.peers):
@@ -233,33 +277,56 @@ def decrypt_wallet(encrypted_hex, password):
     decrypted = bytes([b ^ key[i % 32] for i, b in enumerate(encrypted)])
     return decrypted.decode()
 
+UNLOCK_ATTEMPTS = {}
+UNLOCK_MAX_ATTEMPTS = 5
+UNLOCK_WINDOW_SECONDS = 900
+
+def check_rate_limit(ip):
+    now = time.time()
+    attempts = UNLOCK_ATTEMPTS.get(ip, [])
+    attempts = [t for t in attempts if now - t < UNLOCK_WINDOW_SECONDS]
+    UNLOCK_ATTEMPTS[ip] = attempts
+    return len(attempts) < UNLOCK_MAX_ATTEMPTS
+
+def record_attempt(ip):
+    UNLOCK_ATTEMPTS.setdefault(ip, []).append(time.time())
+
 @app.route("/wallet/unlock", methods=["POST"])
 def wallet_unlock():
+    ip = request.remote_addr
+    if not check_rate_limit(ip):
+        return jsonify({"error": "พยายามผิดพลาดหลายครั้งเกินไป กรุณารอ 15 นาที"}), 429
+
     data = request.json
     address = data.get('address')
     password = data.get('password')
-    
+
     try:
         with open("wallets/wallet_encrypted.json", "r") as f:
             wallet = json.load(f)
-        
+
         if wallet['address'] != address:
+            record_attempt(ip)
             return jsonify({"error": "Address ไม่ตรงกัน"}), 400
-        
+
         if not wallet.get('encrypted'):
             return jsonify({"error": "Wallet ไม่ได้ encrypt"}), 400
-        
-        # Decrypt private key
+
         private_key = decrypt_wallet(wallet['private_key_encrypted'], password)
-        
+        pubkey_bytes = bytes.fromhex(wallet['public_key'])
+        derived_addr = pubkey_to_address(pubkey_bytes)
+        if derived_addr.lower() != address.lower():
+            record_attempt(ip)
+            return jsonify({"error": "รหัสผ่านไม่ถูกต้อง"}), 401
+
+        UNLOCK_ATTEMPTS[ip] = []
         return jsonify({
             "address": wallet['address'],
             "private_key": private_key
         })
     except Exception as e:
+        record_attempt(ip)
         return jsonify({"error": "รหัสผ่านไม่ถูกต้อง"}), 401
-
-
 
 
 @app.route("/tx/send", methods=["POST"])
@@ -348,6 +415,44 @@ def stats():
         "symbol": "DYX",
         "reward": 50,
         "status": "online"
+    })
+
+@app.route("/health")
+def health():
+    chain = node.chain
+    last_block_time = chain[-1].get("timestamp", 0) if chain else 0
+    seconds_since_last_block = int(time.time()) - last_block_time if last_block_time else None
+
+    peer_status = {}
+    for peer in list(node.peers):
+        try:
+            r = requests.get(f"{peer}/", timeout=3)
+            peer_status[peer] = "online" if r.status_code == 200 else f"error_{r.status_code}"
+        except Exception:
+            peer_status[peer] = "offline"
+
+    peers_online = sum(1 for v in peer_status.values() if v == "online")
+
+    issues = []
+    if seconds_since_last_block is not None and seconds_since_last_block > 300:
+        issues.append(f"No new block in {seconds_since_last_block}s (over 5 min)")
+    if len(chain) == 0:
+        issues.append("Chain is empty")
+    if peers_online == 0 and len(node.peers) > 0:
+        issues.append("No peers reachable")
+
+    overall_status = "healthy" if not issues else "degraded"
+
+    return jsonify({
+        "status": overall_status,
+        "issues": issues,
+        "chain_length": len(chain),
+        "mempool_size": len(node.mempool),
+        "seconds_since_last_block": seconds_since_last_block,
+        "peers_total": len(node.peers),
+        "peers_online": peers_online,
+        "peer_status": peer_status,
+        "checked_at": int(time.time())
     })
 
 @app.route("/peers")
@@ -590,7 +695,7 @@ def api_info():
 
 @app.route("/api/v1/balance/<addr>")
 def api_balance(addr):
-    bal = node.get_balance(addr)
+    bal = node.balance(addr)
     return jsonify({"address": addr, "balance": bal, "symbol": "DYX"})
 
 @app.route("/api/v1/tx/<txid>")
@@ -920,9 +1025,11 @@ def validate_chain(chain):
         
         # เช็ค PoW (hash ต้องขึ้นต้นด้วย 0000)
         expected_diff = get_difficulty(chain[:i])
-        # ตรวจ difficulty ใน block ต้องตรงกับที่คำนวณได้
-        if block.get("difficulty") and block["difficulty"] != expected_diff:
-            print(f"Invalid difficulty at block {i}: expected {expected_diff} got {block['difficulty']}")
+        # ตรวจ difficulty ใน block ต้องตรงกับที่คำนวณได้ (รองรับ legacy format 3 หรือ 4 ศูนย์)
+        block_diff = block.get("difficulty")
+        legacy_diffs = {"000", "0000"}
+        if block_diff and block_diff not in legacy_diffs and block_diff != expected_diff:
+            print(f"Invalid difficulty at block {i}: expected {expected_diff} got {block_diff}")
             return False
         # ตรวจ hash ต้องผ่าน PoW ตาม expected difficulty
         if not block.get("hash", "").startswith(expected_diff):
@@ -1311,7 +1418,8 @@ def broadcast_block_signed(block):
             pass
 
 
-app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 6002)))
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 6002)))
 
 
 
