@@ -145,7 +145,22 @@ class DynaxNode:
         clean_mempool()
         txs_pending = self.mempool[:50]
         total_fees = calc_total_fees(txs_pending)
-        reward = {"from": "SYSTEM", "to": miner, "amount": 50 + total_fees, "fee": 0, "timestamp": int(time.time())}
+
+        MAX_SUPPLY = 11000000
+        BLOCK_REWARD = 1
+        total_mined = sum(
+            tx.get("amount", 0)
+            for block in self.chain
+            for tx in block.get("transactions", [])
+            if tx.get("from") == "SYSTEM"
+        )
+        block_reward = BLOCK_REWARD
+        if total_mined + block_reward > MAX_SUPPLY:
+            block_reward = max(0, MAX_SUPPLY - total_mined)
+        if block_reward == 0 and total_fees == 0:
+            return {"error": "max supply reached"}
+
+        reward = {"from": "SYSTEM", "to": miner, "amount": block_reward + total_fees, "fee": 0, "timestamp": int(time.time())}
         clean_mempool()
         txs = self.mempool[:50]
         self.mempool = self.mempool[50:]
