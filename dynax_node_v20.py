@@ -428,7 +428,7 @@ def stats():
         "nodes": len(node.peers) + 1,
         "difficulty": "0000",
         "symbol": "DYX",
-        "reward": 50,
+        "reward": 1,
         "status": "online"
     })
 
