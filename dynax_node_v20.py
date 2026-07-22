@@ -393,6 +393,71 @@ def send_tx_with_key():
         return jsonify({"error": str(e)}), 400
 
 
+FAUCET_MAX_TOTAL = 20000
+FAUCET_AMOUNT = 0.2
+FAUCET_CLAIMED_ADDRESSES = set()
+FAUCET_ATTEMPTS = {}
+FAUCET_MAX_ATTEMPTS = 3
+FAUCET_WINDOW_SECONDS = 3600
+
+def get_faucet_total_sent():
+    total = 0.0
+    for block in node.chain:
+        for tx in block.get("transactions", []):
+            if tx.get("from") == "FAUCET":
+                total += float(tx.get("amount", 0))
+    for tx in node.mempool:
+        if tx.get("from") == "FAUCET":
+            total += float(tx.get("amount", 0))
+    return total
+
+@app.route("/api/faucet", methods=["POST"])
+def faucet_claim():
+    ip = request.remote_addr
+    now = time.time()
+    attempts = FAUCET_ATTEMPTS.get(ip, [])
+    attempts = [t for t in attempts if now - t < FAUCET_WINDOW_SECONDS]
+    if len(attempts) >= FAUCET_MAX_ATTEMPTS:
+        return jsonify({"error": "พยายามหลายครั้งเกินไป กรุณารอ 1 ชั่วโมง"}), 429
+    FAUCET_ATTEMPTS[ip] = attempts + [now]
+
+    data = request.json or {}
+    address = data.get("address", "").strip()
+
+    if not address or not address.startswith("DX") or len(address) != 42:
+        return jsonify({"error": "ที่อยู่ wallet ไม่ถูกต้อง"}), 400
+
+    if address in FAUCET_CLAIMED_ADDRESSES:
+        return jsonify({"error": "ที่อยู่นี้เคยขอรับแล้ว"}), 400
+
+    for block in node.chain:
+        for tx in block.get("transactions", []):
+            if tx.get("from") == "FAUCET" and tx.get("to") == address:
+                FAUCET_CLAIMED_ADDRESSES.add(address)
+                return jsonify({"error": "ที่อยู่นี้เคยขอรับแล้ว"}), 400
+
+    total_sent = get_faucet_total_sent()
+    if total_sent + FAUCET_AMOUNT > FAUCET_MAX_TOTAL:
+        return jsonify({"error": "Faucet หมดแล้ว"}), 400
+
+    tx = {
+        "from": "FAUCET",
+        "to": address,
+        "amount": FAUCET_AMOUNT,
+        "fee": 0,
+        "timestamp": int(time.time())
+    }
+    node.mempool.append(tx)
+    FAUCET_CLAIMED_ADDRESSES.add(address)
+
+    return jsonify({
+        "status": "queued",
+        "amount": FAUCET_AMOUNT,
+        "total_sent": total_sent + FAUCET_AMOUNT,
+        "remaining": FAUCET_MAX_TOTAL - (total_sent + FAUCET_AMOUNT)
+    }), 201
+
+
 @app.route("/pending")
 def show_pending():
     return jsonify({
@@ -902,7 +967,7 @@ def verify_tx_signature(tx):
         import hashlib as _hl
 
         sender = tx.get("from")
-        if sender in ("SYSTEM", "GENESIS", "DEX", "NETWORK"):
+        if sender in ("SYSTEM", "GENESIS", "DEX", "NETWORK", "FAUCET"):
             return True
 
         signature = tx.get("signature")
@@ -951,7 +1016,7 @@ def validate_block_balances(block, chain_before_block):
     spent = {}
     for tx in block.get("transactions", []):
         sender = tx.get("from")
-        if sender in ("SYSTEM", "GENESIS", "DEX", "NETWORK"):
+        if sender in ("SYSTEM", "GENESIS", "DEX", "NETWORK", "FAUCET"):
             continue
         amount = float(tx.get("amount", 0))
         fee = float(tx.get("fee", 0))
