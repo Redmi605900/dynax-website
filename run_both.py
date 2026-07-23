@@ -31,5 +31,9 @@ def serve_elliptic():
 def serve_sha3():
     return send_file('sha3.min.js', mimetype='application/javascript')
 
+@app.route('/qrcode.min.js')
+def serve_qrcode():
+    return send_file('qrcode.min.js', mimetype='application/javascript')
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=6001)
