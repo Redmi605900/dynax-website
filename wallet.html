@@ -454,7 +454,8 @@
             if (!key) return;
             try {
                 const keyPair = ec.keyFromPrivate(key, 'hex');
-                const pubKey = keyPair.getPublic('hex');
+                let pubKey = keyPair.getPublic('hex');
+                if (pubKey.startsWith('04')) pubKey = pubKey.substring(2);
                 const hash = sha3_256(hexToBytes(pubKey));
                 const address = 'DX' + hash.substring(0, 40);
                 currentWallet = { private_key: key, public_key: pubKey, address: address };
@@ -497,7 +498,10 @@
                 const msgText = JSON.stringify(msgDict, Object.keys(msgDict).sort());
                 const keyPair = ec.keyFromPrivate(currentWallet.private_key, 'hex');
                 const msgHash = sha3_256(new TextEncoder().encode(msgText));
-                const signature = keyPair.sign(msgHash, 'hex').toDER('hex');
+                const sig = keyPair.sign(msgHash, 'hex');
+                const rHex = sig.r.toString('hex').padStart(64, '0');
+                const sHex = sig.s.toString('hex').padStart(64, '0');
+                const signature = rHex + sHex;
 
                 const res = await fetch(`${NODE_URL}/tx`, {
                     method: 'POST',
