@@ -208,8 +208,11 @@ def balance(addr): return jsonify({"address": addr, "balance": node.balance(addr
 def mine(miner): return jsonify(node.mine(miner))
 
 @app.route("/")
-def home(): return jsonify({"network": "DYNAX v20 Secure", "blocks": len(node.chain), "api_v1": True})
-
+def home():
+    try:
+        return open("index.html", encoding="utf-8").read()
+    except:
+        return jsonify({"network": "DYNAX v20 Secure", "blocks": len(node.chain), "api_v1": True})
 
 @app.route("/wallet")
 def wallet_page():
@@ -1499,7 +1502,7 @@ def broadcast_block_signed(block):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 6002)))
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 6001)))
 
 
 
