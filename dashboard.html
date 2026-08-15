@@ -321,6 +321,16 @@ try {
   } catch(e) {}
   }
 
+<div class="section" style="margin-top:10px">
+  <h3>Decentralized Access (Tor)</h3>
+  <p style="color:#888;font-size:0.75rem;margin-bottom:10px">Access this node directly via Tor with no intermediary. Open the link below in Tor Browser.</p>
+  <div class="node-item" style="flex-direction:column;align-items:flex-start;gap:6px">
+    <code id="onion-addr" style="color:#d4af37;font-size:0.7rem;word-break:break-all">http://wjk6bqzdt6tto52jaacmkdtohjaf3s3re3zv4bjfmtjy67t24amwsyid.onion</code>
+    <button onclick="navigator.clipboard.writeText('http://wjk6bqzdt6tto52jaacmkdtohjaf3s3re3zv4bjfmtjy67t24amwsyid.onion').then(()=>alert('Copied'))" style="background:#d4af37;color:#000;border:none;padding:6px 12px;border-radius:6px;font-size:0.7rem;cursor:pointer">Copy .onion Address</button>
+  </div>
+</div>
+
+<script>
 loadAll();
 setInterval(loadAll, 15000);
 </script>
