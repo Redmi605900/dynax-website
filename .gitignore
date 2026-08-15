@@ -25,3 +25,6 @@ dynax-website/
 .DS_Store
 Thumbs.db
 *.db
+tor_dynax_backup/
+.tor_dynax/
+bitly_token.txt
