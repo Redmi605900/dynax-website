@@ -650,6 +650,7 @@ def auto_connect_bootstrap():
     static_peers = [
         "https://dynax-node.onrender.com",
         "https://dynax-node2.onrender.com",
+        "http://wjk6bqzdt6tto52jaacmkdtohjaf3s3re3zv4bjfmtjy67t24amwsyid.onion",
     ]
     for p in static_peers:
         node.peers.add(p)
@@ -659,8 +660,7 @@ def auto_connect_bootstrap():
     bootstrap = os.environ.get("BOOTSTRAP_NODE", "")
     if bootstrap:
         try:
-            import requests
-            requests.post(f"{bootstrap}/peers/add", json={"peer": os.environ.get("MY_URL", "")}, timeout=5)
+            peer_request("post", f"{bootstrap}/peers/add", json={"peer": os.environ.get("MY_URL", "")}, timeout=5)
             node.peers.add(bootstrap)
             print(f"Connected to bootstrap: {bootstrap}")
         except Exception as e:
