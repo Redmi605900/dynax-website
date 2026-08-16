@@ -88,7 +88,7 @@ body {
 </footer>
 <script>
 function loadStats() {
-  fetch('https://foreign-western-speech-animation.trycloudflare.com/stats')
+  fetch('https://makers-cookbook-gave-transcription.trycloudflare.com/stats')
     .then(r=>r.json())
     .then(d=>{
       document.getElementById('s-blocks').textContent = d.blocks || '—';
