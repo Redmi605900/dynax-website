@@ -1,6 +1,24 @@
 import time
 import requests
 import threading
+
+# ===== Tor .onion peer support =====
+_TOR_PROXIES = {
+    'http': 'socks5h://127.0.0.1:9050',
+    'https': 'socks5h://127.0.0.1:9050'
+}
+
+def peer_request(method, url, **kwargs):
+    """
+    Wrapper รอบ requests ที่รองรับทั้ง peer ปกติและ .onion peer
+    .onion peer จะถูกส่งผ่าน Tor SOCKS proxy อัตโนมัติ
+    peer ปกติทำงานเหมือนเดิมทุกประการ ไม่กระทบ
+    """
+    if '.onion' in url:
+        kwargs.setdefault('proxies', _TOR_PROXIES)
+        kwargs.setdefault('timeout', 60)
+    return getattr(requests, method)(url, **kwargs)
+
 import json
 import hashlib
 import os
@@ -181,7 +199,7 @@ class DynaxNode:
         # Broadcast new block to all peers
         for peer in list(self.peers):
             try:
-                r = requests.post(f"{peer}/receive_block", json=block, timeout=3)
+                r = peer_request("post", f"{peer}/receive_block", json=block, timeout=3)
                 print(f"Broadcasted block {block['index']} to {peer}: {r.status_code}")
             except Exception as e:
                 print(f"Failed to broadcast to {peer}: {e}")
@@ -509,7 +527,7 @@ def health():
     peer_status = {}
     for peer in list(node.peers):
         try:
-            r = requests.get(f"{peer}/", timeout=3)
+            r = peer_request("get", f"{peer}/", timeout=3)
             peer_status[peer] = "online" if r.status_code == 200 else f"error_{r.status_code}"
         except Exception:
             peer_status[peer] = "offline"
@@ -580,7 +598,7 @@ def sync_chain():
     print(f"DEBUG: starting sync, own chain length={len(longest)}, peers={node.peers}")
     for peer in node.peers:
         try:
-            r = requests.get(f"{peer}/chain", timeout=10)
+            r = peer_request("get", f"{peer}/chain", timeout=10)
             peer_chain = r.json()
             print(f"DEBUG: got {len(peer_chain)} blocks from {peer}")
             if len(peer_chain) > len(longest):
@@ -1508,7 +1526,7 @@ if __name__ == "__main__":
 
 def download_snapshot(peer):
     try:
-        r = requests.get(f"{peer}/snapshot", timeout=20)
+        r = peer_request("get", f"{peer}/snapshot", timeout=20)
         data = r.json()
 
         if data["height"] > len(node.chain):
