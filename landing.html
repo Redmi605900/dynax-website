@@ -88,7 +88,7 @@ body {
 </footer>
 <script>
 function loadStats() {
-  fetch('https://she-big-dispatched-pas.trycloudflare.com/stats')
+  fetch('https://api.trycloudflare.com/stats')
     .then(r=>r.json())
     .then(d=>{
       document.getElementById('s-blocks').textContent = d.blocks || '—';
