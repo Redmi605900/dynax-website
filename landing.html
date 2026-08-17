@@ -94,7 +94,7 @@ body {
 </footer>
 <script>
 function loadStats() {
-  fetch('https://carrying-copied-locate-processing.trycloudflare.com/stats')
+  fetch('https://api.trycloudflare.com/stats')
     .then(r=>r.json())
     .then(d=>{
       document.getElementById('s-blocks').textContent = d.blocks || '—';
