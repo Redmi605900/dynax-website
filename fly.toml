@@ -1,0 +1,26 @@
+app = "dynax-l1-mainnet"
+primary_region = "sin"
+
+[build]
+  builder = "paketobuildpacks/builder:base"
+
+[env]
+  PORT = "6001"
+
+[[services]]
+  internal_port = 6001
+  protocol = "tcp"
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  [[services.ports]]
+    port = 6001
+    protocol = "tcp"
+
+

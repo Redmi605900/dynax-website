@@ -1,4 +1,4 @@
-from flask import send_file, jsonify
+from flask import send_file, jsonify, send_from_directory
 import dynax_node_v20
 
 app = dynax_node_v20.app
@@ -6,6 +6,11 @@ app = dynax_node_v20.app
 def dashboard_home():
     return send_file('landing.html')
 app.view_functions['home'] = dashboard_home
+
+@app.route('/assets/<path:filename>')
+def serve_assets(filename):
+    return send_from_directory('assets', filename)
+
 
 @app.route('/start')
 def dashboard_start():
