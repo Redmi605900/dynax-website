@@ -218,7 +218,7 @@ body {
 
 <script>
 // API URL - ใช้ localtunnel
-const API_URL = 'https://consent-sentence-bite-households.trycloudflare.com';
+const API_URL = 'https://watching-entities-doll-connect.trycloudflare.com';
 
 function showTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -230,10 +230,10 @@ function showTab(tab) {
 
 async function loadBlocks() {
   try {
-    const response = await fetch(`${API_URL}/blocks`);
+    const response = await fetch(`${API_URL}/blocks/recent/30`);
     const blocks = await response.json();
     
-    document.getElementById('totalBlocks').textContent = blocks.length;
+    const statsR = await fetch(`${API_URL}/stats`); const statsJ = await statsR.json(); document.getElementById("totalBlocks").textContent = statsJ.blocks;
     
     window.allBlocks = blocks;
 const container = document.getElementById('blocksList');
@@ -262,7 +262,7 @@ const container = document.getElementById('blocksList');
 
 async function loadTransactions() {
   try {
-    const response = await fetch(`${API_URL}/blocks`);
+    const response = await fetch(`${API_URL}/blocks/recent/30`);
     const blocks = await response.json();
     
     // รวม transactions จากทุก blocks
