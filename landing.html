@@ -75,6 +75,12 @@ body {
     <a href="faucet.html" class="btn btn-outline">💧 Faucet</a>
     <a href="dashboard.html" class="btn btn-outline">📡 Network</a>
   </div>
+
+  <div style="max-width:500px;margin:24px auto 0;padding:14px 16px;background:rgba(212,175,55,0.06);border:1px solid rgba(212,175,55,0.3);border-radius:10px;text-align:center">
+    <p style="color:#d4af37;font-size:0.85rem;margin-bottom:6px">🧅 เว็บช้าหรือเข้าไม่ได้? ใช้ Tor Browser เปิดลิงก์นี้แทน (ไม่ผ่านตัวกลาง เสถียรกว่า):</p>
+    <code style="color:#888;font-size:0.65rem;word-break:break-all;display:block">http://wjk6bqzdt6tto52jaacmkdtohjaf3s3re3zv4bjfmtjy67t24amwsyid.onion</code>
+    <button onclick="navigator.clipboard.writeText('http://wjk6bqzdt6tto52jaacmkdtohjaf3s3re3zv4bjfmtjy67t24amwsyid.onion').then(()=>alert('คัดลอกแล้ว'))" style="margin-top:8px;background:#d4af37;color:#000;border:none;padding:6px 14px;border-radius:6px;font-size:0.7rem;cursor:pointer">📋 คัดลอก .onion</button>
+  </div>
 </section>
 <div class="cards">
   <div class="card" onclick="location.href='wallet.html'"><div class="card-icon">💎</div><div class="card-title">Wallet</div><div class="card-desc">ส่ง รับ และจัดการ DYX อย่างปลอดภัย</div></div>
