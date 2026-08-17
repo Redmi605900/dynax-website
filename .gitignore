@@ -28,3 +28,10 @@ Thumbs.db
 tor_dynax_backup/
 .tor_dynax/
 bitly_token.txt
+dynax_chain.json
+peers.json
+*.bak
+*.bak2
+*.bak3
+*~
+dynax-node2/
