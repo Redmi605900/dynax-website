@@ -192,7 +192,9 @@ async function loadAll() {
     document.getElementById("nodes").textContent = stats.nodes || "-";
     document.getElementById("reward").textContent = stats.reward || "50";
     document.getElementById("difficulty").textContent = stats.difficulty || "0000";
-  } catch(e) {}
+  } catch(e) {
+    document.getElementById("status").textContent = "reconnecting...";
+  }
 
   try {
     const pending = await fetch(NODE + "/pending").then(r=>r.json());
@@ -331,8 +333,23 @@ try {
 </div>
 
 <script>
+let currentInterval = 15000;
+let intervalHandle = null;
+
+function scheduleNext() {
+  if (intervalHandle) clearTimeout(intervalHandle);
+  intervalHandle = setTimeout(async () => {
+    const statusEl = document.getElementById("status");
+    const wasReconnecting = statusEl && statusEl.textContent === "reconnecting...";
+    await loadAll();
+    const isReconnecting = statusEl && statusEl.textContent === "reconnecting...";
+    currentInterval = isReconnecting ? 5000 : 15000;
+    scheduleNext();
+  }, currentInterval);
+}
+
 loadAll();
-setInterval(loadAll, 15000);
+scheduleNext();
 </script>
 </body>
 </html>
