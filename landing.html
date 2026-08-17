@@ -94,7 +94,7 @@ body {
 </footer>
 <script>
 function loadStats() {
-  fetch('https://internal-nodes-maryland-sealed.trycloudflare.com/stats')
+  fetch('https://prefer-pale-salmon-determination.trycloudflare.com/stats')
     .then(r=>r.json())
     .then(d=>{
       document.getElementById('s-blocks').textContent = d.blocks || '—';
