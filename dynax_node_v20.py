@@ -252,6 +252,12 @@ def get_txs(addr):
 def get_blocks():
     return jsonify(node.chain)
 
+@app.route("/blocks/recent/<int:n>")
+def get_recent_blocks(n):
+    """คืนแค่ n blocks ล่าสุด เบากว่า /blocks ทั้งหมดมาก ใช้สำหรับ Explorer"""
+    n = min(n, 100)  # จำกัดสูงสุด 100 กันโหลดหนักเกินไป
+    return jsonify(node.chain[-n:] if len(node.chain) > n else node.chain)
+
 
 @app.route("/wallet_bilingual")
 def wallet_bilingual():
