@@ -47,10 +47,10 @@ button:hover { background: #ffd700; }
   <h2>📊 Pool Status</h2>
   <div class="pool-grid">
     <div class="stat"><div class="stat-value" id="dyx-reserve">-</div><div class="stat-label">DYX Reserve</div></div>
-    <div class="stat"><div class="stat-value" id="usdt-reserve">-</div><div class="stat-label">USDT Reserve</div></div>
+    <div class="stat"><div class="stat-value" id="usdt-reserve">-</div><div class="stat-label">TEST Reserve</div></div>
   </div>
   <div class="pool-grid-3">
-    <div class="stat"><div class="stat-value" id="price">-</div><div class="stat-label">Price (USDT)</div></div>
+    <div class="stat"><div class="stat-value" id="price">-</div><div class="stat-label">Price (TEST)</div></div>
     <div class="stat"><div class="stat-value" id="tvl">-</div><div class="stat-label">Pool TVL</div></div>
     <div class="stat"><div class="stat-value">0.30%</div><div class="stat-label">Swap Fee</div></div>
   </div>
@@ -61,12 +61,12 @@ button:hover { background: #ffd700; }
   <h2>🔄 Swap</h2>
   <select id="token-in" onchange="calcPreview()">
     <option value="DYX">DYX</option>
-    <option value="USDT">USDT</option>
+    <option value="TEST">TEST</option>
   </select>
   <input type="number" id="amount-in" placeholder="จำนวนที่ต้องการแลก" oninput="calcPreview()">
   <div class="divider">↓</div>
   <select id="token-out" onchange="calcPreview()">
-    <option value="USDT">USDT</option>
+    <option value="TEST">TEST</option>
     <option value="DYX">DYX</option>
   </select>
 
@@ -88,7 +88,7 @@ button:hover { background: #ffd700; }
   <h2>💧 Add Liquidity</h2>
   <select id="liq-token">
     <option value="DYX">DYX</option>
-    <option value="USDT">USDT</option>
+    <option value="TEST">TEST</option>
   </select>
   <input type="number" id="liq-amount" placeholder="จำนวนที่ต้องการเพิ่ม" oninput="calcLiquidity()">
 
@@ -113,7 +113,7 @@ async function loadPool() {
     const r = await fetch(`${API}/dex/pool`);
     poolData = await r.json();
     const dyx = poolData.DYX;
-    const usdt = poolData.USDT;
+    const usdt = poolData.TEST;
     const price = poolData.price_dyx_usdt;
     const tvl = (dyx * price + usdt).toFixed(0);
     document.getElementById("price").textContent = price.toFixed(4);
@@ -134,8 +134,8 @@ function calcPreview() {
     document.getElementById("swap-preview").style.display = "none";
     return;
   }
-  const x = tokenIn === "DYX" ? poolData.DYX : poolData.USDT;
-  const y = tokenIn === "DYX" ? poolData.USDT : poolData.DYX;
+  const x = tokenIn === "DYX" ? poolData.DYX : poolData.TEST;
+  const y = tokenIn === "DYX" ? poolData.TEST : poolData.DYX;
   const amountInWithFee = amountIn * (1 - FEE);
   const fee = amountIn * FEE;
   const amountOut = (y * amountInWithFee) / (x + amountInWithFee);
@@ -160,12 +160,12 @@ function calcLiquidity() {
     document.getElementById("liq-preview").style.display = "none";
     return;
   }
-  const totalPool = token === "DYX" ? poolData.DYX : poolData.USDT;
+  const totalPool = token === "DYX" ? poolData.DYX : poolData.TEST;
   const share = (amount / (totalPool + amount) * 100).toFixed(2);
   const lpTokens = Math.round(amount * 0.5);
   const ratio = token === "DYX" 
-    ? "2 DYX : 1 USDT" 
-    : "1 USDT : 2 DYX";
+    ? "2 DYX : 1 TEST" 
+    : "1 TEST : 2 DYX";
 
   document.getElementById("l-share").textContent = share + "%";
   document.getElementById("l-lp").textContent = lpTokens.toLocaleString() + " LP";
