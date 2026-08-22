@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DYNAX Test Wallet</title>
+    <!-- เรียกใช้ไฟล์สร้างคีย์ที่มีอยู่แล้วในโปรเจกต์ของคุณ -->
+    <script src="elliptic.min.js"></script>
+    <style>
+        body { background-color: #121212; color: #fff; font-family: sans-serif; padding: 20px; text-align: center; }
+        .card { background-color: #1e1e1e; border: 2px solid #ffd700; border-radius: 10px; padding: 20px; max-width: 500px; margin: 20px auto; }
+        button { background-color: #ffd700; color: #000; border: none; padding: 12px 24px; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top: 15px; }
+        button:hover { background-color: #e6c200; }
+        .result-box { background-color: #2a2a2a; padding: 10px; border-radius: 5px; margin-top: 15px; text-align: left; word-break: break-all; font-family: monospace; font-size: 14px; border: 1px solid #444; }
+        .label { color: #ffd700; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>💎 DYNAX พัฒนาระบบกระเป๋าเงิน (Sandbox)</h1>
+    <p>สร้างคีย์และจำลองระบบ Wallet ปลอดภัยบน Termux โดยไม่กระทบโหนดจริง</p>
+
+    <div class="card">
+        <h3>สร้างกระเป๋าเงิน DYNAX ใหม่</h3>
+        <p>คลิกปุ่มด้านล่างเพื่อสุ่มสร้างคีย์ตามมาตรฐานการเข้ารหัสบล็อกเชน</p>
+        <button onclick="generateDynaxWallet()">✨ Generate New Wallet</button>
+
+        <div id="walletResult" style="display: none;">
+            <div class="result-box">
+                <span class="label">🔑 ที่อยู่กระเป๋า (Address / Public Key):</span>
+                <div id="addrOut" style="color: #00ffcc; margin-top: 5px;"></div>
+            </div>
+            <div class="result-box">
+                <span class="label">⚠️ กุญแจส่วนตัว (Private Key - ห้ามเปิดเผย):</span>
+                <div id="privOut" style="color: #ff3366; margin-top: 5px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function generateDynaxWallet() {
+            try {
+                // เรียกใช้กลไกวงรี SECP256K1 แบบเดียวกับที่ใช้ใน Bitcoin
+                const ec = new elliptic.ec('secp256k1');
+                
+                // สุ่มสร้าง KeyPair ใหม่
+                const key = ec.genKeyPair();
+                
+                // ดึงค่า Private Key และ Public Key ออกมาในรูปแบบฐาน 16 (Hex)
+                const privateKey = key.getPrivate('hex');
+                const publicKey = key.getPublic('hex');
+                
+                // แปลง Public Key ให้เป็นรูปแบบ Address (ตัวอย่างสถาปัตยกรรมเบื้องต้น)
+                const dynaxAddress = "DYX_" + publicKey.substring(0, 40);
+
+                // แสดงผลบนหน้าเว็บ
+                document.getElementById('addrOut').innerText = dynaxAddress;
+                document.getElementById('privOut').innerText = privateKey;
+                document.getElementById('walletResult').style.display = 'block';
+                
+                alert('สร้างกระเป๋าเงินสำเร็จบนระบบจำลอง!');
+            } catch (error) {
+                alert('เกิดข้อผิดพลาด: โปรดตรวจสอบว่ามีไฟล์ elliptic.min.js อยู่ในโฟลเดอร์นี้');
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>
