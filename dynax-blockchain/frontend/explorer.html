@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DYNAX Block Explorer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0a0a; color: #fff; min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header { text-align: center; padding: 40px 20px; background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%); border-radius: 20px; margin-bottom: 30px; border: 2px solid #d4af37; }
+        header h1 { font-size: 2.5em; color: #d4af37; margin-bottom: 10px; }
+        header p { font-size: 1em; color: #888; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: #1a1a1a; border-radius: 15px; padding: 30px; text-align: center; border: 2px solid #333; transition: all 0.3s; }
+        .stat-card:hover { border-color: #d4af37; transform: translateY(-5px); }
+        .stat-value { font-size: 2.5em; font-weight: bold; color: #d4af37; margin-bottom: 10px; }
+        .stat-label { font-size: 1em; color: #888; }
+        .stat-detail { font-size: 0.85em; color: #666; margin-top: 10px; padding-top: 10px; border-top: 1px solid #333; }
+        .stat-detail span { display: block; margin: 5px 0; }
+        .stat-detail .user-tx { color: #4CAF50; }
+        .stat-detail .coinbase-tx { color: #2196F3; }
+        .network-status { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1.5em; color: #4CAF50; font-weight: bold; }
+        .status-dot { width: 15px; height: 15px; background: #4CAF50; border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .loading { text-align: center; padding: 40px; color: #888; }
+        .nav-links { text-align: center; margin-bottom: 20px; }
+        .nav-links a { color: #d4af37; text-decoration: none; margin: 0 10px; padding: 10px 20px; background: #1a1a1a; border-radius: 10px; border: 1px solid #333; }
+        .nav-links a:hover { background: #2a2a2a; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>DYNAX Block Explorer</h1>
+            <p>Layer 1 Blockchain Explorer</p>
+        </header>
+        <div class="nav-links">
+            <a href="/explorer.html">📊 Dashboard</a>
+            <a href="/blocks.html">📦 Blocks</a>
+            <a href="/wallet.html"> Wallet</a>
+        </div>
+        <div id="stats-container">
+            <div class="loading">กำลังโหลดข้อมูล...</div>
+        </div>
+    </div>
+    <script>
+        const API_BASE = window.location.origin + '/api/v1';
+        async function loadStats() {
+            try {
+                const response = await fetch(API_BASE + '/stats');
+                const data = await response.json();
+                const statsHTML = `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value">${data.total_blocks.toLocaleString()}</div>
+                            <div class="stat-label">Total Blocks</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${data.total_transactions.toLocaleString()}</div>
+                            <div class="stat-label">Total Transactions</div>
+                            <div class="stat-detail">
+                                <span class="user-tx">👤 User TX: ${data.user_transactions.toLocaleString()}</span>
+                                <span class="coinbase-tx">️ Coinbase TX: ${data.coinbase_transactions.toLocaleString()}</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${data.smart_contracts}</div>
+                            <div class="stat-label">Smart Contracts</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="network-status">
+                                <div class="status-dot"></div>
+                                Online
+                            </div>
+                            <div class="stat-label">Network Status</div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('stats-container').innerHTML = statsHTML;
+            } catch (error) {
+                document.getElementById('stats-container').innerHTML = `<div class="stat-card"><div class="stat-label" style="color: #f44336;">❌ ไม่สามารถโหลดข้อมูลได้</div><div class="stat-detail">${error.message}</div></div>`;
+            }
+        }
+        loadStats();
+        setInterval(loadStats, 30000);
+    </script>
+</body>
+</html>
