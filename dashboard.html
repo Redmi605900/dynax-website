@@ -215,7 +215,7 @@ async function loadAll() {
   } catch(e) {}
 
   try {
-    const blocks = await fetch(NODE + "/blocks").then(r=>r.json());
+    const blocks = await fetch(NODE + "/blocks/recent?limit=20").then(r=>r.json());
     if (!blocks.slice) return;
     const recent = blocks.slice(-20).reverse();
     
@@ -241,25 +241,24 @@ async function loadAll() {
       }
     }
     
-    // Total Supply
-    let supply = 0;
-    blocks.forEach(b => {
-      (b.transactions||[]).forEach(tx => {
-        if (tx.from === "SYSTEM") supply += tx.amount || 50;
-      });
-    });
-    document.getElementById("supply").textContent = supply.toLocaleString() + " DYX";
-    
-    // Chain Work
-    let work = 0;
-    blocks.forEach(b => {
-      const h = b.hash || "";
-      const zeros = h.length - h.replace(/^0+/,"").length;
-      work += Math.pow(16, zeros);
-    });
-    document.getElementById("chainwork").textContent = work.toExponential(2);
-    
-    // Block table
+    // Total Supply จาก State API
+      try {
+        const state = await fetch(NODE + "/state").then(r=>r.json());
+        const supply = Number(state.total_supply || 0);
+        document.getElementById("supply").textContent =
+          supply.toLocaleString() + " DYX";
+      } catch(e) {}
+
+// Chain Work แบบ lightweight
+      try {
+        const height = Number(stats.blocks || 0);
+        const diff = String(stats.difficulty || "0000");
+        const workEstimate = height * Math.pow(16, diff.length);
+        document.getElementById("chainwork").textContent =
+          workEstimate.toExponential(2);
+      } catch(e) {}
+
+      // Block table
     document.getElementById("block-table").innerHTML = recent.slice(0,10).map(b => `
       <tr>
         <td>#${b.index}</td>
@@ -289,10 +288,11 @@ try {
 
   // Chain size estimate
   try {
-    const blocks = await fetch(NODE + "/blocks").then(r=>r.json());
+    const blocks = await fetch(NODE + "/blocks/recent?limit=20").then(r=>r.json());
     if (blocks.length) {
       const sizeBytes = JSON.stringify(blocks).length;
-      document.getElementById("chainsize").textContent = (sizeBytes/1024/1024).toFixed(2) + " MB";
+      document.getElementById("chainsize").textContent =
+        (sizeBytes/1024/1024).toFixed(2) + " MB recent";
       
       // Last block age
       const lastBlock = blocks[blocks.length-1];
