@@ -656,7 +656,6 @@ def auto_connect_bootstrap():
     static_peers = [
         "https://dynax-node.onrender.com",
         "https://dynax-node2.onrender.com",
-        "http://wjk6bqzdt6tto52jaacmkdtohjaf3s3re3zv4bjfmtjy67t24amwsyid.onion",
     ]
     for p in static_peers:
         node.peers.add(p)
