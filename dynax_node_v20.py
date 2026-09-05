@@ -144,7 +144,7 @@ class DynaxNode:
         for b in self.chain:
             for tx in self.get_txs(b):
                 if tx.get("to") == addr: bal += tx.get("amount", 0)
-                if tx.get("from") == addr: bal -= tx.get("amount", 0)
+                if tx.get("from") == addr: bal -= tx.get("amount", 0) + tx.get("fee", 0)
         return bal
 
     def send(self, sender, receiver, amount, fee, signature):
