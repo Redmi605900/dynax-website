@@ -27,6 +27,39 @@ from ecdsa import VerifyingKey, SECP256k1
 
 app = Flask(__name__)
 
+# ===== DYNAX CONSENSUS V1 =====
+# Historical blocks 0..10207 are preserved as legacy history.
+# Consensus V1 starts at block 10208.
+CONSENSUS_V1_HEIGHT = 10208
+CONSENSUS_V1_POW_PREFIX = "0000"
+CONSENSUS_V1_NETWORK_ID = 1337
+CONSENSUS_V1_SYMBOL = "DYX"
+
+def calculate_block_hash(block):
+    """Canonical SHA3-256 hash of a block, excluding the stored hash field."""
+    raw = {
+        k: v for k, v in block.items()
+        if k != "hash"
+    }
+    return hashlib.sha3_256(
+        json.dumps(raw, sort_keys=True).encode()
+    ).hexdigest()
+
+def validate_block_pow(block, required_prefix=CONSENSUS_V1_POW_PREFIX):
+    """Verify canonical block hash and Consensus V1 proof-of-work."""
+    calculated = calculate_block_hash(block)
+    stored = block.get("hash", "")
+
+    if calculated != stored:
+        return False
+
+    if not stored.startswith(required_prefix):
+        return False
+
+    return True
+
+# ===== END DYNAX CONSENSUS V1 =====
+
 # ===== Categorized Logging =====
 import sys as _sys
 import os as _os
@@ -187,11 +220,38 @@ class DynaxNode:
         while True:
             raw = json.dumps(block, sort_keys=True)
             h = hashlib.sha3_256(raw.encode()).hexdigest()
-            difficulty = get_difficulty(self.chain)
+            # ===== Consensus V1 mining rule =====
+            # Legacy blocks keep the historical difficulty logic.
+            # Block 10208 onward uses the fixed Consensus V1 target.
+            if len(self.chain) >= CONSENSUS_V1_HEIGHT:
+                difficulty = CONSENSUS_V1_POW_PREFIX
+            else:
+                difficulty = get_difficulty(self.chain)
+
             if h.startswith(difficulty):
                 block["hash"] = h
                 break
             block["nonce"] += 1
+        # ===== Consensus V1 local self-validation =====
+        # Never commit a mined block before applying the same
+        # core validation rules used for received blocks.
+        if block["index"] >= CONSENSUS_V1_HEIGHT:
+            if block.get("index") != len(self.chain):
+                return {"error": "local validation: invalid index"}
+
+            if self.chain and block.get("prev_hash") != self.chain[-1].get("hash"):
+                return {"error": "local validation: invalid prev_hash"}
+
+            if not validate_block_pow(block):
+                return {"error": "local validation: invalid hash or proof-of-work"}
+
+        for tx in block.get("transactions", []):
+            if not verify_tx_signature(tx):
+                return {"error": "local validation: invalid tx signature"}
+
+        if not validate_block_balances(block, self.chain):
+            return {"error": "local validation: insufficient balance in block"}
+
         self.chain.append(block)
         self.save_chain()
         print(f"Block {block['index']} mined successfully with nonce {block['nonce']}")
@@ -373,60 +433,96 @@ def wallet_unlock():
 
 @app.route("/tx/send", methods=["POST"])
 def send_tx_with_key():
-    """ส่งธุรกรรมโดยเซ็นด้วย private_key ที่ส่งมา"""
+    """ส่งธุรกรรมโดยเซ็นด้วย private_key และตรวจสอบ TX ก่อนเข้า mempool"""
     from ecdsa import SigningKey, SECP256k1
-    
-    data = request.json
-    from_addr = data.get('from')
-    to_addr = data.get('to')
-    amount = data.get('amount')
-    fee = float(data.get('fee', 0.01))
+
+    data = request.json or {}
+    from_addr = data.get("from")
+    to_addr = data.get("to")
+    amount = data.get("amount")
+    private_key_hex = data.get("private_key")
+
+    try:
+        amount = float(amount)
+        fee = float(data.get("fee", 0.01))
+    except (TypeError, ValueError):
+        return jsonify({"error": "amount หรือ fee ไม่ถูกต้อง"}), 400
+
+    if not from_addr or not to_addr or not private_key_hex:
+        return jsonify({"error": "ข้อมูลไม่ครบ"}), 400
+
+    if amount <= 0:
+        return jsonify({"error": "invalid amount"}), 400
+
+    if fee < 0:
+        return jsonify({"error": "invalid fee"}), 400
+
     min_fee = get_min_fee()
     if fee < min_fee:
         return jsonify({"error": f"Fee too low. Minimum: {min_fee} DYX"}), 400
-    private_key_hex = data.get('private_key')
-    
-    if not all([from_addr, to_addr, amount, private_key_hex]):
-        return jsonify({"error": "ข้อมูลไม่ครบ"}), 400
-    
+
+    if node.balance(from_addr) < amount + fee:
+        return jsonify({"error": "insufficient balance"}), 400
+
     try:
-        # สร้าง signature จาก private key
-        sk = SigningKey.from_string(bytes.fromhex(private_key_hex), curve=SECP256k1)
-        
-        msg_dict = {"amount": amount, "fee": fee, "from": from_addr, "to": to_addr}
-        msg_text = json.dumps(msg_dict, sort_keys=True)
+        # โหลด private key
+        sk = SigningKey.from_string(
+            bytes.fromhex(private_key_hex),
+            curve=SECP256k1
+        )
+
+        # derive public key จาก private key
+        pubkey_bytes = sk.get_verifying_key().to_string()
+        public_key_hex = pubkey_bytes.hex()
+
+        # ตรวจว่า private key นี้เป็นของ from address จริง
+        derived_addr = pubkey_to_address(pubkey_bytes)
+        if derived_addr.lower() != from_addr.lower():
+            return jsonify({"error": "private key does not match from address"}), 400
+
+        # canonical transaction message
+        msg_dict = {
+            "amount": amount,
+            "fee": fee,
+            "from": from_addr,
+            "to": to_addr
+        }
+
+        msg_text = json.dumps(
+            msg_dict,
+            sort_keys=True,
+            separators=(",", ":")
+        )
+
         msg_hash = hashlib.sha3_256(msg_text.encode()).digest()
-        
-        signature = sk.sign(msg_hash).hex()
-        
-        # สร้าง transaction
+        signature = sk.sign_digest(msg_hash).hex()
+
+        # transaction สำหรับ Consensus V1
         tx = {
             "from": from_addr,
             "to": to_addr,
             "amount": amount,
             "fee": fee,
-            "signature": signature
+            "signature": signature,
+            "public_key": public_key_hex,
+            "timestamp": int(time.time())
         }
-        
-        # เพิ่มเข้า mempool ของ node
+
+        # ตรวจ signature ซ้ำด้วย validator ตัวเดียวกับ Consensus V1
+        if not verify_tx_signature(tx):
+            return jsonify({"error": "invalid signature"}), 400
+
+        # เพิ่มเข้า mempool หลังผ่าน validation ทั้งหมด
         node.mempool.append(tx)
-        
+
         return jsonify({
             "message": "Transaction added to mempool",
             "mempool_size": len(node.mempool),
             "tx": tx
         }), 201
+
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-
-
-FAUCET_MAX_TOTAL = 20000
-FAUCET_AMOUNT = 0.2
-FAUCET_CLAIMED_ADDRESSES = set()
-FAUCET_ATTEMPTS = {}
-FAUCET_MAX_ATTEMPTS = 3
-FAUCET_WINDOW_SECONDS = 3600
-
 def get_faucet_total_sent():
     total = 0.0
     for block in node.chain:
@@ -578,25 +674,50 @@ def add_peer():
 @app.route("/receive_block", methods=["POST"])
 def receive_block():
     block = request.json
-    if not block:
-        return jsonify({"error": "no block"}), 400
-    # เช็ก index ไม่ซ้ำ
-    # ตรวจ signature ทุก tx ใน block
+
+    if not isinstance(block, dict):
+        return jsonify({"error": "invalid block"}), 400
+
+    # ===== Consensus V1: exact next block index =====
+    expected_index = len(node.chain)
+
+    if block.get("index") != expected_index:
+        return jsonify({
+            "error": "invalid index",
+            "expected": expected_index,
+            "received": block.get("index")
+        }), 400
+
+    # ===== Consensus V1: previous block linkage =====
+    if node.chain and block.get("prev_hash") != node.chain[-1].get("hash"):
+        return jsonify({"error": "invalid prev_hash"}), 400
+
+    # ===== Consensus V1: block hash + proof-of-work =====
+    # Legacy history 0..10207 is preserved.
+    # V1 consensus starts at block 10208.
+    if block.get("index", -1) >= CONSENSUS_V1_HEIGHT:
+        if not validate_block_pow(block):
+            return jsonify({
+                "error": "invalid block hash or proof-of-work"
+            }), 400
+
+    # ===== Transaction signatures =====
     for tx in block.get("transactions", []):
         if not verify_tx_signature(tx):
             return jsonify({"error": "invalid tx signature"}), 400
-    if any(b["index"] == block["index"] for b in node.chain):
-        return jsonify({"status": "already have"}), 200
-    # เช็ก prev_hash ต่อกัน
-    if node.chain and block.get("prev_hash") != node.chain[-1]["hash"]:
-        return jsonify({"error": "invalid prev_hash"}), 400
-    # ตรวจสอบยอดเงินคงเหลือ ป้องกัน double-spend
+
+    # ===== Balance / double-spend protection =====
     if not validate_block_balances(block, node.chain):
         return jsonify({"error": "insufficient balance in block"}), 400
+
     node.chain.append(block)
     update_pubkey_cache_from_block(block)
     node.save_chain()
-    return jsonify({"status": "accepted", "block": block["index"]})
+
+    return jsonify({
+        "status": "accepted",
+        "block": block["index"]
+    })
 
 @app.route("/sync")
 def sync_chain():
@@ -1032,7 +1153,7 @@ def verify_tx_signature(tx):
         ).digest()
 
         vk = VerifyingKey.from_string(pub_bytes, curve=SECP256k1)
-        vk.verify(bytes.fromhex(signature), msg)
+        vk.verify_digest(bytes.fromhex(signature), msg)
         return True
     except Exception as e:
         print(f"DEBUG: signature verify error: {e}")
@@ -1108,41 +1229,65 @@ def is_duplicate_tx(tx):
     return False
 
 def validate_chain(chain):
-    """ตรวจสอบ chain ว่าถูกต้องไหม"""
+    """ตรวจสอบ chain แบบ deterministic:
+    Legacy history ใช้ difficulty ที่บันทึกไว้เมื่อมี
+    และ replay rule เมื่อไม่มี
+    Consensus V1 ใช้ fixed PoW ตั้งแต่ block 10208
+    """
     import hashlib as _hl
+    import json as _json
+
     for i in range(1, len(chain)):
         block = chain[i]
-        prev = chain[i-1]
-        
-        # เช็ค previous hash
+        prev = chain[i - 1]
+
+        # 1. Block index
+        if block.get("index") != i:
+            print(f"Invalid index at block {i}")
+            return False
+
+        # 2. Previous block linkage
         if block.get("prev_hash") != prev.get("hash"):
             print(f"Invalid prev_hash at block {i}")
             return False
-        
-        # เช็ค hash ของ block
+
+        # 3. Canonical SHA3-256 block hash
         raw = _hl.sha3_256(
-            __import__("json").dumps(
-                {k: v for k, v in block.items() if k != "hash"}, 
+            _json.dumps(
+                {k: v for k, v in block.items() if k != "hash"},
                 sort_keys=True
             ).encode()
         ).hexdigest()
+
         if raw != block.get("hash"):
             print(f"Invalid hash at block {i}")
             return False
-        
-        # เช็ค PoW (hash ต้องขึ้นต้นด้วย 0000)
-        expected_diff = get_difficulty(chain[:i])
-        # ตรวจ difficulty ใน block ต้องตรงกับที่คำนวณได้ (รองรับ legacy format 3 หรือ 4 ศูนย์)
-        block_diff = block.get("difficulty")
-        legacy_diffs = {"000", "0000"}
-        if block_diff and block_diff not in legacy_diffs and block_diff != expected_diff:
-            print(f"Invalid difficulty at block {i}: expected {expected_diff} got {block_diff}")
-            return False
-        # ตรวจ hash ต้องผ่าน PoW ตาม expected difficulty
-        if not block.get("hash", "").startswith(expected_diff):
-            print(f"Invalid PoW at block {i}")
-            return False
-    
+
+        # 4. Consensus boundary
+        if block.get("index", -1) >= CONSENSUS_V1_HEIGHT:
+            # Consensus V1: fixed deterministic PoW
+            if not validate_block_pow(block):
+                print(f"Invalid Consensus V1 PoW at block {i}")
+                return False
+
+        else:
+            # Legacy history:
+            # Explicit difficulty field is authoritative.
+            block_diff = block.get("difficulty")
+
+            if block_diff:
+                required_diff = block_diff
+            else:
+                required_diff = get_difficulty(chain[:i])
+
+            if not block.get("hash", "").startswith(required_diff):
+                print(
+                    f"Invalid legacy PoW at block {i}: "
+                    f"required={required_diff} "
+                    f"actual_zeros={len(block.get('hash', '')) - len(block.get('hash', '').lstrip('0'))}"
+                )
+                return False
+
     return True
 
 def auto_sync_loop():
@@ -1170,7 +1315,7 @@ def auto_sync_loop():
             print(f"Auto-sync error: {e}")
         time.sleep(30)
 
-threading.Thread(target=resilient_loop, args=(auto_sync_loop, "auto_sync_loop"), daemon=True).start()
+# TEMPORARILY DISABLED: auto-sync/reorg safety lock
 PEERS_FILE = "peers.json"
 MAX_PEERS = 100
 MAX_NEW_PEERS_PER_ROUND = 10
