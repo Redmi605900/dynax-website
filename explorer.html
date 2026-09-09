@@ -230,7 +230,7 @@ function showTab(tab) {
 
 async function loadBlocks() {
   try {
-    const response = await fetch(`${API_URL}/blocks/recent?limit=30`);
+    const response = await fetch(`${API_URL}/blocks/recent/30`);
     const blocks = await response.json();
     
     const statsR = await fetch(`${API_URL}/stats`); const statsJ = await statsR.json(); document.getElementById("totalBlocks").textContent = statsJ.blocks;
@@ -262,7 +262,7 @@ const container = document.getElementById('blocksList');
 
 async function loadTransactions() {
   try {
-    const response = await fetch(`${API_URL}/blocks/recent?limit=30`);
+    const response = await fetch(`${API_URL}/blocks/recent/30`);
     const blocks = await response.json();
     
     // รวม transactions จากทุก blocks

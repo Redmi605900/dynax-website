@@ -215,7 +215,7 @@ async function loadAll() {
   } catch(e) {}
 
   try {
-    const blocks = await fetch(NODE + "/blocks/recent?limit=20").then(r=>r.json());
+    const blocks = await fetch(NODE + "/blocks/recent/20").then(r=>r.json());
     if (!blocks.slice) return;
     const recent = blocks.slice(-20).reverse();
     
@@ -288,7 +288,7 @@ try {
 
   // Chain size estimate
   try {
-    const blocks = await fetch(NODE + "/blocks/recent?limit=20").then(r=>r.json());
+    const blocks = await fetch(NODE + "/blocks/recent/20").then(r=>r.json());
     if (blocks.length) {
       const sizeBytes = JSON.stringify(blocks).length;
       document.getElementById("chainsize").textContent =
