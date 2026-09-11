@@ -507,8 +507,12 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        from: currentWallet.address, to: to,
-                        amount: amount, fee: fee, signature: signature
+                        from: currentWallet.address,
+                        to: to,
+                        amount: amount,
+                        fee: fee,
+                        signature: signature,
+                        public_key: currentWallet.public_key
                     })
                 });
 

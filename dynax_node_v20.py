@@ -270,11 +270,57 @@ node = DynaxNode()
 
 @app.route("/tx", methods=["POST"])
 def tx():
-    data = request.get_json()
-    if not all(k in data for k in ["from", "to", "amount", "signature"]): return jsonify({"error": "Missing fields"}), 400
-    res = node.send(data["from"], data["to"], data["amount"], data.get("fee", 0), data["signature"])
-    if "error" in res: return jsonify(res), 400
-    return jsonify(res), 201
+    data = request.get_json() or {}
+
+    required = ["from", "to", "amount", "signature", "public_key"]
+    if not all(k in data for k in required):
+        return jsonify({"error": "Missing fields"}), 400
+
+    try:
+        amount = float(data["amount"])
+        fee = float(data.get("fee", 0.01))
+    except (TypeError, ValueError):
+        return jsonify({"error": "amount หรือ fee ไม่ถูกต้อง"}), 400
+
+    tx_data = {
+        "from": data["from"],
+        "to": data["to"],
+        "amount": amount,
+        "fee": fee,
+        "signature": data["signature"],
+        "public_key": data["public_key"],
+        "timestamp": int(data.get("timestamp", time.time()))
+    }
+
+    if amount <= 0:
+        return jsonify({"error": "invalid amount"}), 400
+
+    if fee < 0:
+        return jsonify({"error": "invalid fee"}), 400
+
+    min_fee = get_min_fee()
+    if fee < min_fee:
+        return jsonify({"error": f"Fee too low. Minimum: {min_fee} DYX"}), 400
+
+    if node.balance(tx_data["from"]) < amount + fee:
+        return jsonify({"error": "insufficient balance"}), 400
+
+    if is_duplicate_tx(tx_data):
+        return jsonify({"error": "duplicate transaction"}), 400
+
+    if check_replay(tx_data):
+        return jsonify({"error": "replay transaction"}), 400
+
+    if not verify_tx_signature(tx_data):
+        return jsonify({"error": "invalid signature"}), 400
+
+    node.mempool.append(tx_data)
+
+    return jsonify({
+        "message": "Transaction added to mempool",
+        "mempool_size": len(node.mempool),
+        "tx": tx_data
+    }), 201
 
 @app.route("/chain")
 def get_chain(): return jsonify(node.chain)
@@ -773,11 +819,9 @@ def dex():
 
 
 def auto_connect_bootstrap():
-    # Static peers
-    static_peers = [
-        "https://dynax-node.onrender.com",
-        "https://dynax-node2.onrender.com",
-    ]
+    # No hard-coded bootstrap peers.
+    # Optional bootstrap is supplied explicitly via BOOTSTRAP_NODE.
+    static_peers = []
     for p in static_peers:
         node.peers.add(p)
 
@@ -974,11 +1018,53 @@ def receive_tx():
     tx = request.json
     if not tx:
         return jsonify({"error": "no tx"}), 400
-    # เช็คว่ามีใน mempool แล้วหรือยัง
+
+    # P2P must never accept reserved/system senders.
+    sender = tx.get("from")
+    reserved = {"SYSTEM", "GENESIS", "DEX", "NETWORK", "FAUCET"}
+    if sender in reserved:
+        return jsonify({"error": "reserved sender not allowed via P2P"}), 400
+
+    # Economic validation before P2P mempool admission.
+    # Reject malformed/non-finite monetary values.
+    import math
+
+    try:
+        amount = float(tx.get("amount"))
+        fee = float(tx.get("fee", 0))
+    except (TypeError, ValueError):
+        return jsonify({"error": "invalid amount or fee"}), 400
+
+    if not math.isfinite(amount) or not math.isfinite(fee):
+        return jsonify({"error": "invalid amount or fee"}), 400
+
+    if amount <= 0:
+        return jsonify({"error": "invalid amount"}), 400
+
+    if fee < 0:
+        return jsonify({"error": "invalid fee"}), 400
+
+    min_fee = get_min_fee()
+    if fee < min_fee:
+        return jsonify({"error": f"Fee too low. Minimum: {min_fee} DYX"}), 400
+
+    if node.balance(sender) < amount + fee:
+        return jsonify({"error": "insufficient balance"}), 400
+
+    # Reject duplicate/replayed transactions before mempool admission.
     if is_duplicate_tx(tx):
         return jsonify({"status": "already have tx"})
+
+    if check_replay(tx):
+        return jsonify({"error": "replay transaction"}), 400
+
+    # Every normal P2P transaction must pass signature/address validation.
+    if not verify_tx_signature(tx):
+        return jsonify({"error": "invalid signature"}), 400
+
     node.mempool.append(tx)
-    # relay ต่อไปยัง peer อื่น
+
+    # Relay only validated transactions.
     threading.Thread(target=broadcast_tx, args=(tx,), daemon=True).start()
     return jsonify({"status": "received", "mempool_size": len(node.mempool)})
 
@@ -1109,19 +1195,37 @@ def rebuild_pubkey_cache():
     print(f"DEBUG: pubkey cache rebuilt, {len(PUBKEY_CACHE)} addresses")
 
 def verify_tx_signature(tx):
-    """ตรวจสอบ signature ของ transaction (เข้มงวด + ใช้ cache)"""
+    """ตรวจสอบ transaction signature รองรับ current และ legacy protocol"""
     try:
-        from ecdsa import VerifyingKey, SECP256k1, BadSignatureError
+        from ecdsa import VerifyingKey, SECP256k1
         import hashlib as _hl
+        import json as _json
 
         sender = tx.get("from")
+
         if sender in ("SYSTEM", "GENESIS", "DEX", "NETWORK", "FAUCET"):
             return True
 
-        signature = tx.get("signature")
-        if not signature:
+        signature_hex = tx.get("signature")
+        if not signature_hex:
             return False
 
+        signature = bytes.fromhex(signature_hex)
+
+        msg_text = _json.dumps(
+            {
+                "amount": tx["amount"],
+                "fee": tx.get("fee", 0),
+                "from": tx["from"],
+                "to": tx["to"]
+            },
+            sort_keys=True,
+            separators=(",", ":")
+        )
+
+        msg = _hl.sha3_256(msg_text.encode()).digest()
+
+        # CURRENT PROTOCOL
         pub_hex = PUBKEY_CACHE.get(sender)
 
         if not pub_hex:
@@ -1133,28 +1237,50 @@ def verify_tx_signature(tx):
                     if t.get("from") == sender and t.get("public_key"):
                         pub_hex = t["public_key"]
                         PUBKEY_CACHE[sender] = pub_hex
+                        break
+                if pub_hex:
+                    break
 
-        if not pub_hex:
-            print(f"DEBUG: reject tx from {sender} - no public_key found")
-            return False
+        if pub_hex:
+            pub_bytes = bytes.fromhex(pub_hex)
 
-        pub_bytes = bytes.fromhex(pub_hex)
-        derived_addr = pubkey_to_address(pub_bytes)
-        if derived_addr.lower() != sender.lower():
-            print(f"DEBUG: reject tx - public_key mismatch for {sender}")
-            return False
+            derived_addr = pubkey_to_address(pub_bytes)
+            if derived_addr.lower() != sender.lower():
+                print(f"DEBUG: reject tx - public_key mismatch for {sender}")
+                return False
 
-        msg = _hl.sha3_256(
-            __import__("json").dumps(
-                {"amount": tx["amount"], "fee": tx.get("fee",0),
-                 "from": tx["from"], "to": tx["to"]},
-                sort_keys=True, separators=(",",":")
-            ).encode()
-        ).digest()
+            vk = VerifyingKey.from_string(
+                pub_bytes,
+                curve=SECP256k1
+            )
 
-        vk = VerifyingKey.from_string(pub_bytes, curve=SECP256k1)
-        vk.verify_digest(bytes.fromhex(signature), msg)
-        return True
+            vk.verify_digest(signature, msg)
+            return True
+
+        # LEGACY PROTOCOL FALLBACK
+        recovered_keys = VerifyingKey.from_public_key_recovery(
+            signature,
+            msg_text.encode(),
+            SECP256k1,
+            hashfunc=_hl.sha3_256
+        )
+
+        for vk in recovered_keys:
+            recovered_pub = vk.to_string()
+            recovered_addr = pubkey_to_address(recovered_pub)
+
+            if recovered_addr.lower() != sender.lower():
+                continue
+
+            try:
+                vk.verify_digest(signature, msg)
+                return True
+            except Exception:
+                continue
+
+        print(f"DEBUG: reject legacy tx from {sender} - recovery failed")
+        return False
+
     except Exception as e:
         print(f"DEBUG: signature verify error: {e}")
         return False
@@ -1513,9 +1639,45 @@ def sync_mempool_from_peers():
             txs = data.get("transactions", [])
             added = 0
             for tx in txs:
-                if not is_duplicate_tx(tx) and not check_replay(tx):
-                    node.mempool.append(tx)
-                    added += 1
+                sender = tx.get("from")
+                reserved = {"SYSTEM", "GENESIS", "DEX", "NETWORK", "FAUCET"}
+
+                if sender in reserved:
+                    continue
+
+                # Economic validation before peer mempool admission.
+                import math
+
+                try:
+                    amount = float(tx.get("amount"))
+                    fee = float(tx.get("fee", 0))
+                except (TypeError, ValueError):
+                    continue
+
+                if not math.isfinite(amount) or not math.isfinite(fee):
+                    continue
+
+                if amount <= 0:
+                    continue
+
+                if fee < 0:
+                    continue
+
+                min_fee = get_min_fee()
+                if fee < min_fee:
+                    continue
+
+                if node.balance(sender) < amount + fee:
+                    continue
+
+                if is_duplicate_tx(tx) or check_replay(tx):
+                    continue
+
+                if not verify_tx_signature(tx):
+                    continue
+
+                node.mempool.append(tx)
+                added += 1
             if added > 0:
                 print(f"Mempool sync: +{added} tx from {peer}")
         except:
