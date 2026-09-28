@@ -17,6 +17,7 @@ echo "URL เก่า (ถ้ามี): $OLD_URL"
 
 echo ""
 echo "[1/5] กำลังหยุด tunnel เก่า..."
+cp "$LOG_FILE" "$HOME/cloudflared.$(date +%H%M%S).log" 2>/dev/null || true
 pkill -9 -f "cloudflared tunnel" 2>/dev/null || true
 sleep 2
 

@@ -1777,13 +1777,21 @@ def is_valid_peer(url):
             return False
     return True
 
+import threading as _thr
+_ONION_VERIFY_SLOTS = _thr.BoundedSemaphore(2)
+
 def verify_peer(url):
-    import requests as _req
+    is_onion = ".onion" in url
+    if is_onion and not _ONION_VERIFY_SLOTS.acquire(blocking=False):
+        return False  # too many concurrent Tor verifications
     try:
-        r = _req.get(f"{url}/api/v1/info", timeout=5)
+        r = peer_request("get", f"{url}/api/v1/info", timeout=(45 if is_onion else 5))
         data = r.json()
         return (data.get("network_id") == 1337 and data.get("network") == "DYNAX")
     except: return False
+    finally:
+        if is_onion:
+            _ONION_VERIFY_SLOTS.release()
 
 def remove_dead_peers():
     import requests as _req
@@ -1843,8 +1851,8 @@ def peer_discovery_loop():
 threading.Thread(target=resilient_loop, args=(peer_discovery_loop, "peer_discovery_loop"), daemon=True).start()
 print("Peer discovery started")
 
-threading.Thread(target=auto_sync_loop, daemon=True).start()
-print("Auto-sync/reorg: ENABLED (validate_chain + cumulative work check)")
+# auto_sync_loop() disabled until peer-facing hardening (size limits, Tor-aware requests)
+print("Auto-sync/reorg: DISABLED (pending hardening)")
 
 
 import hashlib as _hl
