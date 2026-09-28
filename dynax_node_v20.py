@@ -369,7 +369,12 @@ def get_chain(): return jsonify(node.chain)
 def balance(addr): return jsonify({"address": addr, "balance": node.balance(addr)})
 
 @app.route("/mine/<miner>")
-def mine(miner): return jsonify(node.mine(miner))
+def mine(miner):
+    import hmac as _hm
+    _tok = os.environ.get("MINE_TOKEN", "")
+    if not _tok or not _hm.compare_digest(request.headers.get("X-Mine-Token", ""), _tok):
+        return jsonify({"error": "mining endpoint is private"}), 403
+    return jsonify(node.mine(miner))
 
 @app.route("/")
 def home():
