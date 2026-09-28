@@ -133,12 +133,36 @@ class DynaxNode:
     def _load_initial_peers(self):
         try:
             import json as _j
+
             peers = _j.load(open("peers.json"))
+
+            # Never load this node's own URL as a peer.
+            port = int(os.environ.get("PORT", 6001))
+            my_url = os.environ.get("MY_URL", "").strip()
+            if not my_url:
+                my_url = f"http://127.0.0.1:{port}"
+
+            loaded = 0
+            skipped_self = 0
+
             for p in peers:
+                p = str(p).strip().rstrip("/")
+                if not p:
+                    continue
+
+                if p.rstrip("/") == my_url.rstrip("/"):
+                    skipped_self += 1
+                    continue
+
                 self.peers.add(p)
-            print(f"Loaded {len(peers)} peers from peers.json")
-        except:
-            pass
+                loaded += 1
+
+            print(
+                f"Loaded {loaded} peers from peers.json "
+                f"(skipped self: {skipped_self})"
+            )
+        except Exception as e:
+            print(f"Initial peer load error: {e}")
 
     def load_chain(self):
         if os.path.exists(self.CHAIN_FILE):
@@ -214,7 +238,9 @@ class DynaxNode:
         reward = {"from": "SYSTEM", "to": miner, "amount": block_reward + total_fees, "fee": 0, "timestamp": int(time.time())}
         clean_mempool()
         txs = self.mempool[:50]
-        self.mempool = self.mempool[50:]
+        # Do NOT remove selected mempool transactions yet.
+        # They are committed only after the block passes all local
+        # consensus/state validation and is persisted successfully.
         prev_hash = self.chain[-1]["hash"] if self.chain else "0"*64
         block = {"index": len(self.chain), "timestamp": int(time.time()), "transactions": [reward] + txs, "prev_hash": prev_hash, "nonce": 0}
         while True:
@@ -254,6 +280,20 @@ class DynaxNode:
 
         self.chain.append(block)
         self.save_chain()
+
+        # Commit only the transactions actually included in the block.
+        # If any local validation above fails, the mempool is untouched.
+        committed_signatures = {
+            tx.get("signature")
+            for tx in txs
+            if tx.get("signature")
+        }
+        if committed_signatures:
+            self.mempool = [
+                tx for tx in self.mempool
+                if tx.get("signature") not in committed_signatures
+            ]
+
         print(f"Block {block['index']} mined successfully with nonce {block['nonce']}")
         
         # Broadcast new block to all peers
@@ -714,6 +754,10 @@ def add_peer():
     peer = data.get("peer")
     if not peer:
         return jsonify({"error": "no peer"}), 400
+    if not is_valid_peer(peer):
+        return jsonify({"error": "invalid peer"}), 400
+    if not verify_peer(peer):
+        return jsonify({"error": "peer verification failed"}), 400
     node.peers.add(peer)
     return jsonify({"status": "added", "peer": peer})
 
@@ -723,6 +767,23 @@ def receive_block():
 
     if not isinstance(block, dict):
         return jsonify({"error": "invalid block"}), 400
+
+    # ===== P2P authentication =====
+    p2p_ts = block.get("_p2p_ts")
+    p2p_sig = block.get("_p2p_sig")
+
+    if p2p_ts is None or not p2p_sig:
+        return jsonify({"error": "missing P2P authentication"}), 401
+
+    # Verify the exact block payload used by broadcast_block_signed().
+    block_data = __import__("json").dumps(
+        {k: v for k, v in block.items()
+         if k not in ("_p2p_ts", "_p2p_sig")},
+        sort_keys=True
+    )
+
+    if not verify_p2p_message(p2p_ts, p2p_sig, block_data):
+        return jsonify({"error": "invalid P2P authentication"}), 401
 
     # ===== Consensus V1: exact next block index =====
     expected_index = len(node.chain)
@@ -774,7 +835,7 @@ def sync_chain():
             r = peer_request("get", f"{peer}/chain", timeout=10)
             peer_chain = r.json()
             print(f"DEBUG: got {len(peer_chain)} blocks from {peer}")
-            if len(peer_chain) > len(longest):
+            if len(peer_chain) > len(longest) and validate_chain(peer_chain):
                 longest = peer_chain
                 print(f"DEBUG: {peer} is now the longest with {len(longest)} blocks")
         except Exception as e:
@@ -996,6 +1057,10 @@ def api_peers_add():
     data = request.json
     peer = data.get("peer")
     if peer:
+        if not is_valid_peer(peer):
+            return jsonify({"error": "invalid peer"}), 400
+        if not verify_peer(peer):
+            return jsonify({"error": "peer verification failed"}), 400
         node.peers.add(peer)
         return jsonify({"success": True, "peer": peer})
     return jsonify({"error": "peer required"}), 400
@@ -1004,11 +1069,26 @@ def api_peers_add():
 
 
 def broadcast_tx(tx):
-    """ส่ง transaction ไปให้ทุก peer"""
+    """ส่ง transaction ไปให้ทุก peer พร้อม P2P authentication"""
     import requests as _req
+    import json as _json
+
+    tx_data = _json.dumps(tx, sort_keys=True, separators=(",", ":"))
+    auth = sign_p2p_message(tx_data)
+
+    payload = {
+        **tx,
+        "_p2p_ts": auth["timestamp"],
+        "_p2p_sig": auth["signature"],
+    }
+
     for peer in list(node.peers):
         try:
-            _req.post(f"{peer}/receive_tx", json=tx, timeout=3)
+            _req.post(
+                f"{peer}/receive_tx",
+                json=payload,
+                timeout=3
+            )
         except:
             pass
 
@@ -1018,6 +1098,31 @@ def receive_tx():
     tx = request.json
     if not tx:
         return jsonify({"error": "no tx"}), 400
+
+    # ===== P2P authentication =====
+    p2p_ts = tx.get("_p2p_ts")
+    p2p_sig = tx.get("_p2p_sig")
+
+    if p2p_ts is None or not p2p_sig:
+        return jsonify({"error": "missing P2P authentication"}), 401
+
+    import json as _json
+
+    tx_data = _json.dumps(
+        {k: v for k, v in tx.items()
+         if k not in ("_p2p_ts", "_p2p_sig")},
+        sort_keys=True,
+        separators=(",", ":")
+    )
+
+    if not verify_p2p_message(p2p_ts, p2p_sig, tx_data):
+        return jsonify({"error": "invalid P2P authentication"}), 401
+
+    # Remove transport authentication fields before mempool admission.
+    tx = {
+        k: v for k, v in tx.items()
+        if k not in ("_p2p_ts", "_p2p_sig")
+    }
 
     # P2P must never accept reserved/system senders.
     sender = tx.get("from")
@@ -1137,23 +1242,38 @@ def reorg_chain(new_chain):
     """เปลี่ยน chain ถ้า new_chain มี cumulative work มากกว่า"""
     if not validate_chain(new_chain):
         return False
+
     new_work = calc_cumulative_work(new_chain)
     cur_work = calc_cumulative_work(node.chain)
+
     if new_work > cur_work:
         print(f"Reorg: {len(node.chain)} -> {len(new_chain)} blocks")
-        node.chain = new_chain
-        node.save_chain()
-        # คืน tx ที่ถูก orphan กลับ mempool
+
+        # เก็บ chain เดิมไว้ก่อนเปลี่ยน node.chain
+        old_chain = node.chain
+
+        # หา transaction ที่ยืนยันแล้วใน chain ใหม่
         confirmed = set()
         for block in new_chain:
             for tx in block.get("transactions", []):
-                confirmed.add(tx.get("signature",""))
-        for block in node.chain:
+                sig = tx.get("signature", "")
+                if sig:
+                    confirmed.add(sig)
+
+        # คืน transaction จาก chain เดิมที่ถูก orphan
+        # ก่อนเปลี่ยน node.chain เพื่อไม่ให้ old chain หายไป
+        for block in old_chain:
             for tx in block.get("transactions", []):
-                sig = tx.get("signature","")
+                sig = tx.get("signature", "")
                 if sig and sig not in confirmed:
                     node.mempool.append(tx)
+
+        # เปลี่ยน chain หลังจากเก็บ orphan transactions แล้ว
+        node.chain = new_chain
+        node.save_chain()
+
         return True
+
     return False
 
 
@@ -1292,8 +1412,25 @@ def validate_block_balances(block, chain_before_block):
         sender = tx.get("from")
         if sender in ("SYSTEM", "GENESIS", "DEX", "NETWORK", "FAUCET"):
             continue
-        amount = float(tx.get("amount", 0))
-        fee = float(tx.get("fee", 0))
+        try:
+            amount = float(tx.get("amount", 0))
+            fee = float(tx.get("fee", 0))
+        except (TypeError, ValueError):
+            print(f"DEBUG: reject block - invalid amount/fee for {sender}")
+            return False
+
+        if not __import__("math").isfinite(amount) or not __import__("math").isfinite(fee):
+            print(f"DEBUG: reject block - non-finite amount/fee for {sender}")
+            return False
+
+        if amount <= 0:
+            print(f"DEBUG: reject block - invalid amount for {sender}: {amount}")
+            return False
+
+        if fee < 0:
+            print(f"DEBUG: reject block - invalid fee for {sender}: {fee}")
+            return False
+
         total_needed = amount + fee
 
         balance = 0
@@ -1354,6 +1491,102 @@ def is_duplicate_tx(tx):
                 return True
     return False
 
+
+def verify_tx_signature_with_chain(tx, chain_context):
+    """Pure transaction signature validation for candidate-chain validation.
+
+    Does NOT read or mutate PUBKEY_CACHE.
+    Uses tx.public_key when available; otherwise searches chain_context.
+    Supports current and legacy signature protocols.
+    """
+    try:
+        from ecdsa import VerifyingKey, SECP256k1
+        import hashlib as _hl
+        import json as _json
+
+        sender = tx.get("from")
+
+        if sender in ("SYSTEM", "GENESIS", "DEX", "NETWORK", "FAUCET"):
+            return True
+
+        signature_hex = tx.get("signature")
+        if not signature_hex:
+            return False
+
+        signature = bytes.fromhex(signature_hex)
+
+        msg_text = _json.dumps(
+            {
+                "amount": tx["amount"],
+                "fee": tx.get("fee", 0),
+                "from": tx["from"],
+                "to": tx["to"]
+            },
+            sort_keys=True,
+            separators=(",", ":")
+        )
+
+        msg = _hl.sha3_256(msg_text.encode()).digest()
+
+        # Prefer public_key carried by the transaction.
+        pub_hex = tx.get("public_key")
+
+        # Legacy transactions may not carry public_key.
+        if not pub_hex:
+            for block in chain_context:
+                for t in block.get("transactions", []):
+                    if (
+                        t.get("from") == sender
+                        and t.get("public_key")
+                    ):
+                        pub_hex = t["public_key"]
+                        break
+                if pub_hex:
+                    break
+
+        # Current protocol: explicit public key.
+        if pub_hex:
+            pub_bytes = bytes.fromhex(pub_hex)
+
+            derived_addr = pubkey_to_address(pub_bytes)
+            if derived_addr.lower() != sender.lower():
+                return False
+
+            vk = VerifyingKey.from_string(
+                pub_bytes,
+                curve=SECP256k1
+            )
+
+            vk.verify_digest(signature, msg)
+            return True
+
+        # Legacy protocol: recover public key from signature.
+        recovered_keys = VerifyingKey.from_public_key_recovery(
+            signature,
+            msg_text.encode(),
+            SECP256k1,
+            hashfunc=_hl.sha3_256
+        )
+
+        for vk in recovered_keys:
+            recovered_pub = vk.to_string()
+            recovered_addr = pubkey_to_address(recovered_pub)
+
+            if recovered_addr.lower() != sender.lower():
+                continue
+
+            try:
+                vk.verify_digest(signature, msg)
+                return True
+            except Exception:
+                continue
+
+        return False
+
+    except Exception:
+        return False
+
+
 def validate_chain(chain):
     """ตรวจสอบ chain แบบ deterministic:
     Legacy history ใช้ difficulty ที่บันทึกไว้เมื่อมี
@@ -1389,7 +1622,20 @@ def validate_chain(chain):
             print(f"Invalid hash at block {i}")
             return False
 
-        # 4. Consensus boundary
+        # 4. Deterministic transaction validation
+        # Do not use verify_tx_signature() here because that function
+        # depends on/mutates runtime PUBKEY_CACHE and node.chain.
+        for tx in block.get("transactions", []):
+            if not verify_tx_signature_with_chain(tx, chain[:i]):
+                print(f"Invalid transaction signature at block {i}")
+                return False
+
+        # Deterministic balance / double-spend validation
+        if not validate_block_balances(block, chain[:i]):
+            print(f"Invalid transaction balance/state at block {i}")
+            return False
+
+        # 5. Consensus boundary
         if block.get("index", -1) >= CONSENSUS_V1_HEIGHT:
             # Consensus V1: fixed deterministic PoW
             if not validate_block_pow(block):
@@ -1452,23 +1698,83 @@ peer_failures = {}
 def save_peers():
     try:
         import json as _j
+
+        port = int(os.environ.get("PORT", 6001))
+        my_url = os.environ.get("MY_URL", "").strip()
+        if not my_url:
+            my_url = f"http://127.0.0.1:{port}"
+
         with peer_lock:
-            _j.dump(list(node.peers), open(PEERS_FILE, "w"))
-    except: pass
+            clean_peers = sorted(
+                p.rstrip("/")
+                for p in node.peers
+                if p and p.rstrip("/") != my_url.rstrip("/")
+            )
+            _j.dump(clean_peers, open(PEERS_FILE, "w"))
+
+    except Exception as e:
+        print(f"Peer save error: {e}")
 
 def load_peers():
     try:
         import json as _j
+
         peers = _j.load(open(PEERS_FILE))
+
+        port = int(os.environ.get("PORT", 6001))
+        my_url = os.environ.get("MY_URL", "").strip()
+        if not my_url:
+            my_url = f"http://127.0.0.1:{port}"
+
+        loaded = 0
+        skipped_self = 0
+
         for p in peers:
+            p = str(p).strip().rstrip("/")
+            if not p:
+                continue
+
+            if p == my_url.rstrip("/"):
+                skipped_self += 1
+                continue
+
+            if not is_valid_peer(p):
+                continue
+
+            if not verify_peer(p):
+                continue
+
             node.peers.add(p)
-        print(f"Loaded {len(peers)} peers")
-    except: pass
+            loaded += 1
+
+        print(
+            f"Loaded {loaded} peers "
+            f"(skipped self: {skipped_self})"
+        )
+
+    except Exception as e:
+        print(f"Peer load error: {e}")
 
 def is_valid_peer(url):
     if not url: return False
     if not (url.startswith("http://") or url.startswith("https://")): return False
     if len(url) > 200: return False
+
+    import re
+    from urllib.parse import urlparse
+    try:
+        host = urlparse(url).hostname or ""
+    except:
+        return False
+
+    blocked_patterns = [
+        r'^localhost$', r'^127\.', r'^0\.', r'^10\.',
+        r'^172\.(1[6-9]|2[0-9]|3[0-1])\.', r'^192\.168\.',
+        r'^169\.254\.', r'^::1$', r'^fc00:', r'^fe80:'
+    ]
+    for pattern in blocked_patterns:
+        if re.match(pattern, host):
+            return False
     return True
 
 def verify_peer(url):
@@ -1502,7 +1808,11 @@ def peer_discovery_loop():
     import requests as _req
     load_peers()
     time.sleep(20)
-    my_url = os.environ.get("MY_URL", "")
+    port = int(os.environ.get("PORT", 6001))
+    my_url = os.environ.get("MY_URL", "").strip()
+    if not my_url:
+        my_url = f"http://127.0.0.1:{port}"
+
     while True:
         try:
             new_peers = set()
@@ -1533,7 +1843,8 @@ def peer_discovery_loop():
 threading.Thread(target=resilient_loop, args=(peer_discovery_loop, "peer_discovery_loop"), daemon=True).start()
 print("Peer discovery started")
 
-print("Auto-sync thread started")
+threading.Thread(target=auto_sync_loop, daemon=True).start()
+print("Auto-sync/reorg: ENABLED (validate_chain + cumulative work check)")
 
 
 import hashlib as _hl
@@ -1609,11 +1920,7 @@ def initial_snapshot_sync():
     """sync chain จาก snapshot ตอน node เริ่มต้น"""
     import time
     time.sleep(5)
-    static_peers = [
-        "https://dynax-node2.onrender.com",
-        "https://dynax-node2.onrender.com",
-        "https://dynax-node.onrender.com"
-    ]
+    static_peers = []  # No hardcoded peers - fully decentralized bootstrap
     for peer in static_peers:
         try:
             r = __import__("requests").get(f"{peer}/snapshot/info", timeout=5)
@@ -1775,7 +2082,9 @@ import hmac as _hmac
 import hashlib as _hl2
 import time as _time2
 
-P2P_SECRET = os.environ.get("P2P_SECRET", "dynax_network_1337")
+P2P_SECRET = os.environ.get("P2P_SECRET")
+if not P2P_SECRET:
+    raise RuntimeError("P2P_SECRET is required")
 
 def sign_p2p_message(data):
     """สร้าง signature สำหรับ P2P message"""
@@ -1784,20 +2093,30 @@ def sign_p2p_message(data):
     sig = _hmac.new(
         P2P_SECRET.encode(),
         payload.encode(),
-        _hl2.sha256
+        _hl2.sha3_256
     ).hexdigest()
     return {"timestamp": timestamp, "signature": sig}
 
 def verify_p2p_message(timestamp, signature, data):
     """ตรวจสอบ P2P message"""
-    # ตรวจ timestamp ไม่เกิน 60 วินาที
-    if abs(int(_time2.time()) - int(timestamp)) > 60:
+    # Reject malformed authentication input without raising exceptions.
+    try:
+        timestamp_int = int(timestamp)
+    except (TypeError, ValueError, OverflowError):
         return False
+
+    if not isinstance(signature, str) or not signature:
+        return False
+
+    # ตรวจ timestamp ไม่เกิน 60 วินาที
+    if abs(int(_time2.time()) - timestamp_int) > 60:
+        return False
+
     payload = f"{timestamp}:{data}"
     expected = _hmac.new(
         P2P_SECRET.encode(),
         payload.encode(),
-        _hl2.sha256
+        _hl2.sha3_256
     ).hexdigest()
     return _hmac.compare_digest(signature, expected)
 
@@ -1821,7 +2140,7 @@ def broadcast_block_signed(block):
     """ส่ง block พร้อม P2P signature"""
     import requests as _req
     block_data = __import__("json").dumps(block, sort_keys=True)
-    auth = sign_p2p_message(block_data[:64])
+    auth = sign_p2p_message(block_data)
     
     for peer in list(node.peers):
         try:

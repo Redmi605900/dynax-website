@@ -33,6 +33,7 @@ while true; do
         log_msg "Tor NOT running - restarting..."
         tor -f "$PREFIX/etc/tor/torrc" >> "$NODE_DIR/tor.log" 2>&1 &
         log_msg "Tor restarted with PID $!"
+        sleep 30  # ให้เวลา Tor bootstrap ก่อนเช็ครอบถัดไป กันการ restart ซ้ำระหว่าง bootstrap
     fi
 
     sleep "$CHECK_INTERVAL"
