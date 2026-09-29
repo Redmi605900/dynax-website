@@ -58,6 +58,61 @@ def validate_block_pow(block, required_prefix=CONSENSUS_V1_POW_PREFIX):
 
     return True
 
+# ===== DYNAX CONSENSUS V2 (difficulty retarget + timestamp rules) =====
+# Applies to blocks with index >= CONSENSUS_V2_HEIGHT. Earlier blocks keep V1/legacy rules.
+CONSENSUS_V2_HEIGHT = 10210
+V2_INITIAL_TARGET = 1 << 240   # same hardness as the old "0000" prefix
+V2_MAX_TARGET = 1 << 248       # easiest allowed target
+V2_TARGET_SPACING = 12         # seconds per block
+V2_ADJUST_INTERVAL = 10        # retarget every N blocks
+V2_MAX_ADJUST = 4              # max change factor per retarget
+V2_MTP_WINDOW = 11
+V2_MAX_FUTURE_SECONDS = 180
+
+def expected_target_v2(chain_prefix):
+    i = len(chain_prefix)
+    if i <= CONSENSUS_V2_HEIGHT:
+        return V2_INITIAL_TARGET
+    prev_target = int(chain_prefix[-1]["target"], 16)
+    if (i - CONSENSUS_V2_HEIGHT) % V2_ADJUST_INTERVAL != 0:
+        return prev_target
+    window = chain_prefix[i - V2_ADJUST_INTERVAL:i]
+    expected = V2_TARGET_SPACING * (V2_ADJUST_INTERVAL - 1)
+    actual = window[-1]["timestamp"] - window[0]["timestamp"]
+    actual = max(expected // V2_MAX_ADJUST, min(expected * V2_MAX_ADJUST, actual))
+    return max(1, min(V2_MAX_TARGET, prev_target * actual // expected))
+
+def validate_block_pow_v2(block, chain_prefix):
+    try:
+        if calculate_block_hash(block) != block.get("hash", ""):
+            return False
+        target = expected_target_v2(chain_prefix)
+        if block.get("target") != "%064x" % target:
+            return False
+        return int(block["hash"], 16) < target
+    except Exception:
+        return False
+
+def validate_block_pow_ctx(block, chain_prefix):
+    if block.get("index", -1) >= CONSENSUS_V2_HEIGHT:
+        return validate_block_pow_v2(block, chain_prefix)
+    return validate_block_pow(block)
+
+def validate_block_time_v2(block, chain_prefix, check_future=False):
+    import time as _t
+    try:
+        ts = block.get("timestamp")
+        if not isinstance(ts, int) or isinstance(ts, bool):
+            return False
+        times = sorted(int(b.get("timestamp", 0)) for b in chain_prefix[-V2_MTP_WINDOW:])
+        if ts <= times[len(times) // 2]:
+            return False
+        if check_future and ts > int(_t.time()) + V2_MAX_FUTURE_SECONDS:
+            return False
+        return True
+    except Exception:
+        return False
+
 # ===== END DYNAX CONSENSUS V1 =====
 
 # ===== Categorized Logging =====
@@ -243,18 +298,26 @@ class DynaxNode:
         # consensus/state validation and is persisted successfully.
         prev_hash = self.chain[-1]["hash"] if self.chain else "0"*64
         block = {"index": len(self.chain), "timestamp": int(time.time()), "transactions": [reward] + txs, "prev_hash": prev_hash, "nonce": 0}
+        _v2_target = None
+        if len(self.chain) >= CONSENSUS_V2_HEIGHT:
+            _v2_target = expected_target_v2(self.chain)
+            block["target"] = "%064x" % _v2_target
         while True:
             raw = json.dumps(block, sort_keys=True)
             h = hashlib.sha3_256(raw.encode()).hexdigest()
             # ===== Consensus V1 mining rule =====
             # Legacy blocks keep the historical difficulty logic.
             # Block 10208 onward uses the fixed Consensus V1 target.
-            if len(self.chain) >= CONSENSUS_V1_HEIGHT:
-                difficulty = CONSENSUS_V1_POW_PREFIX
+            if _v2_target is not None:
+                _pow_ok = int(h, 16) < _v2_target
             else:
-                difficulty = get_difficulty(self.chain)
+                if len(self.chain) >= CONSENSUS_V1_HEIGHT:
+                    difficulty = CONSENSUS_V1_POW_PREFIX
+                else:
+                    difficulty = get_difficulty(self.chain)
+                _pow_ok = h.startswith(difficulty)
 
-            if h.startswith(difficulty):
+            if _pow_ok:
                 block["hash"] = h
                 break
             block["nonce"] += 1
@@ -268,8 +331,11 @@ class DynaxNode:
             if self.chain and block.get("prev_hash") != self.chain[-1].get("hash"):
                 return {"error": "local validation: invalid prev_hash"}
 
-            if not validate_block_pow(block):
+            if not validate_block_pow_ctx(block, self.chain):
                 return {"error": "local validation: invalid hash or proof-of-work"}
+
+            if block["index"] >= CONSENSUS_V2_HEIGHT and not validate_block_time_v2(block, self.chain, check_future=True):
+                return {"error": "local validation: invalid block timestamp"}
 
         for tx in block.get("transactions", []):
             if not verify_tx_signature(tx):
@@ -808,10 +874,12 @@ def receive_block():
     # Legacy history 0..10207 is preserved.
     # V1 consensus starts at block 10208.
     if block.get("index", -1) >= CONSENSUS_V1_HEIGHT:
-        if not validate_block_pow(block):
+        if not validate_block_pow_ctx(block, node.chain):
             return jsonify({
                 "error": "invalid block hash or proof-of-work"
             }), 400
+        if block.get("index", -1) >= CONSENSUS_V2_HEIGHT and not validate_block_time_v2(block, node.chain, check_future=True):
+            return jsonify({"error": "invalid block timestamp"}), 400
 
     # ===== Transaction signatures =====
     for tx in block.get("transactions", []):
@@ -1649,8 +1717,11 @@ def validate_chain(chain):
         # 5. Consensus boundary
         if block.get("index", -1) >= CONSENSUS_V1_HEIGHT:
             # Consensus V1: fixed deterministic PoW
-            if not validate_block_pow(block):
+            if not validate_block_pow_ctx(block, chain[:i]):
                 print(f"Invalid Consensus V1 PoW at block {i}")
+                return False
+            if block.get("index", -1) >= CONSENSUS_V2_HEIGHT and not validate_block_time_v2(block, chain[:i]):
+                print(f"Invalid V2 timestamp at block {i}")
                 return False
 
         else:
