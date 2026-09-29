@@ -1746,25 +1746,46 @@ def validate_chain(chain):
 
     return True
 
+def _block_work(block, chain_prefix):
+    """Actual proof-of-work for one block: inverse of its accept threshold."""
+    idx = block.get("index", -1)
+    if idx >= CONSENSUS_V2_HEIGHT:
+        try:
+            target = int(block.get("target", "0"), 16)
+        except ValueError:
+            return 0
+        return (1 << 256) // max(target, 1)
+    diff = block.get("difficulty") or ("0" * len((block.get("hash","")) ) )
+    zeros = len(block.get("hash","")) - len(block.get("hash","").lstrip("0"))
+    return 16 ** zeros
+
+def _chain_work(chain):
+    total = 0
+    for i, b in enumerate(chain):
+        total += _block_work(b, chain[:i])
+    return total
+
 def auto_sync_loop():
     import time
-    import requests as _req
     time.sleep(15)  # รอให้ node start ก่อน
     while True:
         try:
             longest = node.chain
             for peer in list(node.peers):
                 try:
-                    r = _req.get(f"{peer}/chain", timeout=5)
+                    is_onion = ".onion" in peer
+                    r = peer_request("get", f"{peer}/chain", timeout=(90 if is_onion else 8))
                     peer_chain = r.json()
+                    if not isinstance(peer_chain, list) or len(peer_chain) > 200000:
+                        continue
                     if validate_chain(peer_chain):
-                        peer_work = sum(16 ** (64 - len(b.get("hash","").lstrip("0"))) for b in peer_chain)
-                        cur_work = sum(16 ** (64 - len(b.get("hash","").lstrip("0"))) for b in longest)
+                        peer_work = _chain_work(peer_chain)
+                        cur_work = _chain_work(longest)
                         if peer_work > cur_work:
                             longest = peer_chain
                             print(f"Found higher work chain from {peer}: {len(peer_chain)} blocks")
-                except:
-                    pass
+                except Exception as _pe:
+                    print(f"Sync attempt failed for {peer}: {_pe}")
             if reorg_chain(longest):
                 print(f"Auto-synced/reorged to {len(node.chain)} blocks")
         except Exception as e:
@@ -1912,7 +1933,8 @@ def peer_discovery_loop():
                 peers_copy = list(node.peers)
             for peer in peers_copy:
                 try:
-                    r = _req.get(f"{peer}/peers", timeout=5)
+                    _is_onion = ".onion" in peer
+                    r = peer_request("get", f"{peer}/peers", timeout=(45 if _is_onion else 5))
                     data = r.json()
                     for p in data.get("peers", []):
                         if (p and p != my_url and p not in node.peers
@@ -1935,8 +1957,8 @@ def peer_discovery_loop():
 threading.Thread(target=resilient_loop, args=(peer_discovery_loop, "peer_discovery_loop"), daemon=True).start()
 print("Peer discovery started")
 
-# auto_sync_loop() disabled until peer-facing hardening (size limits, Tor-aware requests)
-print("Auto-sync/reorg: DISABLED (pending hardening)")
+threading.Thread(target=resilient_loop, args=(auto_sync_loop, "auto_sync_loop"), daemon=True).start()
+print("Auto-sync/reorg: ENABLED (Tor-aware, V2-accurate work, mine/sync locked)")
 
 
 import hashlib as _hl
