@@ -965,6 +965,7 @@ def dex_pool():
 
 @app.route("/dex/swap", methods=["POST"])
 def dex_swap():
+    return jsonify({"error": "DEX temporarily disabled pending security review"}), 503
     try:
         data = request.get_json()
         token_in = data["token_in"]
@@ -989,6 +990,7 @@ def dex_swap():
 
 @app.route("/dex/liquidity", methods=["POST"])
 def dex_add_liquidity():
+    return jsonify({"error": "DEX temporarily disabled pending security review"}), 503
     try:
         data = request.get_json()
         token = data["token"]
