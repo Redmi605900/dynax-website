@@ -833,6 +833,10 @@ def receive_block():
 
 @app.route("/sync")
 def sync_chain():
+    import hmac as _hm
+    _tok = os.environ.get("MINE_TOKEN", "")
+    if not _tok or not _hm.compare_digest(request.headers.get("X-Mine-Token", ""), _tok):
+        return jsonify({"error": "sync endpoint is private"}), 403
     longest = node.chain
     print(f"DEBUG: starting sync, own chain length={len(longest)}, peers={node.peers}")
     for peer in node.peers:
