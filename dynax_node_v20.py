@@ -518,7 +518,7 @@ def auto_login():
 
 @app.route("/test_fetch")
 def test_fetch():
-    return open("test_fetch.html").read()
+    return jsonify({"error": "removed"}), 404
 
 
 
@@ -552,6 +552,7 @@ def record_attempt(ip):
 
 @app.route("/wallet/unlock", methods=["POST"])
 def wallet_unlock():
+    return jsonify({"error": "server-side key custody is disabled; sign transactions client-side"}), 410
     ip = request.remote_addr
     if not check_rate_limit(ip):
         return jsonify({"error": "พยายามผิดพลาดหลายครั้งเกินไป กรุณารอ 15 นาที"}), 429
@@ -591,6 +592,7 @@ def wallet_unlock():
 @app.route("/tx/send", methods=["POST"])
 def send_tx_with_key():
     """ส่งธุรกรรมโดยเซ็นด้วย private_key และตรวจสอบ TX ก่อนเข้า mempool"""
+    return jsonify({"error": "sending raw private keys to the server is disabled; sign transactions client-side and POST to /tx"}), 410
     from ecdsa import SigningKey, SECP256k1
 
     data = request.json or {}
