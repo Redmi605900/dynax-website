@@ -693,6 +693,13 @@ def get_faucet_total_sent():
             total += float(tx.get("amount", 0))
     return total
 
+FAUCET_ATTEMPTS = {}
+FAUCET_MAX_ATTEMPTS = 3
+FAUCET_WINDOW_SECONDS = 3600
+FAUCET_AMOUNT = 10
+FAUCET_MAX_TOTAL = 10000
+FAUCET_CLAIMED_ADDRESSES = set()
+
 @app.route("/api/faucet", methods=["POST"])
 def faucet_claim():
     ip = request.remote_addr
