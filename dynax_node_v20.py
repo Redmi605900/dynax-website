@@ -694,6 +694,7 @@ def get_faucet_total_sent():
     return total
 
 FAUCET_ATTEMPTS = {}
+FAUCET_ADDR_ATTEMPTS = {}
 FAUCET_MAX_ATTEMPTS = 3
 FAUCET_WINDOW_SECONDS = 3600
 FAUCET_AMOUNT = 10
@@ -704,14 +705,27 @@ FAUCET_CLAIMED_ADDRESSES = set()
 def faucet_claim():
     ip = request.remote_addr
     now = time.time()
+
+    data = request.json or {}
+    address = data.get("address", "").strip()
+
+    # Address-based limit: the meaningful check when every request
+    # arrives from the same tunnel IP. Checked before the IP-based
+    # limit so a malformed/missing address fails fast with a clear error.
+    if address:
+        addr_attempts = FAUCET_ADDR_ATTEMPTS.get(address, [])
+        addr_attempts = [t for t in addr_attempts if now - t < FAUCET_WINDOW_SECONDS]
+        if len(addr_attempts) >= FAUCET_MAX_ATTEMPTS:
+            return jsonify({"error": "ที่อยู่นี้พยายามหลายครั้งเกินไป กรุณารอ 1 ชั่วโมง"}), 429
+        FAUCET_ADDR_ATTEMPTS[address] = addr_attempts + [now]
+
+    # IP-based limit: secondary layer, still useful once real client
+    # IPs are visible (e.g. behind a Named Tunnel).
     attempts = FAUCET_ATTEMPTS.get(ip, [])
     attempts = [t for t in attempts if now - t < FAUCET_WINDOW_SECONDS]
     if len(attempts) >= FAUCET_MAX_ATTEMPTS:
         return jsonify({"error": "พยายามหลายครั้งเกินไป กรุณารอ 1 ชั่วโมง"}), 429
     FAUCET_ATTEMPTS[ip] = attempts + [now]
-
-    data = request.json or {}
-    address = data.get("address", "").strip()
 
     if not address or not address.startswith("DX") or len(address) != 42:
         return jsonify({"error": "ที่อยู่ wallet ไม่ถูกต้อง"}), 400
