@@ -1172,7 +1172,6 @@ def api_peers_add():
 
 def broadcast_tx(tx):
     """ส่ง transaction ไปให้ทุก peer พร้อม P2P authentication"""
-    import requests as _req
     import json as _json
 
     tx_data = _json.dumps(tx, sort_keys=True, separators=(",", ":"))
@@ -1186,10 +1185,11 @@ def broadcast_tx(tx):
 
     for peer in list(node.peers):
         try:
-            _req.post(
+            peer_request(
+                "post",
                 f"{peer}/receive_tx",
                 json=payload,
-                timeout=3
+                timeout=(60 if ".onion" in peer else 3)
             )
         except:
             pass
@@ -2273,15 +2273,14 @@ def p2p_verify():
 
 def broadcast_block_signed(block):
     """ส่ง block พร้อม P2P signature"""
-    import requests as _req
     block_data = __import__("json").dumps(block, sort_keys=True)
     auth = sign_p2p_message(block_data)
-    
+
     for peer in list(node.peers):
         try:
-            _req.post(f"{peer}/receive_block", 
+            peer_request("post", f"{peer}/receive_block",
                 json={**block, "_p2p_ts": auth["timestamp"], "_p2p_sig": auth["signature"]},
-                timeout=5)
+                timeout=(90 if ".onion" in peer else 5))
         except:
             pass
 
