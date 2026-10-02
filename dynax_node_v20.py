@@ -987,6 +987,21 @@ def explorer():
     except:
         return "explorer.html not found", 404
 
+@app.route("/manifest.json")
+def manifest():
+    from flask import send_file
+    return send_file("manifest.json", mimetype="application/manifest+json")
+
+@app.route("/sw.js")
+def service_worker():
+    from flask import send_file
+    return send_file("sw.js", mimetype="application/javascript")
+
+@app.route("/logo.png")
+def logo():
+    from flask import send_file
+    return send_file("logo.png", mimetype="image/png")
+
 @app.route("/whitepaper")
 def whitepaper():
     try:
