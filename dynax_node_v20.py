@@ -26,6 +26,7 @@ from flask import Flask, jsonify, request
 from ecdsa import VerifyingKey, SECP256k1
 
 app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024  # 1MB request body limit
 
 # ===== DYNAX CONSENSUS V1 =====
 # Historical blocks 0..10207 are preserved as legacy history.
@@ -374,8 +375,19 @@ class DynaxNode:
 
 node = DynaxNode()
 
+TX_ATTEMPTS = {}
+TX_MAX_ATTEMPTS = 30
+TX_WINDOW_SECONDS = 60
+
 @app.route("/tx", methods=["POST"])
 def tx():
+    _ip = request.remote_addr
+    _now = time.time()
+    _att = [t for t in TX_ATTEMPTS.get(_ip, []) if _now - t < TX_WINDOW_SECONDS]
+    if len(_att) >= TX_MAX_ATTEMPTS:
+        return jsonify({"error": "too many requests, slow down"}), 429
+    TX_ATTEMPTS[_ip] = _att + [_now]
+
     data = request.get_json() or {}
 
     required = ["from", "to", "amount", "signature", "public_key"]
@@ -842,8 +854,19 @@ def health():
 def get_peers():
     return jsonify({"peers": list(node.peers)})
 
+PEER_ADD_ATTEMPTS = {}
+PEER_ADD_MAX_ATTEMPTS = 10
+PEER_ADD_WINDOW_SECONDS = 60
+
 @app.route("/peers/add", methods=["POST"])
 def add_peer():
+    _ip = request.remote_addr
+    _now = time.time()
+    _att = [t for t in PEER_ADD_ATTEMPTS.get(_ip, []) if _now - t < PEER_ADD_WINDOW_SECONDS]
+    if len(_att) >= PEER_ADD_MAX_ATTEMPTS:
+        return jsonify({"error": "too many requests, slow down"}), 429
+    PEER_ADD_ATTEMPTS[_ip] = _att + [_now]
+
     data = request.json
     peer = data.get("peer")
     if not peer:
