@@ -1,0 +1,17 @@
+{
+  "name": "DYNAX - Decentralized Layer 1 Blockchain",
+  "short_name": "DYNAX",
+  "description": "Experimental Layer 1 blockchain with SHA3-256 Proof of Work",
+  "start_url": "/landing.html",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#d4af37",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

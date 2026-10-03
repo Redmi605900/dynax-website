@@ -35,3 +35,4 @@ peers.json
 *.bak3
 *~
 dynax-node2/
+!manifest.json
