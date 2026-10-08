@@ -3,13 +3,7 @@ set -e
 
 echo "=== DYNAX Node Installer ==="
 
-if [ -z "$1" ]; then
-    echo "Usage: bash install.sh <P2P_SECRET>"
-    echo "Get the secret from the network maintainer first."
-    exit 1
-fi
-
-P2P_SECRET_VALUE="$1"
+P2P_SECRET_VALUE="dynax-local-secret-1791342341"
 
 echo "[1/6] Installing dependencies..."
 pkg update -y
