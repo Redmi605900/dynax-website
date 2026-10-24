@@ -100,7 +100,7 @@ body {
 </footer>
 <script>
 function loadStats() {
-  fetch('https://grand-overview-chemistry-exhibit.trycloudflare.com/stats')
+  fetch('https://obj-every-comp-chapter.trycloudflare.com/stats')
     .then(r=>r.json())
     .then(d=>{
       document.getElementById('s-blocks').textContent = d.blocks || '—';
