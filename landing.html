@@ -100,7 +100,7 @@ body {
 </footer>
 <script>
 function loadStats() {
-  fetch('https://dispatch-findings-expires-auckland.trycloudflare.com/stats')
+  fetch('https://historic-refresh-ing-diameter.trycloudflare.com/stats')
     .then(r=>r.json())
     .then(d=>{
       document.getElementById('s-blocks').textContent = d.blocks || '—';
