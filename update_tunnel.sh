@@ -16,6 +16,23 @@ OLD_URL=$(grep -aoE 'https://[a-z0-9-]+\.trycloudflare\.com' "$WEBSITE_DIR"/*.ht
 echo "URL เก่า (ถ้ามี): $OLD_URL"
 
 echo ""
+# --- network pre-check: skip this round if the network is down ---
+SKIP_FILE="${TUNNEL_SKIP_FILE:-$HOME/.tunnel_skip_count}"
+CHECK_URL="${TUNNEL_CHECK_URL:-https://api.trycloudflare.com}"
+if curl -s --max-time 8 -o /dev/null "$CHECK_URL"; then
+    echo 0 > "$SKIP_FILE"
+else
+    SKIPS=$(cat "$SKIP_FILE" 2>/dev/null || echo 0)
+    SKIPS=$((SKIPS + 1))
+    echo "$SKIPS" > "$SKIP_FILE"
+    if [ "$SKIPS" -lt 5 ]; then
+        echo "network check failed ($SKIPS/5) - skipping this round"
+        exit 0
+    fi
+    echo "network check failed 5 times - trying anyway"
+    echo 0 > "$SKIP_FILE"
+fi
+
 echo "[1/5] กำลังหยุด tunnel เก่า..."
 cp "$LOG_FILE" "$HOME/cloudflared.$(date +%H%M%S).log" 2>/dev/null || true
 pkill -9 -f "cloudflared tunnel" 2>/dev/null || true
