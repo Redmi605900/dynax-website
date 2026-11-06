@@ -308,17 +308,17 @@ async function loadContracts() {
   try {
     // contracts not yet implemented
     const contracts = [];
-    document.getElementById('totalContracts').textContent = '0';
+    document.getElementById('totalContracts').textContent = 'N/A';
     
     const container = document.getElementById('contractsList');
     
     document.getElementById('contractsList').innerHTML = '<div class="empty-state">🧠 Smart Contracts — Coming Soon</div>';
     if (!contracts || contracts.length === 0) {
-      document.getElementById('totalContracts').textContent = '0';
+      document.getElementById('totalContracts').textContent = 'N/A';
       container.innerHTML = `
         <div class="empty-state">
-          <h3>No Smart Contracts Deployed Yet</h3>
-          <p>Smart contracts will appear here once deployed</p>
+          <h3>Smart Contracts Are Not Available Yet</h3>
+          <p>DYNAX does not support smart contracts yet. This feature is not implemented.</p>
         </div>
       `;
       return;
@@ -335,11 +335,11 @@ async function loadContracts() {
       </div>
     `).join('');
   } catch (error) {
-    document.getElementById('totalContracts').textContent = '0';
+    document.getElementById('totalContracts').textContent = 'N/A';
     document.getElementById('contractsList').innerHTML = `
       <div class="empty-state">
-        <h3>No Smart Contracts Deployed Yet</h3>
-        <p>Smart contracts will appear here once deployed</p>
+        <h3>Smart Contracts Are Not Available Yet</h3>
+        <p>DYNAX does not support smart contracts yet. This feature is not implemented.</p>
       </div>
     `;
   }
