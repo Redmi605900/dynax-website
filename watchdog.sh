@@ -12,6 +12,8 @@ log_msg() {
 
 log_msg "Watchdog started"
 
+[ -f "$HOME/.dynax_env" ] && . "$HOME/.dynax_env"
+
 MINER_ADDRESS="DXa5ae9ccc94279d4f52b4f4e694a5a3b2f4f5ece3"
 
 while true; do
