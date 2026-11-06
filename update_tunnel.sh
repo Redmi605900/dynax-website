@@ -30,7 +30,7 @@ echo "[3/5] กำลังรอ URL ใหม่..."
 NEW_URL=""
 for i in $(seq 1 15); do
     sleep 2
-    NEW_URL=$(cat -v "$LOG_FILE" 2>/dev/null | grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' | head -1)
+    NEW_URL=$(cat -v "$LOG_FILE" 2>/dev/null | grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' | grep -v '^https://api\.' | head -1)
     if [ -n "$NEW_URL" ]; then
         break
     fi
