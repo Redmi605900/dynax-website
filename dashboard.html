@@ -352,5 +352,21 @@ function scheduleNext() {
 loadAll();
 scheduleNext();
 </script>
+<!-- tunnel-watch -->
+<script>
+(function () {
+  var BAKED = 'https://diagnosis-much-vary-scientists.trycloudflare.com';
+  setInterval(function () {
+    if (document.visibilityState !== 'visible') return;
+    fetch(location.pathname + '?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.text(); })
+      .then(function (t) {
+        var m = t.match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/);
+        if (m && m[0] !== BAKED) location.reload();
+      })
+      .catch(function () {});
+  }, 60000);
+})();
+</script>
 </body>
 </html>
