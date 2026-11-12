@@ -218,7 +218,7 @@ body {
 
 <script>
 // API URL - ใช้ localtunnel
-const API_URL = 'https://coordinates-better-regarded-portal.trycloudflare.com';
+const API_URL = 'https://beta-metal-imagine-bidder.trycloudflare.com';
 
 function showTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -394,7 +394,7 @@ function closeModal() {
 <!-- tunnel-watch -->
 <script>
 (function () {
-  var BAKED = 'https://coordinates-better-regarded-portal.trycloudflare.com';
+  var BAKED = 'https://beta-metal-imagine-bidder.trycloudflare.com';
   setInterval(function () {
     if (document.visibilityState !== 'visible') return;
     fetch(location.pathname + '?t=' + Date.now(), { cache: 'no-store' })
