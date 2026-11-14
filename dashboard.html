@@ -181,8 +181,8 @@ th { color:#666; font-weight:normal; }
 <button class="refresh" onclick="loadAll()">🔄 Refresh</button>
 
 <script>
-const API = "https://visits-primarily-interact-mounting.trycloudflare.com";
-const NODE = "https://visits-primarily-interact-mounting.trycloudflare.com";
+const API = "https://test-franklin-brave-controller.trycloudflare.com";
+const NODE = "https://test-franklin-brave-controller.trycloudflare.com";
 
 async function loadAll() {
   try {
@@ -355,7 +355,7 @@ scheduleNext();
 <!-- tunnel-watch -->
 <script>
 (function () {
-  var BAKED = 'https://visits-primarily-interact-mounting.trycloudflare.com';
+  var BAKED = 'https://test-franklin-brave-controller.trycloudflare.com';
   setInterval(function () {
     if (document.visibilityState !== 'visible') return;
     fetch(location.pathname + '?t=' + Date.now(), { cache: 'no-store' })
