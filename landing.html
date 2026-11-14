@@ -100,7 +100,7 @@ body {
 </footer>
 <script>
 function loadStats() {
-  fetch('https://offerings-guam-steps-salvador.trycloudflare.com/stats')
+  fetch('https://advisory-subject-retailers-emotions.trycloudflare.com/stats')
     .then(r=>r.json())
     .then(d=>{
       document.getElementById('s-blocks').textContent = d.blocks || '—';
@@ -120,7 +120,7 @@ if ('serviceWorker' in navigator) {
 <!-- tunnel-watch -->
 <script>
 (function () {
-  var BAKED = 'https://offerings-guam-steps-salvador.trycloudflare.com';
+  var BAKED = 'https://advisory-subject-retailers-emotions.trycloudflare.com';
   setInterval(function () {
     if (document.visibilityState !== 'visible') return;
     fetch(location.pathname + '?t=' + Date.now(), { cache: 'no-store' })
