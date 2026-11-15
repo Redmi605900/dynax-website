@@ -100,7 +100,7 @@ body {
 </footer>
 <script>
 function loadStats() {
-  fetch('https://ahead-wedding-cds-spot.trycloudflare.com/stats')
+  fetch('https://playlist-elephant-spot-tulsa.trycloudflare.com/stats')
     .then(r=>r.json())
     .then(d=>{
       document.getElementById('s-blocks').textContent = d.blocks || '—';
@@ -120,7 +120,7 @@ if ('serviceWorker' in navigator) {
 <!-- tunnel-watch -->
 <script>
 (function () {
-  var BAKED = 'https://ahead-wedding-cds-spot.trycloudflare.com';
+  var BAKED = 'https://playlist-elephant-spot-tulsa.trycloudflare.com';
   setInterval(function () {
     if (document.visibilityState !== 'visible') return;
     fetch(location.pathname + '?t=' + Date.now(), { cache: 'no-store' })
