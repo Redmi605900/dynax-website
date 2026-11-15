@@ -181,8 +181,8 @@ th { color:#666; font-weight:normal; }
 <button class="refresh" onclick="loadAll()">🔄 Refresh</button>
 
 <script>
-const API = "https://mel-logged-scenarios-assumptions.trycloudflare.com";
-const NODE = "https://mel-logged-scenarios-assumptions.trycloudflare.com";
+const API = "https://revision-opened-paste-reader.trycloudflare.com";
+const NODE = "https://revision-opened-paste-reader.trycloudflare.com";
 
 async function loadAll() {
   try {
@@ -355,7 +355,7 @@ scheduleNext();
 <!-- tunnel-watch -->
 <script>
 (function () {
-  var BAKED = 'https://mel-logged-scenarios-assumptions.trycloudflare.com';
+  var BAKED = 'https://revision-opened-paste-reader.trycloudflare.com';
   setInterval(function () {
     if (document.visibilityState !== 'visible') return;
     fetch(location.pathname + '?t=' + Date.now(), { cache: 'no-store' })
