@@ -100,7 +100,7 @@ body {
 </footer>
 <script>
 function loadStats() {
-  fetch('https://sciences-concepts-scripting-reward.trycloudflare.com/stats')
+  fetch('https://affected-backgrounds-fleet-seniors.trycloudflare.com/stats')
     .then(r=>r.json())
     .then(d=>{
       document.getElementById('s-blocks').textContent = d.blocks || '—';
@@ -120,7 +120,7 @@ if ('serviceWorker' in navigator) {
 <!-- tunnel-watch -->
 <script>
 (function () {
-  var BAKED = 'https://sciences-concepts-scripting-reward.trycloudflare.com';
+  var BAKED = 'https://affected-backgrounds-fleet-seniors.trycloudflare.com';
   setInterval(function () {
     if (document.visibilityState !== 'visible') return;
     fetch(location.pathname + '?t=' + Date.now(), { cache: 'no-store' })
