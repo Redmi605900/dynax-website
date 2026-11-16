@@ -70,6 +70,7 @@ fi
 
 echo "[5/5] กำลังอัปเดตไฟล์ HTML และ push..."
 cd "$WEBSITE_DIR"
+mkdir -p "$HOME/dynax-skill" && echo "$NEW_URL" > "$HOME/dynax-skill/live_tunnel_url"
 sed -i -E "s|https://[a-z0-9-]+\.trycloudflare\.com|$NEW_URL|g" *.html
 
 CHANGED=$(git status --porcelain -- '*.html' | wc -l)
