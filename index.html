@@ -179,146 +179,92 @@ th { color:#666; font-weight:normal; }
 <button class="refresh" onclick="loadAll()">🔄 Refresh</button>
 
 <script>
-const API = window.location.origin;
-const NODE = window.location.origin;
-
-async function loadAll() {
-  try {
-    const stats = await fetch(NODE + "/stats").then(r=>r.json());
-    document.getElementById("status").textContent = stats.status || "online";
-    document.getElementById("blocks").textContent = stats.blocks || "-";
-    document.getElementById("nodes").textContent = stats.nodes || "-";
-    document.getElementById("reward").textContent = stats.reward || "50";
-    document.getElementById("difficulty").textContent = stats.difficulty || "0000";
-  } catch(e) {}
-
-  try {
-    const pending = await fetch(NODE + "/pending").then(r=>r.json());
-    document.getElementById("mempool").textContent = pending.count || 0;
-  } catch(e) {}
-
-  try {
-    const peers = await fetch(NODE + "/peers").then(r=>r.json());
-    const list = peers.peers || [];
-    document.getElementById("peer-list").innerHTML = list.length === 0
-      ? "<div style=color:#666>No peers connected</div>"
-      : list.map(p => `<div class="node-item"><span style="color:#d4af37">${p}</span><span class="tag tag-green">● Online</span></div>`).join("");
-  } catch(e) {}
-
-  try {
-    const info = await fetch(NODE + "/api/v1/info").then(r=>r.json());
-    document.getElementById("version").textContent = "v" + (info.version || "20");
-  } catch(e) {}
-
-  try {
-    const blocks = await fetch(NODE + "/blocks").then(r=>r.json());
-    if (!blocks.slice) return;
-    const recent = blocks.slice(-20).reverse();
-    
-    // คำนวณ avg block time
-    if (recent.length >= 2) {
-      const times = [];
-      for (let i=0; i<Math.min(recent.length-1, 10); i++) {
-        const diff = recent[i].timestamp - recent[i+1].timestamp;
-        if (diff > 0) times.push(diff);
-      }
-      if (times.length > 0) {
-        const avg = times.reduce((a,b)=>a+b,0)/times.length;
-        document.getElementById("blocktime").textContent = avg.toFixed(1) + "s";
+async function updateDashboard() {
+    const statusEl = document.getElementById('status');
+    try {
+        const res = await fetch('dynax_chain.json');
+        if (!res.ok) throw new Error("Network error");
+        const chain = await res.json();
         
-        // estimate hash rate
-        const difficulty = recent[0].difficulty || "0000";
-        const zeros = difficulty.length;
-        const hashesPerBlock = Math.pow(16, zeros);
-        const hashRate = hashesPerBlock / avg;
-        if (hashRate > 1e6) document.getElementById("hashrate").textContent = (hashRate/1e6).toFixed(2) + " MH/s";
-        else if (hashRate > 1e3) document.getElementById("hashrate").textContent = (hashRate/1e3).toFixed(2) + " KH/s";
-        else document.getElementById("hashrate").textContent = hashRate.toFixed(0) + " H/s";
-      }
+        if (!Array.isArray(chain) || chain.length === 0) {
+            throw new Error("Invalid chain data");
+        }
+
+        // --- คำนวณค่าต่างๆ จาก Array ---
+        const totalBlocks = chain.length;
+        const latestBlock = chain[chain.length - 1];
+        
+        // นับ Transaction ทั้งหมด
+        let totalTx = 0;
+        chain.forEach(b => {
+            if (b.transactions && Array.isArray(b.transactions)) {
+                totalTx += b.transactions.length;
+            }
+        });
+
+        // คำนวณ Last Block Age (วินาทีที่ผ่านมา)
+        const latestTime = latestBlock.timestamp * 1000;
+        const now = Date.now();
+        const ageSeconds = Math.floor((now - latestTime) / 1000);
+        let ageStr = ageSeconds + "s ago";
+        if (ageSeconds > 60) ageStr = Math.floor(ageSeconds / 60) + "m ago";
+        if (ageSeconds > 3600) ageStr = Math.floor(ageSeconds / 3600) + "h ago";
+
+        // --- อัปเดตลงหน้าเว็บ ---
+        const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = val;
+        };
+
+        setVal('blocks', totalBlocks);
+        setVal('lastblockage', ageStr);
+        setVal('chainsize', (JSON.stringify(chain).length / 1024).toFixed(2) + " KB");
+        
+        // ข้อมูลที่ยังไม่มีใน JSON (โชว์เป็น -)
+        setVal('blocktime', '-');
+        setVal('chainwork', '-');
+        setVal('difficulty', '-');
+        setVal('hashrate', '-');
+        setVal('mempool', '-');
+        setVal('reward', '1'); // สมมติว่า Reward = 1 DYX
+        setVal('supply', '-');
+        setVal('tps', '-');
+        setVal('uptime', '-');
+        setVal('version', 'v20.0');
+        setVal('syncstatus', '100%');
+        setVal('snapheight', totalBlocks);
+        setVal('fork', 'No Fork');
+        setVal('nodes', '0');
+        setVal('miners', '-');
+
+        // อัปเดตสถานะ
+        if (statusEl) {
+            statusEl.innerText = "Online";
+            statusEl.style.color = "#00FF00";
+            // ลบคลาส reconnecting ถ้ามี
+            statusEl.classList.remove('reconnecting'); 
+        }
+
+    } catch (error) {
+        console.warn("API ล่ม! ใช้ข้อมูลเก่าแทน:", error);
+        
+        // --- Fallback: ใช้ข้อมูลจาก Cache ---
+        if (statusEl) {
+            statusEl.innerText = "reconnecting...";
+            statusEl.style.color = "#FFA500"; // สีส้ม
+        }
+        
+        const cachedBlocks = localStorage.getItem('dynax_blocks');
+        if (cachedBlocks) {
+            const el = document.getElementById('blocks');
+            if (el) el.innerText = cachedBlocks;
+        }
     }
-    
-    // Total Supply
-    let supply = 0;
-    blocks.forEach(b => {
-      (b.transactions||[]).forEach(tx => {
-        if (tx.from === "SYSTEM") supply += tx.amount || 50;
-      });
-    });
-    document.getElementById("supply").textContent = supply.toLocaleString() + " DYX";
-    
-    // Chain Work
-    let work = 0;
-    blocks.forEach(b => {
-      const h = b.hash || "";
-      const zeros = h.length - h.replace(/^0+/,"").length;
-      work += Math.pow(16, zeros);
-    });
-    document.getElementById("chainwork").textContent = work.toExponential(2);
-    
-    // Block table
-    document.getElementById("block-table").innerHTML = recent.slice(0,10).map(b => `
-      <tr>
-        <td>#${b.index}</td>
-        <td>${(b.hash||"").slice(0,10)}...</td>
-        <td>${(b.transactions||[]).length}</td>
-        <td>${b.nonce||0}</td>
-        <td>${new Date(b.timestamp*1000).toLocaleTimeString()}</td>
-      </tr>
-    `).join("");
-  } catch(e) {}
 }
 
-
-  // Snapshot info
-  try {
-    const snap = await fetch(NODE + "/snapshot/info").then(r=>r.json());
-    document.getElementById("snapheight").textContent = snap.height || "-";
-  } catch(e) {}
-
-  // State info
-  try {
-    const state = await fetch(NODE + "/state").then(r=>r.json());
-    const tps = state.tx_count / Math.max(state.block_height * 12, 1);
-    document.getElementById("tps").textContent = tps.toFixed(4);
-  } catch(e) {}
-
-  // Chain size estimate
-  try {
-    const blocks = await fetch(NODE + "/blocks").then(r=>r.json());
-    if (blocks.length) {
-      const sizeBytes = JSON.stringify(blocks).length;
-      document.getElementById("chainsize").textContent = (sizeBytes/1024/1024).toFixed(2) + " MB";
-      
-      // Last block age
-      const lastBlock = blocks[blocks.length-1];
-      const age = Math.floor(Date.now()/1000) - lastBlock.timestamp;
-      if (age < 60) document.getElementById("lastblockage").textContent = age + "s";
-      else document.getElementById("lastblockage").textContent = Math.floor(age/60) + "m";
-      
-      // Active miners (unique miners in last 10 blocks)
-      const last10 = blocks.slice(-10);
-      const miners = new Set();
-      last10.forEach(b => {
-        (b.transactions||[]).forEach(tx => {
-          if (tx.from === "SYSTEM") miners.add(tx.to);
-        });
-      });
-      document.getElementById("miners").textContent = miners.size;
-      
-      // Sync status
-      document.getElementById("syncstatus").textContent = "100%";
-      
-      // Uptime estimate
-      const firstBlock = blocks[0];
-      const uptimeSec = Math.floor(Date.now()/1000) - firstBlock.timestamp;
-      const days = Math.floor(uptimeSec/86400);
-      const hours = Math.floor((uptimeSec%86400)/3600);
-      document.getElementById("uptime").textContent = days + "d " + hours + "h";
-    }
-  } catch(e) {}
-
-loadAll();
-setInterval(loadAll, 15000);
+// รันทุก 5 วินาที
+setInterval(updateDashboard, 5000);
+updateDashboard();
 </script>
 </body>
 </html>
