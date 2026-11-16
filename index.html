@@ -182,84 +182,93 @@ th { color:#666; font-weight:normal; }
 document.addEventListener("DOMContentLoaded", async function() {
     const statusEl = document.getElementById('status');
     
-    try {
-        // ดึงข้อมูลจากไฟล์ JSON โดยตรง
-        const res = await fetch('dynax_chain.json');
-        if (!res.ok) throw new Error("Network response was not ok");
-        const chain = await res.json();
-        
-        if (!Array.isArray(chain) || chain.length === 0) {
-            throw new Error("Invalid chain data");
-        }
-
-        // --- คำนวณค่าต่างๆ จาก Array ---
-        const totalBlocks = chain.length;
-        const latestBlock = chain[chain.length - 1];
-        
-        // นับ Transaction ทั้งหมด
-        let totalTx = 0;
-        chain.forEach(b => {
-            if (b.transactions && Array.isArray(b.transactions)) {
-                totalTx += b.transactions.length;
+    async function fetchChain() {
+        try {
+            // ดึงข้อมูลจาก API ที่ถูกต้อง
+            const res = await fetch('/api/chain');
+            if (!res.ok) throw new Error("API error");
+            const chain = await res.json();
+            
+            if (!Array.isArray(chain) || chain.length === 0) {
+                throw new Error("Invalid chain data");
             }
-        });
 
-        // คำนวณ Last Block Age
-        const latestTime = latestBlock.timestamp * 1000;
-        const now = Date.now();
-        const ageSeconds = Math.floor((now - latestTime) / 1000);
-        let ageStr = ageSeconds + "s ago";
-        if (ageSeconds > 60) ageStr = Math.floor(ageSeconds / 60) + "m ago";
-        if (ageSeconds > 3600) ageStr = Math.floor(ageSeconds / 3600) + "h ago";
+            // --- คำนวณค่าต่างๆ จาก Array ---
+            const totalBlocks = chain.length;
+            const latestBlock = chain[chain.length - 1];
+            
+            // นับ Transaction ทั้งหมด
+            let totalTx = 0;
+            chain.forEach(b => {
+                if (b.transactions && Array.isArray(b.transactions)) {
+                    totalTx += b.transactions.length;
+                }
+            });
 
-        // --- อัปเดตลงหน้าเว็บ ---
-        const setVal = (id, val) => {
-            const el = document.getElementById(id);
-            if (el) el.innerText = val;
-        };
+            // คำนวณ Last Block Age
+            const latestTime = latestBlock.timestamp * 1000;
+            const now = Date.now();
+            const ageSeconds = Math.floor((now - latestTime) / 1000);
+            let ageStr = ageSeconds + "s ago";
+            if (ageSeconds > 60) ageStr = Math.floor(ageSeconds / 60) + "m ago";
+            if (ageSeconds > 3600) ageStr = Math.floor(ageSeconds / 3600) + "h ago";
 
-        setVal('blocks', totalBlocks);
-        setVal('lastblockage', ageStr);
-        setVal('chainsize', (JSON.stringify(chain).length / 1024).toFixed(2) + " KB");
-        
-        // ข้อมูลที่ไม่มีใน JSON (โชว์ -)
-        setVal('blocktime', '-');
-        setVal('chainwork', '-');
-        setVal('difficulty', '-');
-        setVal('hashrate', '-');
-        setVal('mempool', '-');
-        setVal('reward', '1');
-        setVal('supply', '-');
-        setVal('tps', '-');
-        setVal('uptime', '-');
-        setVal('version', 'v20.0');
-        setVal('syncstatus', '100%');
-        setVal('snapheight', totalBlocks);
-        setVal('fork', 'No Fork');
-        setVal('nodes', '0');
-        setVal('miners', '-');
+            // --- อัปเดตลงหน้าเว็บ ---
+            const setVal = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = val;
+            };
 
-        // อัปเดตสถานะเป็น Online
-        if (statusEl) {
-            statusEl.innerText = "Online";
-            statusEl.style.color = "#00FF00";
-        }
+            setVal('blocks', totalBlocks);
+            setVal('lastblockage', ageStr);
+            setVal('chainsize', (JSON.stringify(chain).length / 1024).toFixed(2) + " KB");
+            setVal('snapheight', totalBlocks);
+            
+            // อัปเดตค่าที่พอจะคำนวณได้
+            setVal('blocktime', '-');
+            setVal('chainwork', '-');
+            setVal('difficulty', '-');
+            setVal('hashrate', '-');
+            setVal('mempool', '-');
+            setVal('reward', '1');
+            setVal('supply', '-');
+            setVal('tps', '-');
+            setVal('uptime', '-');
+            setVal('version', 'v20.0');
+            setVal('syncstatus', '100%');
+            setVal('fork', 'No Fork');
+            setVal('nodes', '0');
+            setVal('miners', '-');
 
-    } catch (error) {
-        console.warn("API ล่ม! ใช้ข้อมูลเก่าแทน:", error);
-        
-        // Fallback: ใช้ข้อมูลจาก Cache
-        if (statusEl) {
-            statusEl.innerText = "reconnecting...";
-            statusEl.style.color = "#FFA500";
-        }
-        
-        const cachedBlocks = localStorage.getItem('dynax_blocks');
-        if (cachedBlocks) {
-            const el = document.getElementById('blocks');
-            if (el) el.innerText = cachedBlocks;
+            // อัปเดตสถานะเป็น Online
+            if (statusEl) {
+                statusEl.innerText = "Online";
+                statusEl.style.color = "#00FF00";
+            }
+
+            // เซฟลง Cache
+            localStorage.setItem('dynax_blocks', totalBlocks);
+            localStorage.setItem('dynax_age', ageStr);
+
+        } catch (error) {
+            console.warn("API ล่ม! ใช้ข้อมูลเก่าแทน:", error);
+            
+            if (statusEl) {
+                statusEl.innerText = "reconnecting...";
+                statusEl.style.color = "#FFA500";
+            }
+            
+            const cachedBlocks = localStorage.getItem('dynax_blocks');
+            if (cachedBlocks) {
+                const el = document.getElementById('blocks');
+                if (el) el.innerText = cachedBlocks;
+            }
         }
     }
+
+    // รันครั้งแรก และรันซ้ำทุก 5 วินาที
+    fetchChain();
+    setInterval(fetchChain, 5000);
 });
 </script>
 </body>
