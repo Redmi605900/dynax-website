@@ -179,11 +179,13 @@ th { color:#666; font-weight:normal; }
 <button class="refresh" onclick="loadAll()">🔄 Refresh</button>
 
 <script>
-async function updateDashboard() {
+document.addEventListener("DOMContentLoaded", async function() {
     const statusEl = document.getElementById('status');
+    
     try {
+        // ดึงข้อมูลจากไฟล์ JSON โดยตรง
         const res = await fetch('dynax_chain.json');
-        if (!res.ok) throw new Error("Network error");
+        if (!res.ok) throw new Error("Network response was not ok");
         const chain = await res.json();
         
         if (!Array.isArray(chain) || chain.length === 0) {
@@ -202,7 +204,7 @@ async function updateDashboard() {
             }
         });
 
-        // คำนวณ Last Block Age (วินาทีที่ผ่านมา)
+        // คำนวณ Last Block Age
         const latestTime = latestBlock.timestamp * 1000;
         const now = Date.now();
         const ageSeconds = Math.floor((now - latestTime) / 1000);
@@ -220,13 +222,13 @@ async function updateDashboard() {
         setVal('lastblockage', ageStr);
         setVal('chainsize', (JSON.stringify(chain).length / 1024).toFixed(2) + " KB");
         
-        // ข้อมูลที่ยังไม่มีใน JSON (โชว์เป็น -)
+        // ข้อมูลที่ไม่มีใน JSON (โชว์ -)
         setVal('blocktime', '-');
         setVal('chainwork', '-');
         setVal('difficulty', '-');
         setVal('hashrate', '-');
         setVal('mempool', '-');
-        setVal('reward', '1'); // สมมติว่า Reward = 1 DYX
+        setVal('reward', '1');
         setVal('supply', '-');
         setVal('tps', '-');
         setVal('uptime', '-');
@@ -237,21 +239,19 @@ async function updateDashboard() {
         setVal('nodes', '0');
         setVal('miners', '-');
 
-        // อัปเดตสถานะ
+        // อัปเดตสถานะเป็น Online
         if (statusEl) {
             statusEl.innerText = "Online";
             statusEl.style.color = "#00FF00";
-            // ลบคลาส reconnecting ถ้ามี
-            statusEl.classList.remove('reconnecting'); 
         }
 
     } catch (error) {
         console.warn("API ล่ม! ใช้ข้อมูลเก่าแทน:", error);
         
-        // --- Fallback: ใช้ข้อมูลจาก Cache ---
+        // Fallback: ใช้ข้อมูลจาก Cache
         if (statusEl) {
             statusEl.innerText = "reconnecting...";
-            statusEl.style.color = "#FFA500"; // สีส้ม
+            statusEl.style.color = "#FFA500";
         }
         
         const cachedBlocks = localStorage.getItem('dynax_blocks');
@@ -260,11 +260,7 @@ async function updateDashboard() {
             if (el) el.innerText = cachedBlocks;
         }
     }
-}
-
-// รันทุก 5 วินาที
-setInterval(updateDashboard, 5000);
-updateDashboard();
+});
 </script>
 </body>
 </html>
