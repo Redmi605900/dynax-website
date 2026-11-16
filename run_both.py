@@ -40,5 +40,9 @@ def serve_sha3():
 def serve_qrcode():
     return send_file('qrcode.min.js', mimetype='application/javascript')
 
+@app.route('/api/chain') 
+def get_chain_data(): 
+    return send_file('dynax_chain.json', mimetype='application/json')
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=6001)

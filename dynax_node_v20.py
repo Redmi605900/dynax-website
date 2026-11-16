@@ -1,3 +1,4 @@
+from flask_cors import CORS
 import time
 import requests
 import threading
@@ -26,6 +27,7 @@ from flask import Flask, jsonify, request
 from ecdsa import VerifyingKey, SECP256k1
 
 app = Flask(__name__)
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024  # 1MB request body limit
 
 # ===== DYNAX CONSENSUS V1 =====

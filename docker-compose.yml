@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  dynax-node:
+    build: .
+    container_name: dynax-node
+    restart: unless-stopped
+    ports:
+      - "6001:6001"
+    volumes:
+      - ./data:/app/data

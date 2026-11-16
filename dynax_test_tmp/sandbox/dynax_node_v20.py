@@ -1,3 +1,4 @@
+from dex_security import verify_swap_signature
 import time
 import requests
 import threading
@@ -944,69 +945,46 @@ def dex_pool():
 def dex_swap():
     try:
         data = request.get_json()
-        token_in = data["token_in"]
-        token_out = data["token_out"]
-        amount_in = float(data["amount_in"])
+        
+        # --- 1. ตรวจสอบข้อมูลที่ส่งมา ---
+        payload = data.get("payload")
+        signature = data.get("signature")
+        public_key = data.get("public_key")
+        
+        if not payload or not signature or not public_key:
+            return jsonify({"error": "Missing signature, public_key, or payload"}), 400
+
+        # --- 2. ตรวจสอบ Signature ---
+        if not verify_swap_signature(payload, signature, public_key):
+            return jsonify({"error": "Invalid signature"}), 401
+            
+        # --- 3. ตรวจสอบความเป็นเจ้าของ (Authorization) ---
+        # สมมติว่าคุณมีตัวแปร POOL_OWNER_PUBLIC_KEY (ถ้าไม่มีให้ลบบรรทัดนี้)
+        # if public_key != POOL_OWNER_PUBLIC_KEY:
+        #     return jsonify({"error": "Unauthorized: Not the pool owner"}), 403
+
+        # --- 4. ทำการ Swap ---
+        token_in = payload["token_in"]
+        token_out = payload["token_out"]
+        amount_in = float(payload["amount_in"])
+        
         if amount_in <= 0:
             return jsonify({"error": "Amount must be positive"}), 400
+            
+        # ... (ส่วนคำนวณ Swap เดิมของคุณ) ...
+        # ยกตัวอย่างการคำนวณเบื้องต้น (คุณสามารถนำโค้ดเดิมมาใส่แทนได้)
         reserve_in = liquidity_pool[token_in]
         reserve_out = liquidity_pool[token_out]
-        amount_out = (amount_in * reserve_out) / (reserve_in + amount_in)
+        amount_out = (reserve_out * amount_in) / (reserve_in + amount_in)
+        
         liquidity_pool[token_in] += amount_in
         liquidity_pool[token_out] -= amount_out
         save_pool(liquidity_pool)
-        return jsonify({
-            "success": True,
-            "swapped": f"{amount_in} {token_in} -> {round(amount_out,6)} {token_out}",
-            "rate": round(amount_out/amount_in, 6),
-            "pool": liquidity_pool
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
-
-@app.route("/dex/liquidity", methods=["POST"])
-def dex_add_liquidity():
-    try:
-        data = request.get_json()
-        token = data["token"]
-        amount = float(data["amount"])
-        if amount <= 0:
-            return jsonify({"error": "Amount must be positive"}), 400
-        pool = get_pool()
-        pool[token] = pool.get(token, 0) + amount
         
-        liq_tx = {
-            "type": "dex_liquidity",
-            "token": token,
-            "amount": amount,
-            "timestamp": int(__import__("time").time()),
-            "from": "DEX",
-            "to": "DEX"
-        }
-        node.mempool.append(liq_tx)
-        save_pool(pool)
-        liquidity_pool.update(pool)
-        return jsonify({"success": True, "pool": liquidity_pool})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"success": True, "swapped": f"{amount_in} {token_in} -> {amount_out} {token_out}"})
 
-if __name__ == "__main__":
-    print("=== DYNAX V20 SECURE NODE STARTED ===")
-    
-# ===== BRIDGE API v1 =====
-@app.route("/api/v1/info")
-def api_info():
-    return jsonify({
-        "network": "DYNAX",
-        "version": "v20",
-        "network_id": 1337,
-        "ticker": "DYX",
-        "max_supply": 11000000,
-        "block_reward": 50,
-        "algorithm": "SHA3-256 PoW",
-        "blocks": len(node.chain),
-        "status": "online"
-    })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/v1/balance/<addr>")
 def api_balance(addr):
