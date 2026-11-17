@@ -1,275 +1,44 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DYNAX Network Dashboard</title>
-<style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body { background:#0a0a0a; color:#fff; font-family:monospace; padding:16px; }
-h1 { color:#d4af37; text-align:center; margin-bottom:20px; font-size:1.5rem; }
-.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
-.grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px; }
-.grid-4 { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:10px; margin-bottom:10px; }
-.card { background:#111; border:1px solid #333; border-radius:10px; padding:12px; }
-.card h3 { color:#888; font-size:0.75rem; margin-bottom:6px; text-transform:uppercase; }
-.value { font-size:1.4rem; font-weight:bold; color:#fff; }
-.value.green { color:#4caf50; }
-.value.gold { color:#d4af37; }
-.value.red { color:#f44336; }
-.value.small { font-size:1rem; }
-.label { font-size:0.7rem; color:#555; margin-top:3px; }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-.dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:4px; }
-.dot-green { background:#4caf50; animation:blink 2s infinite; }
-.section { background:#111; border:1px solid #333; border-radius:10px; padding:14px; margin-bottom:10px; }
-.section h3 { color:#d4af37; margin-bottom:10px; font-size:0.9rem; }
-.node-item { background:#1a1a1a; border-radius:6px; padding:8px; margin-top:6px; font-size:0.75rem; display:flex; justify-content:space-between; }
-.back { display:inline-block; color:#d4af37; text-decoration:none; border:1px solid #d4af37; padding:6px 14px; border-radius:4px; margin-bottom:16px; font-size:0.85rem; }
-.refresh { background:#d4af37; color:#000; border:none; padding:10px; border-radius:6px; cursor:pointer; font-weight:bold; width:100%; margin-top:8px; }
-table { width:100%; border-collapse:collapse; font-size:0.75rem; }
-td,th { padding:6px 4px; border-bottom:1px solid #1a1a1a; }
-th { color:#666; font-weight:normal; }
-.tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:0.7rem; }
-.tag-green { background:#0a2a0a; color:#4caf50; border:1px solid #2a4a2a; }
-.tag-red { background:#2a0a0a; color:#f44336; border:1px solid #4a2a2a; }
-</style>
+  <meta charset="UTF-8">
+  <title>DYNAX - Hideko</title>
+  <style>
+    body {
+      background-color: black;
+      color: turquoise;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 50px;
+    }
+    img {
+      display: block;
+      margin: 20px auto;
+      width: 400px;
+    }
+    h1 {
+      font-size: 3em;
+      margin-bottom: 10px;
+    }
+    p {
+      font-size: 1.2em;
+    }
+  </style>
 </head>
 <body>
-<a href="landing.html" class="back">← Home</a>
-<h1>📡 DYNAX Network Dashboard</h1>
+  <img src="https://avatars.githubusercontent.com/Redmi605900" style="width:120px;border-radius:50%;margin-bottom:16px;border:3px solid #00ffd5"><h1>DYNAX</h1>
+  <p>Decentralized Layer 1 Blockchain · Quantum-Resistant · No ICO</p>
 
-<div class="grid-3">
-  <div class="card">
-    <h3>Network Status</h3>
-    <div class="value green"><span class="dot dot-green"></span><span id="status">-</span></div>
-    <div class="label">Network</div>
-  </div>
-  <div class="card">
-    <h3>Node Version</h3>
-    <div class="value gold" id="version">v20</div>
-    <div class="label">DYNAX Protocol</div>
-  </div>
-  <div class="card">
-    <h3>Network ID</h3>
-    <div class="value">1337</div>
-    <div class="label">Chain ID</div>
-  </div>
-</div>
+  
 
-<div class="grid-4">
-  <div class="card">
-    <h3>Total Blocks</h3>
-    <div class="value gold" id="blocks">-</div>
-    <div class="label">Chain Height</div>
-  </div>
-  <div class="card">
-    <h3>Connected Nodes</h3>
-    <div class="value" id="nodes">-</div>
-    <div class="label">Peers</div>
-  </div>
-  <div class="card">
-    <h3>Mempool</h3>
-    <div class="value" id="mempool">-</div>
-    <div class="label">Pending TX</div>
-  </div>
-  <div class="card">
-    <h3>Block Reward</h3>
-    <div class="value gold" id="reward">-</div>
-    <div class="label">DYX/block</div>
-  </div>
-</div>
+  
 
-<div class="grid-4">
-  <div class="card">
-    <h3>Difficulty</h3>
-    <div class="value small" id="difficulty">-</div>
-    <div class="label">Leading Zeros</div>
+  <div>
+    <button>Explorer</button>
+    <button>Mining Guide</button>
+    <button>Whitepaper</button>
+    <button>Wallet</button>
   </div>
-  <div class="card">
-    <h3>Avg Block Time</h3>
-    <div class="value" id="blocktime">-</div>
-    <div class="label">seconds</div>
-  </div>
-  <div class="card">
-    <h3>Total Supply</h3>
-    <div class="value small gold" id="supply">-</div>
-    <div class="label">DYX mined</div>
-  </div>
-  <div class="card">
-    <h3>Fork Status</h3>
-    <div class="value small green" id="fork">No Fork</div>
-    <div class="label">Chain status</div>
-  </div>
-</div>
-
-<div class="grid-2">
-  <div class="card">
-    <h3>Est. Hash Rate</h3>
-    <div class="value small" id="hashrate">-</div>
-    <div class="label">Network Power</div>
-  </div>
-  <div class="card">
-    <h3>Chain Work</h3>
-    <div class="value small" id="chainwork">-</div>
-    <div class="label">Cumulative PoW</div>
-  </div>
-</div>
-
-
-<div class="grid-4">
-  <div class="card">
-    <h3>Network Uptime</h3>
-    <div class="value small green" id="uptime">-</div>
-    <div class="label">Since start</div>
-  </div>
-  <div class="card">
-    <h3>Protocol Version</h3>
-    <div class="value small gold">v20.0</div>
-    <div class="label">DYNAX Protocol</div>
-  </div>
-  <div class="card">
-    <h3>Chain Size</h3>
-    <div class="value small" id="chainsize">-</div>
-    <div class="label">MB</div>
-  </div>
-  <div class="card">
-    <h3>Last Block Age</h3>
-    <div class="value small" id="lastblockage">-</div>
-    <div class="label">ago</div>
-  </div>
-</div>
-
-<div class="grid-4">
-  <div class="card">
-    <h3>TPS</h3>
-    <div class="value small" id="tps">-</div>
-    <div class="label">TX/sec</div>
-  </div>
-  <div class="card">
-    <h3>Active Miners</h3>
-    <div class="value small" id="miners">-</div>
-    <div class="label">Last 10 blocks</div>
-  </div>
-  <div class="card">
-    <h3>Sync Status</h3>
-    <div class="value small green" id="syncstatus">-</div>
-    <div class="label">Chain sync</div>
-  </div>
-  <div class="card">
-    <h3>Snapshot Height</h3>
-    <div class="value small gold" id="snapheight">-</div>
-    <div class="label">Latest snapshot</div>
-  </div>
-</div>
-
-<div class="section">
-  <h3>🔗 Connected Peers</h3>
-  <div id="peer-list"><div style="color:#666">Loading...</div></div>
-</div>
-
-<div class="section">
-  <h3>📦 Latest Blocks</h3>
-  <table>
-    <tr><th>#</th><th>Hash</th><th>TX</th><th>Nonce</th><th>Time</th></tr>
-    <tbody id="block-table"></tbody>
-  </table>
-</div>
-
-<button class="refresh" onclick="loadAll()">🔄 Refresh</button>
-
-<script>
-document.addEventListener("DOMContentLoaded", async function() {
-    const statusEl = document.getElementById('status');
-    
-    async function fetchChain() {
-        try {
-            // ดึงข้อมูลจาก API ที่ถูกต้อง
-            const res = await fetch('/api/chain');
-            if (!res.ok) throw new Error("API error");
-            const chain = await res.json();
-            
-            if (!Array.isArray(chain) || chain.length === 0) {
-                throw new Error("Invalid chain data");
-            }
-
-            // --- คำนวณค่าต่างๆ จาก Array ---
-            const totalBlocks = chain.length;
-            const latestBlock = chain[chain.length - 1];
-            
-            // นับ Transaction ทั้งหมด
-            let totalTx = 0;
-            chain.forEach(b => {
-                if (b.transactions && Array.isArray(b.transactions)) {
-                    totalTx += b.transactions.length;
-                }
-            });
-
-            // คำนวณ Last Block Age
-            const latestTime = latestBlock.timestamp * 1000;
-            const now = Date.now();
-            const ageSeconds = Math.floor((now - latestTime) / 1000);
-            let ageStr = ageSeconds + "s ago";
-            if (ageSeconds > 60) ageStr = Math.floor(ageSeconds / 60) + "m ago";
-            if (ageSeconds > 3600) ageStr = Math.floor(ageSeconds / 3600) + "h ago";
-
-            // --- อัปเดตลงหน้าเว็บ ---
-            const setVal = (id, val) => {
-                const el = document.getElementById(id);
-                if (el) el.innerText = val;
-            };
-
-            setVal('blocks', totalBlocks);
-            setVal('lastblockage', ageStr);
-            setVal('chainsize', (JSON.stringify(chain).length / 1024).toFixed(2) + " KB");
-            setVal('snapheight', totalBlocks);
-            
-            // อัปเดตค่าที่พอจะคำนวณได้
-            setVal('blocktime', '-');
-            setVal('chainwork', '-');
-            setVal('difficulty', '-');
-            setVal('hashrate', '-');
-            setVal('mempool', '-');
-            setVal('reward', '1');
-            setVal('supply', '-');
-            setVal('tps', '-');
-            setVal('uptime', '-');
-            setVal('version', 'v20.0');
-            setVal('syncstatus', '100%');
-            setVal('fork', 'No Fork');
-            setVal('nodes', '0');
-            setVal('miners', '-');
-
-            // อัปเดตสถานะเป็น Online
-            if (statusEl) {
-                statusEl.innerText = "Online";
-                statusEl.style.color = "#00FF00";
-            }
-
-            // เซฟลง Cache
-            localStorage.setItem('dynax_blocks', totalBlocks);
-            localStorage.setItem('dynax_age', ageStr);
-
-        } catch (error) {
-            console.warn("API ล่ม! ใช้ข้อมูลเก่าแทน:", error);
-            
-            if (statusEl) {
-                statusEl.innerText = "reconnecting...";
-                statusEl.style.color = "#FFA500";
-            }
-            
-            const cachedBlocks = localStorage.getItem('dynax_blocks');
-            if (cachedBlocks) {
-                const el = document.getElementById('blocks');
-                if (el) el.innerText = cachedBlocks;
-            }
-        }
-    }
-
-    // รันครั้งแรก และรันซ้ำทุก 5 วินาที
-    fetchChain();
-    setInterval(fetchChain, 5000);
-});
-</script>
 </body>
 </html>
+ 
